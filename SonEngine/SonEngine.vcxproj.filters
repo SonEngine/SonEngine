@@ -30,6 +30,9 @@
     <ClCompile Include="SimpleApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="GraphicsCommon.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseApp.h">
@@ -47,5 +50,24 @@
     <ClInclude Include="SimpleApp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="PipelineState.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="RootSignature.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicsCommon.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="DefaultVS.hlsl" />
+    <FxCompile Include="DefaultPS.hlsl" />
   </ItemGroup>
 </Project>

@@ -6,6 +6,7 @@
 #include "wrl.h"
 #include "d3d12.h"
 #include "d3dx12.h"
+#include "dxgi1_6.h"
 
 inline std::wstring AnsiToWString(const std::string& str)
 {
@@ -23,6 +24,16 @@ inline std::wstring AnsiToWString(const std::string& str)
     if(FAILED(hr__)) { throw DxException(hr__, L#x, wfn, __LINE__); } \
 }
 #endif
+
+
+#if defined (DEBUG) || (_DEBUG)
+
+#define ASSERT( isFalse, ... ) \
+        if (!(bool)(isFalse)) { \
+            __debugbreak(); \
+        }
+#endif
+
 class DxException
 {
 public:
@@ -38,14 +49,18 @@ public:
 };
 
 
-namespace Utility {
+namespace GraphicsUtils {
 	class Utility {
 	public:
 		Utility();
 		Utility(ID3D12Device5* pDevice, ID3D12GraphicsCommandList* pCommandList);
 
 	private:
-		ID3D12Device5* m_Device;
-		ID3D12GraphicsCommandList* m_CommandList;
+		ID3D12Device5* m_device;
+		ID3D12GraphicsCommandList* m_commandList;
+
+	public:
+		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
+		void CreateDescriptorHeap(UINT numDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE type, Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& heap, UINT nodeMask = 0, D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 	};
 }

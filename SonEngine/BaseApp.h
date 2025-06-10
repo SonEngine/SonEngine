@@ -1,11 +1,12 @@
-#include <wrl.h>
+#pragma once
+
 #include <iostream>
 
-#include "dxgi1_6.h"
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 
 #include "Timer.h"
+
 
 namespace Core {
     class BaseApp {
@@ -36,12 +37,12 @@ namespace Core {
         virtual void Finalize(float deltaTime) = 0;
 
     public:
-        static BaseApp* m_AppPtr;
-        Core::Timer m_Timer;
+        static BaseApp* m_appPtr;
+        Core::Timer m_timer;
 
     protected:
-        int m_Width;
-        int m_Height;
-        HWND m_MainWnd;
+        int m_width;
+        int m_height;
+        HWND m_mainWnd;
     };
 }

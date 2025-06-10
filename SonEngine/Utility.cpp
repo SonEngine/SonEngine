@@ -18,14 +18,40 @@ std::wstring DxException::ToString()const
 	return FunctionName + L" failed in " + Filename + L"; line " + std::to_wstring(LineNumber) + L"; error: " + msg;
 }
 
-Utility::Utility::Utility()
-	:m_Device(nullptr),
-	m_CommandList(nullptr)
-{
-}
+namespace GraphicsUtils {
 
-Utility::Utility::Utility(ID3D12Device5* pDevice, ID3D12GraphicsCommandList* pCommandList)
-	:m_Device(pDevice),
-	m_CommandList(pCommandList)
-{
+	using Microsoft::WRL::ComPtr;
+
+	Utility::Utility()
+		:m_device(nullptr),
+		m_commandList(nullptr)
+	{
+	}
+
+	Utility::Utility(ID3D12Device5* pDevice, ID3D12GraphicsCommandList* pCommandList)
+		:m_device(pDevice),
+		m_commandList(pCommandList)
+	{
+	}
+
+	void Utility::LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format)
+	{
+
+	}
+
+	void Utility::CreateDescriptorHeap(UINT numDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE type, ComPtr<ID3D12DescriptorHeap>& heap, UINT nodeMask, D3D12_DESCRIPTOR_HEAP_FLAGS flag)
+	{
+		if (m_device == nullptr) return;
+
+		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+		heapDesc.Flags = flag;
+		heapDesc.NodeMask = nodeMask;
+		heapDesc.NumDescriptors = numDescriptors;
+		heapDesc.Type = type;
+
+		ThrowIfFailed(m_device->CreateDescriptorHeap(
+			&heapDesc,
+			IID_PPV_ARGS(heap.ReleaseAndGetAddressOf())
+		));
+	}
 }

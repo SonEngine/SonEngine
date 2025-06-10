@@ -2,33 +2,33 @@
 
 using namespace Core;
 
-BaseApp* BaseApp::m_AppPtr = nullptr;
+BaseApp* BaseApp::m_appPtr = nullptr;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-	return BaseApp::m_AppPtr->MainProc(hWnd, msg, wParam, lParam);
+	return BaseApp::m_appPtr->MainProc(hWnd, msg, wParam, lParam);
 }
 
 BaseApp::BaseApp()
-	:m_Width(1280),
-	m_Height(720),
-	m_MainWnd(NULL)
+	:m_width(1280),
+	m_height(720),
+	m_mainWnd(NULL)
 {
-	if (m_AppPtr != nullptr) {
-		delete m_AppPtr;
+	if (m_appPtr != nullptr) {
+		delete m_appPtr;
 	}
-	m_AppPtr = this;
-	m_Timer = Timer();
+	m_appPtr = this;
+	m_timer = Timer();
 }
 
 BaseApp::BaseApp(int width, int height)
-	:m_Width(width),
-	m_Height(height),
-	m_MainWnd(NULL)
+	:m_width(width),
+	m_height(height),
+	m_mainWnd(NULL)
 {
-	if (m_AppPtr != nullptr) {
-		delete m_AppPtr;
+	if (m_appPtr != nullptr) {
+		delete m_appPtr;
 	}
-	m_AppPtr = this;
+	m_appPtr = this;
 }
 
 BaseApp::~BaseApp()
@@ -36,8 +36,8 @@ BaseApp::~BaseApp()
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
-	m_MainWnd = NULL;
-	m_AppPtr = nullptr;
+	m_mainWnd = NULL;
+	m_appPtr = nullptr;
 	std::cout << "Delete BaseApp\n";
 
 }
@@ -84,10 +84,10 @@ bool BaseApp::InitWindow()
 	RegisterClassEx(&wc);
 
 	// Create window
-	RECT rc = { 0, 0, (LONG)m_Width, (LONG)m_Height };
+	RECT rc = { 0, 0, (LONG)m_width, (LONG)m_height };
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
-	m_MainWnd = CreateWindow(wc.lpszClassName, wc.lpszClassName, WS_OVERLAPPEDWINDOW,
+	m_mainWnd = CreateWindow(wc.lpszClassName, wc.lpszClassName, WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
 		(int)(rc.right - rc.left),
@@ -105,13 +105,12 @@ bool BaseApp::InitWindow()
 	rawInputDevice.usUsagePage = 0x01;
 	rawInputDevice.usUsage = standardMouse;
 	rawInputDevice.dwFlags = 0;
-	rawInputDevice.hwndTarget = m_MainWnd;
+	rawInputDevice.hwndTarget = m_mainWnd;
 
 	::RegisterRawInputDevices(&rawInputDevice, 1, sizeof(RAWINPUTDEVICE));
 
-
-	ShowWindow(m_MainWnd, SW_SHOWDEFAULT);
-	UpdateWindow(m_MainWnd);
+	ShowWindow(m_mainWnd, SW_SHOWDEFAULT);
+	UpdateWindow(m_mainWnd);
 
 	return true;
 }
@@ -130,8 +129,8 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_SIZE:
 	{
-		m_Width = LOWORD(lParam);
-		m_Height = HIWORD(lParam);
+		m_width = LOWORD(lParam);
+		m_height = HIWORD(lParam);
 		OnResize();
 
 		return 0;
@@ -162,7 +161,7 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 int BaseApp::Run()
 {
 	MSG msg = { };
-	m_Timer.Reset();
+	m_timer.Reset();
 
 	while (msg.message != WM_QUIT) {
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
@@ -170,8 +169,8 @@ int BaseApp::Run()
 			DispatchMessage(&msg);
 		}
 		else {
-			m_Timer.Tick();
-			float deltaTime = (float)m_Timer.GetDeltaTime();
+			m_timer.Tick();
+			float deltaTime = (float)m_timer.GetDeltaTime();
 
 			Update(deltaTime);
 			Render(deltaTime);
