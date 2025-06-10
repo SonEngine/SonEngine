@@ -51,13 +51,17 @@ void GraphicsPSO::SetRenderTargetFormats(UINT NumRTVs, const DXGI_FORMAT* RTVFor
 	
 	for (UINT i = NumRTVs; i < m_psoDesc.NumRenderTargets; i++)	
 		m_psoDesc.RTVFormats[i] = DXGI_FORMAT_UNKNOWN;
+
 	m_psoDesc.NumRenderTargets = NumRTVs;
 	SetDepthTargetFormat(DSVFormat, MsaaCount, MsaaQuality);
 }
 
 void GraphicsPSO::SetInputLayout(UINT NumElements, const D3D12_INPUT_ELEMENT_DESC* pInputElementDescs)
 {
+	
 	m_psoDesc.InputLayout.NumElements = NumElements;
+	
+	// pInputElementDescs 메모리 m_inputLayouts 로 복사
 	if (NumElements > 0) 
 	{
 		size_t size = sizeof(D3D12_INPUT_ELEMENT_DESC) * NumElements;

@@ -20,8 +20,6 @@ void RootSignature::Finalize(const ComPtr<ID3D12Device5> & device, const std::ws
 		flags
 	);
 	
-	
-
 	ComPtr<ID3DBlob> pOutBlob, pErrorBlob;
 	
 	ThrowIfFailed(D3D12SerializeVersionedRootSignature(

@@ -18,6 +18,7 @@ namespace Renderer
 void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 {
     GraphicsPSO defaultPSO(L"default PSO");
+
     D3D12_INPUT_ELEMENT_DESC posOnlyIL[] =
     {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}

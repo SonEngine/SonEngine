@@ -76,9 +76,11 @@ public:
         return m_paramArray.get()[entryIndex];
 
     }
+    
     void InitStaticSampler(UINT index, const D3D12_STATIC_SAMPLER_DESC& staticSamplerDesc,
         D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL);
 
+    // sampler & root parameter 설정 후 Root Signature를 생성
     void Finalize(const  Microsoft::WRL::ComPtr<ID3D12Device5>& device, const std::wstring& name, D3D12_ROOT_SIGNATURE_FLAGS flags = D3D12_ROOT_SIGNATURE_FLAG_NONE);
 
     ID3D12RootSignature* GetSignature() const { return m_signature.Get(); }
