@@ -61,7 +61,7 @@ public:
     void SetHullShader(const D3D12_SHADER_BYTECODE& Binary) { m_psoDesc.HS = Binary; }
     void SetDomainShader(const D3D12_SHADER_BYTECODE& Binary) { m_psoDesc.DS = Binary; }
 
-    // RootSignature & InputLayout ÃÊ±âÈ­ ÈÄ PSO »ı¼º
+    // RootSignature & InputLayout ì´ˆê¸°í™” í›„ PSO ìƒì„±
     void Finalize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device);
 
 
