@@ -9,7 +9,7 @@ class GraphicsPSO;
 
 namespace Graphics
 {
-    // sampler, rootsignature µîÀ» ¹Ì¸® »ı¼º
+    // sampler, rootsignature ë“±ì„ ë¯¸ë¦¬ ìƒì„±
     void InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5> & device);
 
     extern D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;

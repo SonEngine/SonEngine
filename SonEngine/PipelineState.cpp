@@ -61,7 +61,7 @@ void GraphicsPSO::SetInputLayout(UINT NumElements, const D3D12_INPUT_ELEMENT_DES
 	
 	m_psoDesc.InputLayout.NumElements = NumElements;
 	
-	// pInputElementDescs ¸Þ¸ð¸® m_inputLayouts ·Î º¹»ç
+	// pInputElementDescs ë©”ëª¨ë¦¬ m_inputLayouts ë¡œ ë³µì‚¬
 	if (NumElements > 0) 
 	{
 		size_t size = sizeof(D3D12_INPUT_ELEMENT_DESC) * NumElements;
