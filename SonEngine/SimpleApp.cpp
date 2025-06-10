@@ -1,7 +1,13 @@
 #include "SimpleApp.h"
+#include "RootSignature.h"
+#include "PipelineState.h"
+#include "Vertex.h"
+#include "StaticMesh.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace GraphicsUtils;
+using namespace Graphics;
+using namespace Renderer;
 
 Core::SimpleApp::SimpleApp()
 	:BaseApp()
@@ -11,6 +17,11 @@ Core::SimpleApp::SimpleApp()
 Core::SimpleApp::SimpleApp(const int width, const int height)
 	:BaseApp(width, height)
 {
+}
+
+Core::SimpleApp::~SimpleApp()
+{
+
 }
 
 bool Core::SimpleApp::InitDirectX()
@@ -55,7 +66,6 @@ bool Core::SimpleApp::InitDirectX()
 	CreateSwapChain();
 
 	m_utility = new Utility(m_device.Get(), m_commandList.Get());
-
 	
 	m_cbvSrvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -66,25 +76,60 @@ bool Core::SimpleApp::InitDirectX()
 	// Create SwapChain RTVs
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart());
-	ComPtr<ID3D12Resource> buffer[m_swapChainBufferCount];
 	for (int i = 0; i < m_swapChainBufferCount; i++)
 	{
-		m_swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer[i]));
-		m_device->CreateRenderTargetView(buffer[i].Get(), nullptr, handle);
+		m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_swapChainResources[i].ReleaseAndGetAddressOf()));
+		m_device->CreateRenderTargetView(m_swapChainResources[i].Get(), nullptr, handle);
 
 		handle.Offset(1, m_rtvDescriptorSize);
 	}
 
 	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
-	m_scissorRect = CD3DX12_RECT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
+	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)m_width, (LONG)m_height);
 	
+	Graphics::InitializeCommonState(m_device);
+	Renderer::Initialize(m_device);
 	
+	m_currentFence = 0;
+	m_device->CreateFence(m_currentFence, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
+
+	
+
+	BuildGeometry();
 
 	return true;
 }
 
 bool Core::SimpleApp::InitGUI()
 {
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	// io.Fonts->TexID = (ImTextureID)m_guiFont->GetSpriteSheet().ptr;
+
+	ImGui::StyleColorsLight();
+	const char* fontPath = "Fonts/Hack-Bold.ttf";
+	float fontSize = 15.0f;
+	// 폰트 로드
+	io.Fonts->AddFontFromFileTTF(fontPath, fontSize);
+
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heapDesc.NumDescriptors = 1;
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_guiFontHeap));
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplWin32_Init(m_mainWnd);
+
+	ImGui_ImplDX12_Init(m_device.Get(), m_swapChainBufferCount, m_backbufferFormat,
+		m_guiFontHeap.Get(),
+		m_guiFontHeap->GetCPUDescriptorHandleForHeapStart(),
+		m_guiFontHeap->GetGPUDescriptorHandleForHeapStart());
+
+
 	return true;
 }
 
@@ -102,8 +147,56 @@ void Core::SimpleApp::UpdateGUI(float deltaTime)
 
 void Core::SimpleApp::Render(float deltaTime)
 {
+	RenderScene();
+}
+
+void  Core::SimpleApp::RenderScene()
+{
 	m_commandAllocator->Reset();
-	m_commandList->Reset(m_commandAllocator.Get(), 
+	m_commandList->Reset(m_commandAllocator.Get(), sm_PSOs[0].GetPSO());
+
+
+	m_commandList->RSSetScissorRects(1, &m_scissorRect);
+	m_commandList->RSSetViewports(1, &m_viewport);
+	
+	m_commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	m_commandList->SetPipelineState(sm_PSOs[0].GetPSO());
+	m_commandList->SetGraphicsRootSignature(sm_PSOs[0].GetRootSignature()->GetSignature());
+
+
+	m_commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			GetCurrentSwapChainResource(),
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_RENDER_TARGET
+		));
+
+	FLOAT black[4] = { 1.F, 0.F, 0.F , 1.F };
+	m_commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), black, 0, nullptr);
+	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, nullptr);
+
+	mesh->Render(m_commandList.Get());
+	
+	m_commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			GetCurrentSwapChainResource(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PRESENT
+		));
+
+	m_commandList->Close();
+
+	ID3D12CommandList* commands[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+
+	ThrowIfFailed(m_swapChain->Present(1, 0));
+	m_frameIndex = (m_frameIndex + 1) % m_swapChainBufferCount;
+
+
+	FlushCommands();
 }
 
 void Core::SimpleApp::RenderGUI(float deltaTime)
@@ -117,6 +210,7 @@ bool Core::SimpleApp::FinDirectX()
 
 void Core::SimpleApp::Finalize(float deltaTime)
 {
+	
 }
 
 void Core::SimpleApp::CreateCommandObjects()
@@ -147,6 +241,7 @@ void Core::SimpleApp::CreateCommandObjects()
 	);
 
 	m_commandList->Close();
+
 }
 
 void Core::SimpleApp::CreateSwapChain()
@@ -174,4 +269,46 @@ void Core::SimpleApp::CreateSwapChain()
 	ThrowIfFailed(swapChain.As(&m_swapChain));
 
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
+}
+
+void Core::SimpleApp::BuildGeometry()
+{
+	m_commandAllocator->Reset();
+	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+
+	mesh = std::make_shared<StaticMesh>();
+	mesh->Initialize(m_device.Get(), m_commandList.Get());
+
+	m_commandList->Close();
+
+	ID3D12CommandList* commands[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+
+	FlushCommands();
+}
+D3D12_CPU_DESCRIPTOR_HANDLE Core::SimpleApp::GetCurrentRtvCpuHandle() const
+{
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE( m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
+}
+
+ID3D12Resource* Core::SimpleApp::GetCurrentSwapChainResource() const
+{
+	return m_swapChainResources[m_frameIndex].Get();
+}
+
+void Core::SimpleApp::FlushCommands()
+{
+	m_currentFence++;
+
+	ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), m_currentFence));
+
+	if (m_fence->GetCompletedValue() < m_currentFence)
+	{
+		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+		m_fence->SetEventOnCompletion(m_currentFence, eventHandle);
+
+		WaitForSingleObject(eventHandle, INFINITE);
+
+		CloseHandle(eventHandle);
+	}
 }

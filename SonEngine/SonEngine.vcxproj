@@ -103,8 +103,8 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)include\directx</AdditionalIncludeDirectories>
+      <ConformanceMode>false</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\directx;$(OutDir)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -114,7 +114,9 @@
     </Link>
     <FxCompile>
       <ShaderModel>6.0</ShaderModel>
-      <VariableName>$(OutDir)CompiledShaders\%(Filename).h</VariableName>
+      <VariableName>g_p%(Filename)</VariableName>
+      <HeaderFileOutput>$(OutDir)CompiledShaders\%(Filename).h</HeaderFileOutput>
+      <ObjectFileOutput>$(OutDir)CompiledShaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -124,9 +126,9 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)include\directx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\directx;$(OutDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -137,14 +139,20 @@
     </Link>
     <FxCompile>
       <ShaderModel>6.0</ShaderModel>
-      <VariableName>$(OutDir)CompiledShaders\%(Filename).h</VariableName>
+      <VariableName>g_p%(Filename)</VariableName>
+      <HeaderFileOutput>$(OutDir)CompiledShaders\%(Filename).h</HeaderFileOutput>
+      <ObjectFileOutput>$(OutDir)CompiledShaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BaseApp.cpp" />
     <ClCompile Include="GraphicsCommon.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PipelineState.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
+    <ClCompile Include="StaticMesh.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
@@ -156,9 +164,11 @@
     <ClInclude Include="PipelineState.h" />
     <ClInclude Include="RootSignature.h" />
     <ClInclude Include="SimpleApp.h" />
+    <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Utility.h" />
+    <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultPS.hlsl">

@@ -33,6 +33,7 @@ BaseApp::BaseApp(int width, int height)
 
 BaseApp::~BaseApp()
 {
+	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 

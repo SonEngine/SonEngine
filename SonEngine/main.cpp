@@ -2,7 +2,7 @@
 
 int main()
 {
-	Core::SimpleApp app(1920, 1080);
+	Core::SimpleApp app(1280, 720);
 
 	if (app.Initialize())
 	{
