@@ -40,8 +40,8 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 
 	depthStateDisabled = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 
-    g_commonRS.Reset(0, 0);
-    //g_commonRS[0].InitSRV(1);
+    g_commonRS.Reset(1, 0);
+    g_commonRS[0].InitCBV();
 	//g_commonRS.InitStaticSampler(0, wrapLinearSampler);
 
 	g_commonRS.Finalize(device, L"CommonRS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);

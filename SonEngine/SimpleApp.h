@@ -2,6 +2,7 @@
 
 #include "BaseApp.h"
 #include "Renderer.h"
+#include "Constants.h"
 
 class StaticMesh;
 
@@ -42,6 +43,8 @@ namespace Core {
 		void CreateSwapChain();
 
 		void BuildGeometry();
+
+		void BuildConstantBuffers();
 
 	private:
 
@@ -102,5 +105,10 @@ namespace Core {
 
 		std::shared_ptr<StaticMesh> mesh;
 
+	private:
+
+		TestConstant constant;
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_constantBuffer;
+		void* pConstant = nullptr;
 	};
 }

@@ -93,9 +93,8 @@ bool Core::SimpleApp::InitDirectX()
 	m_currentFence = 0;
 	m_device->CreateFence(m_currentFence, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
 
-	
-
 	BuildGeometry();
+	BuildConstantBuffers();
 
 	return true;
 }
@@ -112,7 +111,7 @@ bool Core::SimpleApp::InitGUI()
 	ImGui::StyleColorsLight();
 	const char* fontPath = "Fonts/Hack-Bold.ttf";
 	float fontSize = 15.0f;
-	// ÆùÆ® ·Îµå
+	// í°íŠ¸ ë¡œë“œ
 	io.Fonts->AddFontFromFileTTF(fontPath, fontSize);
 
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
@@ -173,9 +172,11 @@ void  Core::SimpleApp::RenderScene()
 			D3D12_RESOURCE_STATE_RENDER_TARGET
 		));
 
-	FLOAT black[4] = { 1.F, 0.F, 0.F , 1.F };
+	FLOAT black[4] = { 0.F, 0.F, 0.F , 1.F };
 	m_commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), black, 0, nullptr);
 	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, nullptr);
+
+	m_commandList->SetGraphicsRootConstantBufferView(0, m_constantBuffer->GetGPUVirtualAddress());
 
 	mesh->Render(m_commandList.Get());
 	
@@ -286,6 +287,28 @@ void Core::SimpleApp::BuildGeometry()
 
 	FlushCommands();
 }
+
+void Core::SimpleApp::BuildConstantBuffers()
+{
+	UINT bufferSize = sizeof(TestConstant);
+	ThrowIfFailed(
+		m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(m_constantBuffer.ReleaseAndGetAddressOf())));
+
+	CD3DX12_RANGE range(0, 0);
+	ThrowIfFailed(m_constantBuffer->Map(0, &range, reinterpret_cast<void**>(&pConstant)));
+
+	constant.Color = DirectX::SimpleMath::Vector4(1, 1, 0, 1);
+	memcpy(pConstant, &constant, bufferSize);
+
+
+}
+
 D3D12_CPU_DESCRIPTOR_HANDLE Core::SimpleApp::GetCurrentRtvCpuHandle() const
 {
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE( m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);

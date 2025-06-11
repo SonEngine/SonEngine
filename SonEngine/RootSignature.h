@@ -30,6 +30,10 @@ public:
         descRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, numDescriptors, baseShaderRegister, registerSpace);
         m_rootParam.InitAsDescriptorTable(1, &descRange);
     }
+    void InitCBV(UINT baseShaderRegister = 0, UINT registerSpace = 0)
+    {
+        m_rootParam.InitAsConstantBufferView(baseShaderRegister, registerSpace);
+    }
 
 protected:
 

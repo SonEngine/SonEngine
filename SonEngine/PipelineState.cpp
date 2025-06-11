@@ -61,7 +61,7 @@ void GraphicsPSO::SetInputLayout(UINT NumElements, const D3D12_INPUT_ELEMENT_DES
 	
 	m_psoDesc.InputLayout.NumElements = NumElements;
 	
-	// pInputElementDescs 메모리 m_inputLayouts 로 복사
+	// pInputElementDescs 메모리 m_inputLayouts로 복사
 	if (NumElements > 0) 
 	{
 		size_t size = sizeof(D3D12_INPUT_ELEMENT_DESC) * NumElements;
