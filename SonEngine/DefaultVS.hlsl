@@ -2,8 +2,23 @@ cbuffer Test : register(b0)
 {
     float4 color;
 }
-
-float4 main(float3 pos : POSITION) : SV_POSITION
+struct psInput
 {
-    return float4(pos, 1.f);
+    float4 svPosition : SV_Position;
+    float2 uv : TEXCOORD;
+};
+
+struct vsInput
+{
+    float3 pos : POSITION;
+    float2 uv : TEXCOORD;
+};
+
+psInput main(vsInput input)
+{
+    psInput output;
+    
+    output.svPosition = float4(input.pos, 1.f);
+    output.uv = input.uv;
+    return output;
 }

@@ -1,5 +1,6 @@
 #include "Utility.h"
 #include <comdef.h>
+#include <fstream>
 
 DxException::DxException(HRESULT hr, const std::wstring& functionName, const std::wstring& filename, int lineNumber) :
 	ErrorCode(hr),
@@ -53,5 +54,24 @@ namespace GraphicsUtils {
 			&heapDesc,
 			IID_PPV_ARGS(heap.ReleaseAndGetAddressOf())
 		));
+	}
+	ByteArray ReadFileHelper(const wstring& fileName)
+	{
+		ByteArray NullFile = make_shared<vector<byte> >(vector<byte>());
+
+		struct _stat64 fileStat;
+		int fileExists = _wstat64(fileName.c_str(), &fileStat);
+		if (fileExists == -1)
+			return NullFile;
+
+		ifstream file(fileName, ios::in | ios::binary);
+		if (!file)
+			return NullFile;
+
+		ByteArray byteArray = make_shared<vector<byte> >(fileStat.st_size);
+		file.read((char*)byteArray->data(), byteArray->size());
+		file.close();
+
+		return byteArray;
 	}
 }

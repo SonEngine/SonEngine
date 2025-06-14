@@ -9,22 +9,23 @@ StaticMesh::StaticMesh()
 
 void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList)
 {
+	// TODO : Utility 함수화
 
-	std::vector<PositionVertex> vertices{
-		{Vector3(-1, -1, 1)},
-		{Vector3(0, 1, 1)},
-		{Vector3(1, -1, 1)}
+	std::vector<SimpleVertex> vertices{
+		{Vector3(-1, -1, 1), Vector2(0, 1)},
+		{Vector3(-1, 1, 1), Vector2(0, 0)},
+		{Vector3(1, 1, 1), Vector2(1, 0)}
 	};
 	std::vector<uint16_t> indices{
 		0,1,2
 	};
 
-	m_indexCount = indices.size();
+	m_indexCount = (UINT)indices.size();
 
 	ThrowIfFailed(device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(PositionVertex)),
+		&CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(SimpleVertex)),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&m_vertexUpload)
@@ -33,7 +34,7 @@ void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* co
 	ThrowIfFailed(device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(PositionVertex)),
+		&CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(SimpleVertex)),
 		D3D12_RESOURCE_STATE_COMMON,
 		nullptr,
 		IID_PPV_ARGS(&m_vertexGpu)
@@ -59,7 +60,7 @@ void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* co
 
 	D3D12_SUBRESOURCE_DATA subData;
 	subData.pData = vertices.data();
-	subData.RowPitch = vertices.size() * sizeof(PositionVertex);
+	subData.RowPitch = vertices.size() * sizeof(SimpleVertex);
 	subData.SlicePitch = subData.RowPitch;
 
 	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexGpu.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST));
@@ -79,12 +80,12 @@ void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* co
 
 
 	m_vertexBufferView.BufferLocation = m_vertexGpu->GetGPUVirtualAddress();
-	m_vertexBufferView.SizeInBytes = vertices.size() * sizeof(PositionVertex);
-	m_vertexBufferView.StrideInBytes = sizeof(PositionVertex);
+	m_vertexBufferView.SizeInBytes = (UINT)(vertices.size() * sizeof(SimpleVertex));
+	m_vertexBufferView.StrideInBytes = (UINT)(sizeof(SimpleVertex));
 
 	m_indexBufferView.BufferLocation = m_indexGpu->GetGPUVirtualAddress();
 	m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-	m_indexBufferView.SizeInBytes = indices.size() * sizeof(uint16_t);
+	m_indexBufferView.SizeInBytes = (UINT)(indices.size() * sizeof(uint16_t));
 }
 
 void StaticMesh::Render(ID3D12GraphicsCommandList* commandList)

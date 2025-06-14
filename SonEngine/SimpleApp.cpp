@@ -4,10 +4,14 @@
 #include "Vertex.h"
 #include "StaticMesh.h"
 
+#include "Directxtk12/DDSTextureLoader.h"
+#include "directxtk12/ResourceUploadBatch.h"
+
 using Microsoft::WRL::ComPtr;
 using namespace GraphicsUtils;
 using namespace Graphics;
 using namespace Renderer;
+using namespace DirectX;
 
 Core::SimpleApp::SimpleApp()
 	:BaseApp()
@@ -95,6 +99,35 @@ bool Core::SimpleApp::InitDirectX()
 
 	BuildGeometry();
 	BuildConstantBuffers();
+	
+	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+	heapDesc.NumDescriptors = 1;
+	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_texturesHeap)));
+	
+	ResourceUploadBatch resourceUpload(m_device.Get());
+	resourceUpload.Begin();
+
+	ThrowIfFailed(CreateDDSTextureFromFile(m_device.Get(), resourceUpload, L"Textures/bricks.dds", m_texture.GetAddressOf()));
+		
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = m_texture->GetDesc().Format;
+
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Texture2D.MipLevels = m_texture->GetDesc().MipLevels;
+	srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE textureHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());
+	m_device->CreateShaderResourceView(m_texture.Get(), &srvDesc, textureHandle);
+
+	auto uploadResourcesFinished = resourceUpload.End(m_commandQueue.Get());
+
+	uploadResourcesFinished.wait();
 
 	return true;
 }
@@ -176,10 +209,17 @@ void  Core::SimpleApp::RenderScene()
 	m_commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), black, 0, nullptr);
 	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, nullptr);
 
-	m_commandList->SetGraphicsRootConstantBufferView(0, m_constantBuffer->GetGPUVirtualAddress());
+	m_commandList->SetGraphicsRootConstantBufferView(1, m_constantBuffer->GetGPUVirtualAddress());
+
+	ID3D12DescriptorHeap* heaps[] = {
+		m_texturesHeap.Get()
+	};
+
+	m_commandList->SetDescriptorHeaps(1, heaps);
+	m_commandList->SetGraphicsRootDescriptorTable(0, m_texturesHeap->GetGPUDescriptorHandleForHeapStart());
 
 	mesh->Render(m_commandList.Get());
-	
+
 	m_commandList->ResourceBarrier(
 		1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -306,6 +346,11 @@ void Core::SimpleApp::BuildConstantBuffers()
 	constant.Color = DirectX::SimpleMath::Vector4(1, 1, 0, 1);
 	memcpy(pConstant, &constant, bufferSize);
 
+
+}
+
+void LoadIBLTextures()
+{
 
 }
 

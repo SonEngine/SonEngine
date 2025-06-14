@@ -2,11 +2,15 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "wrl.h"
 #include "d3d12.h"
 #include "d3dx12.h"
 #include "dxgi1_6.h"
+
+#define D3D12_GPU_VIRTUAL_ADDRESS_NULL      ((D3D12_GPU_VIRTUAL_ADDRESS)0)
+#define D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN   ((D3D12_GPU_VIRTUAL_ADDRESS)-1)
 
 inline std::wstring AnsiToWString(const std::string& str)
 {
@@ -50,6 +54,13 @@ public:
 
 
 namespace GraphicsUtils {
+	using namespace std;
+	typedef unsigned char byte;
+
+	typedef shared_ptr<vector<byte> > ByteArray;
+
+	ByteArray ReadFileHelper(const wstring& fileName);
+
 	class Utility {
 	public:
 		Utility();
@@ -62,5 +73,7 @@ namespace GraphicsUtils {
 	public:
 		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
 		void CreateDescriptorHeap(UINT numDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE type, Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& heap, UINT nodeMask = 0, D3D12_DESCRIPTOR_HEAP_FLAGS flag = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+
+
 	};
 }

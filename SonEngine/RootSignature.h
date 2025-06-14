@@ -24,20 +24,40 @@ public:
         m_rootParam.ParameterType = (D3D12_ROOT_PARAMETER_TYPE)0xFFFFFFFF;
     }
 
-    void InitSRV(UINT numDescriptors, UINT baseShaderRegister = 0, UINT registerSpace = 0)
+    void InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE Type, UINT Register, UINT Count, D3D12_SHADER_VISIBILITY Visibility = D3D12_SHADER_VISIBILITY_ALL, UINT Space = 0)
     {
-        CD3DX12_DESCRIPTOR_RANGE1 descRange;
-        descRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, numDescriptors, baseShaderRegister, registerSpace);
-        m_rootParam.InitAsDescriptorTable(1, &descRange);
+        InitAsDescriptorTable(1, Visibility);
+        SetTableRange(0, Type, Register, Count, Space);
     }
-    void InitCBV(UINT baseShaderRegister = 0, UINT registerSpace = 0)
+
+    void InitAsDescriptorTable(UINT RangeCount, D3D12_SHADER_VISIBILITY Visibility = D3D12_SHADER_VISIBILITY_ALL)
     {
-        m_rootParam.InitAsConstantBufferView(baseShaderRegister, registerSpace);
+        m_rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        m_rootParam.ShaderVisibility = Visibility;
+        m_rootParam.DescriptorTable.NumDescriptorRanges = RangeCount;
+        m_rootParam.DescriptorTable.pDescriptorRanges = new D3D12_DESCRIPTOR_RANGE[RangeCount];
+    }
+
+    void SetTableRange(UINT RangeIndex, D3D12_DESCRIPTOR_RANGE_TYPE Type, UINT Register, UINT Count, UINT Space = 0)
+    {
+        D3D12_DESCRIPTOR_RANGE* range = const_cast<D3D12_DESCRIPTOR_RANGE*>(m_rootParam.DescriptorTable.pDescriptorRanges + RangeIndex);
+        range->RangeType = Type;
+        range->NumDescriptors = Count;
+        range->BaseShaderRegister = Register;
+        range->RegisterSpace = Space;
+        range->OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+    }
+    void InitCBV(UINT baseShaderRegister = 0, D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL, UINT registerSpace = 0)
+    {
+        m_rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        m_rootParam.ShaderVisibility = visibility;
+        m_rootParam.Descriptor.ShaderRegister = baseShaderRegister;
+        m_rootParam.Descriptor.RegisterSpace = registerSpace;
     }
 
 protected:
-
-    CD3DX12_ROOT_PARAMETER1 m_rootParam;
+    D3D12_ROOT_PARAMETER m_rootParam;
 };
 
 

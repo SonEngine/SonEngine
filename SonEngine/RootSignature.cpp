@@ -1,4 +1,5 @@
 #include "RootSignature.h"
+#include <iostream>
 
 using Microsoft::WRL::ComPtr;
 
@@ -12,21 +13,30 @@ void RootSignature::Finalize(const ComPtr<ID3D12Device5> & device, const std::ws
 {
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC m_rootSignatureDesc;
 	 
-	m_rootSignatureDesc.Init_1_1(
+	m_rootSignatureDesc.Init_1_0(
 		m_numParameters,
-		(const D3D12_ROOT_PARAMETER1*)m_paramArray.get(),
+		(const D3D12_ROOT_PARAMETER*)m_paramArray.get(),
 		m_numSamplers,
-		(const D3D12_STATIC_SAMPLER_DESC*)m_samplerArray.get(), 
-		flags
-	);
+		(const D3D12_STATIC_SAMPLER_DESC*)m_samplerArray.get(),
+		flags);
 	
 	ComPtr<ID3DBlob> pOutBlob, pErrorBlob;
 	
-	ThrowIfFailed(D3D12SerializeVersionedRootSignature(
+	HRESULT hr = D3D12SerializeVersionedRootSignature(
 		&m_rootSignatureDesc, 
 		pOutBlob.GetAddressOf(), 
 		pErrorBlob.GetAddressOf()
-		));
+	);
+
+	std::cout << (int)m_paramArray[0].m_rootParam.ParameterType;
+	if (FAILED(hr))
+	{
+		if (pErrorBlob)
+		{
+			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
+		}
+		ThrowIfFailed(hr);
+	}
 
 	ThrowIfFailed(device->CreateRootSignature(0,
 		pOutBlob->GetBufferPointer(),

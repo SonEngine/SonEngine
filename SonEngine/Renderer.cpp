@@ -2,7 +2,6 @@
 #include "RootSignature.h"
 #include "PipelineState.h"
 
-
 #include "CompiledShaders/DefaultPS.h"
 #include "CompiledShaders/DefaultVS.h"
 
@@ -21,10 +20,16 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 
     D3D12_INPUT_ELEMENT_DESC posOnlyIL[] =
     {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
     };
 
-    defaultPSO.SetInputLayout(_countof(posOnlyIL), posOnlyIL);
+    D3D12_INPUT_ELEMENT_DESC simpleIL[] =
+    {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+
+    };
+    defaultPSO.SetInputLayout(_countof(simpleIL), simpleIL);
     defaultPSO.SetRootSignature(g_commonRS);
     defaultPSO.SetRasterizerState(rasterizerDefault);
     defaultPSO.SetBlendState(blendNoColorWrite);

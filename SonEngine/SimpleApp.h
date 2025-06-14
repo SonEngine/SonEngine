@@ -71,6 +71,7 @@ namespace Core {
 
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_swapChainRtvHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_texturesHeap;
 
 	private:
 
@@ -109,6 +110,8 @@ namespace Core {
 
 		TestConstant constant;
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_constantBuffer;
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_texture;
 		void* pConstant = nullptr;
+		
 	};
 }

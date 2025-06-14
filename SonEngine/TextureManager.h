@@ -5,25 +5,25 @@
 // A referenced-counted pointer to a Texture.
 class TextureRef;
 
-//
-// Texture file loading system.
-//
-// References to textures are passed around so that a texture may be shared.  When
-// all references to a texture expire, the texture memory is reclaimed.
-//
 namespace TextureManager
 {
+    TextureRef LoadDDSFromFile(ID3D12CommandQueue* commandQueue, ID3D12Device5* g_device, ID3D12DescriptorHeap* heap, const std::wstring& filePath, bool sRGB);
    
 }
 
-// Forward declaration; private implementation
 class ManagedTexture;
 
-//
-// A handle to a ManagedTexture.  Constructors and destructors modify the reference
-// count.  When the last reference is destroyed, the TextureManager is informed that
-// the texture should be deleted.
-//
 class TextureRef
 {
+public:
+    TextureRef(ManagedTexture* tex = nullptr);
+    /*TextureRef(const TextureRef& ref);
+    TextureRef(ManagedTexture* tex = nullptr);
+
+    void operator=(std::nullptr_t);
+
+    void operator=(TextureRef& rhs);*/
+
+private:
+    ManagedTexture* m_ref;
 };
