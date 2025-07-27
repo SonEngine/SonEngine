@@ -108,10 +108,15 @@ namespace Core {
 
 	private:
 
-		TestConstant constant;
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_constantBuffer;
+		LocalConstant localConstant;
+		LocalConstant globalConstant;
+
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_localCB;
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_globalCB;
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_texture;
-		void* pConstant = nullptr;
+
+		void* pLocalConstant = nullptr;
+		void* pGlobalConstant = nullptr;
 		
 	};
 }

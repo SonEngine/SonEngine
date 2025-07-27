@@ -21,9 +21,7 @@ public:
     ID3D12PipelineState* GetPSO() { return m_pso.Get(); }
 
 protected:
-
-  
-
+    
     const wchar_t* m_name;
 
     const RootSignature* m_rootSignature;

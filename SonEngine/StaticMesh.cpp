@@ -14,10 +14,11 @@ void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* co
 	std::vector<SimpleVertex> vertices{
 		{Vector3(-1, -1, 1), Vector2(0, 1)},
 		{Vector3(-1, 1, 1), Vector2(0, 0)},
-		{Vector3(1, 1, 1), Vector2(1, 0)}
+		{Vector3(1, 1, 1), Vector2(1, 0)},
+		{Vector3(1, -1, 1), Vector2(1, 1)}
 	};
 	std::vector<uint16_t> indices{
-		0,1,2
+		0, 1, 2, 0, 2, 3
 	};
 
 	m_indexCount = (UINT)indices.size();

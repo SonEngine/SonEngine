@@ -28,7 +28,6 @@ void RootSignature::Finalize(const ComPtr<ID3D12Device5> & device, const std::ws
 		pErrorBlob.GetAddressOf()
 	);
 
-	std::cout << (int)m_paramArray[0].m_rootParam.ParameterType;
 	if (FAILED(hr))
 	{
 		if (pErrorBlob)

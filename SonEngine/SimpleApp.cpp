@@ -167,10 +167,39 @@ bool Core::SimpleApp::InitGUI()
 
 void Core::SimpleApp::OnResize()
 {
+	if (m_swapChain == nullptr) return;
+
+	for (int i = 0; i < m_swapChainBufferCount; i++)
+	{
+		m_swapChainResources[i].Reset();
+	}
+
+	m_swapChain->ResizeBuffers(m_swapChainBufferCount, 
+		m_width, 
+		m_height, 
+		DXGI_FORMAT_UNKNOWN, 
+		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart());
+	for (int i = 0; i < m_swapChainBufferCount; i++)
+	{
+		m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_swapChainResources[i].ReleaseAndGetAddressOf()));
+		m_device->CreateRenderTargetView(m_swapChainResources[i].Get(), nullptr, handle);
+
+		handle.Offset(1, m_rtvDescriptorSize);
+	}
+	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
+	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
+	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)m_width, (LONG)m_height);
+	
+	std::cout << m_width << ' ' << m_height <<'\n';
 }
 
 void Core::SimpleApp::Update(float deltaTime)
 {
+	localConstant.model.m[3][0] += 1 / 60.f;
+	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 }
 
 void Core::SimpleApp::UpdateGUI(float deltaTime)
@@ -209,7 +238,8 @@ void  Core::SimpleApp::RenderScene()
 	m_commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), black, 0, nullptr);
 	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, nullptr);
 
-	m_commandList->SetGraphicsRootConstantBufferView(1, m_constantBuffer->GetGPUVirtualAddress());
+	m_commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
+	m_commandList->SetGraphicsRootConstantBufferView(2, m_globalCB->GetGPUVirtualAddress());
 
 	ID3D12DescriptorHeap* heaps[] = {
 		m_texturesHeap.Get()
@@ -330,23 +360,15 @@ void Core::SimpleApp::BuildGeometry()
 
 void Core::SimpleApp::BuildConstantBuffers()
 {
-	UINT bufferSize = sizeof(TestConstant);
-	ThrowIfFailed(
-		m_device->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(m_constantBuffer.ReleaseAndGetAddressOf())));
 
-	CD3DX12_RANGE range(0, 0);
-	ThrowIfFailed(m_constantBuffer->Map(0, &range, reinterpret_cast<void**>(&pConstant)));
+	m_utility->CreateConstantBuffer(sizeof(LocalConstant), m_localCB, reinterpret_cast<void**>(&pLocalConstant));
+	m_utility->CreateConstantBuffer(sizeof(GlobalConstant), m_globalCB, reinterpret_cast<void**>(&pGlobalConstant));
+	
+	localConstant.model.m[3][0] = 1/60.f;
+	//localConstant.model = localConstant.model.Transpose();
+	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 
-	constant.Color = DirectX::SimpleMath::Vector4(1, 1, 0, 1);
-	memcpy(pConstant, &constant, bufferSize);
-
-
+	DirectX::XMMatrixPerspectiveFovLH(70, )
 }
 
 void LoadIBLTextures()
