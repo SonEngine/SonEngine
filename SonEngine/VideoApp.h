@@ -4,31 +4,31 @@
 #include "Renderer.h"
 #include "Constants.h"
 
-#include <mfapi.h>
-#include <mfidl.h>
-#include <mfreadwrite.h>
-#include <mfobjects.h>
-#include <mftransform.h>
-
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
+#include <libswscale/swscale.h>
+}
 class StaticMesh;
 
 namespace Core {
-	class SimpleApp : public BaseApp
+	class VideoApp : public BaseApp
 	{
 
 	public:
 
-		SimpleApp();
-		SimpleApp(const int width, const int height);
+		VideoApp();
+		VideoApp(const int width, const int height);
 
-		virtual ~SimpleApp();
+		virtual ~VideoApp();
 
 	private:
 
 		// Init
 		virtual bool InitDirectX() override;
 		virtual bool InitGUI() override;
-		
+
 		// Called when the window is resized
 		virtual void OnResize() override;
 
@@ -94,7 +94,7 @@ namespace Core {
 		UINT m_cbvSrvDescriptorSize;
 		UINT m_rtvDescriptorSize;
 		UINT m_dsvDescriptorSize;
-		
+
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
 
@@ -109,7 +109,7 @@ namespace Core {
 	private:
 
 		GraphicsUtils::Utility* m_utility;
-		
+
 	private:
 
 		std::shared_ptr<StaticMesh> mesh;
@@ -119,12 +119,28 @@ namespace Core {
 		LocalConstant localConstant;
 		LocalConstant globalConstant;
 
+		// ConstantBuffer
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_localCB;
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_globalCB;
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_texture;
+
+		// TextureBuffer
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_gpuTexture;
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_uploadBuffer;
 
 		void* pLocalConstant = nullptr;
 		void* pGlobalConstant = nullptr;
-		
+
+	private:
+		AVFormatContext* fmtCtx = nullptr;
+		AVCodecContext* codecCtx = nullptr;
+		SwsContext* swsCtx = nullptr;
+		AVFrame* frame = nullptr;
+		AVFrame* rgbFrame = nullptr;
+		AVPacket pkt;
+		int videoStreamIdx = -1;
+		std::vector<uint8_t> rgbBuffer;
+		int currentFrameIndex = 0;
+		float time = 0;
+		D3D12_SUBRESOURCE_DATA avSubresource = {};
 	};
 }

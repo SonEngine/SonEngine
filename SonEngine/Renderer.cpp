@@ -4,6 +4,7 @@
 
 #include "CompiledShaders/DefaultPS.h"
 #include "CompiledShaders/DefaultVS.h"
+#include "CompiledShaders/VideoPS.h"
 
 using namespace Graphics;
 using namespace Renderer;
@@ -17,6 +18,7 @@ namespace Renderer
 void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 {
     GraphicsPSO defaultPSO(L"default PSO");
+    GraphicsPSO vidoePSO(L"video PSO");
 
     D3D12_INPUT_ELEMENT_DESC posOnlyIL[] =
     {
@@ -41,6 +43,20 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     defaultPSO.Finalize(device);
 
     sm_PSOs.push_back(defaultPSO);
+
+    vidoePSO.SetInputLayout(_countof(simpleIL), simpleIL);
+    vidoePSO.SetRootSignature(g_videoRS);
+    vidoePSO.SetRasterizerState(rasterizerDefault);
+    vidoePSO.SetBlendState(blendNoColorWrite);
+    vidoePSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+    vidoePSO.SetVertexShader(g_pDefaultVS, sizeof(g_pDefaultVS));
+    vidoePSO.SetPixelShader(g_pVideoPS, sizeof(g_pVideoPS));
+    vidoePSO.SetSampleMask(UINT_MAX);
+    vidoePSO.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, 1, 0);
+    vidoePSO.Finalize(device);
+    
+    sm_PSOs.push_back(vidoePSO);
+
 }
 
 ID3D12PipelineState* Renderer::GetPSO(UINT index)

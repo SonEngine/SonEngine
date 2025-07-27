@@ -21,4 +21,6 @@ namespace Graphics
     extern D3D12_DEPTH_STENCIL_DESC depthStateDisabled;
 
     extern RootSignature g_commonRS;
+    extern RootSignature g_videoRS;
+
 }

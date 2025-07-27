@@ -1,8 +1,10 @@
-#include "SimpleApp.h"
+#include "VideoApp.h"
 #include "RootSignature.h"
 #include "PipelineState.h"
 #include "Vertex.h"
 #include "StaticMesh.h"
+
+#include <fstream>
 
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
@@ -13,22 +15,47 @@ using namespace Graphics;
 using namespace Renderer;
 using namespace DirectX;
 
-Core::SimpleApp::SimpleApp()
+void SaveFrameAsBMP(const std::string& filename, uint8_t* data, int width, int height, int pitch) {
+	std::ofstream file(filename, std::ios::binary);
+	if (!file) return;
+
+	uint32_t fileSize = 54 + height * pitch;
+	uint8_t bmpHeader[54] = {
+		'B','M',
+		static_cast<uint8_t>(fileSize), static_cast<uint8_t>(fileSize >> 8),
+		static_cast<uint8_t>(fileSize >> 16), static_cast<uint8_t>(fileSize >> 24),
+		0,0,0,0, 54,0,0,0, 40,0,0,0,
+		static_cast<uint8_t>(width), static_cast<uint8_t>(width >> 8),
+		static_cast<uint8_t>(width >> 16), static_cast<uint8_t>(width >> 24),
+		static_cast<uint8_t>(-height), static_cast<uint8_t>((-height) >> 8),
+		static_cast<uint8_t>((-height) >> 16), static_cast<uint8_t>((-height) >> 24),
+		1,0, 32,0,
+		0,0,0,0, 0,0,0,0, 0,0,0,0,
+		0,0,0,0, 0,0,0,0, 0,0,0,0
+	};
+	file.write(reinterpret_cast<char*>(bmpHeader), 54);
+	for (int y = 0; y < height; ++y) {
+		file.write(reinterpret_cast<char*>(data + y * pitch), pitch);
+	}
+	file.close();
+}
+
+Core::VideoApp::VideoApp()
 	:BaseApp()
 {
 }
 
-Core::SimpleApp::SimpleApp(const int width, const int height)
+Core::VideoApp::VideoApp(const int width, const int height)
 	:BaseApp(width, height)
 {
 }
 
-Core::SimpleApp::~SimpleApp()
+Core::VideoApp::~VideoApp()
 {
 
 }
 
-bool Core::SimpleApp::InitDirectX()
+bool Core::VideoApp::InitDirectX()
 {
 	UINT dxgiFactoryFlags = 0;
 
@@ -70,13 +97,13 @@ bool Core::SimpleApp::InitDirectX()
 	CreateSwapChain();
 
 	m_utility = new Utility(m_device.Get(), m_commandList.Get());
-	
+
 	m_cbvSrvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	m_dsvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
 	m_utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRtvHeap);
-	m_utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_texturesHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	m_utility->CreateDescriptorHeap(3, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_texturesHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	// Create SwapChain RTVs
 
@@ -91,71 +118,32 @@ bool Core::SimpleApp::InitDirectX()
 
 	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
 	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)m_width, (LONG)m_height);
-	
+
 	Graphics::InitializeCommonState(m_device);
 	Renderer::Initialize(m_device);
-	
+
 	m_currentFence = 0;
 	m_device->CreateFence(m_currentFence, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
+
+	m_commandAllocator->Reset();
+	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
 	BuildGeometry();
 	BuildConstantBuffers();
 	CreateTextures();
 
-	MFStartup(MF_VERSION);
+	m_commandList->Close();
 
-	ComPtr<IMFSourceReader> sourceReader;
-	MFCreateSourceReaderFromURL(L"videos/test.mp4", nullptr, &sourceReader);
+	ID3D12CommandList* commands[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
 
-	// 원하는 출력 형식으로 설정 (RGB32)
-	ComPtr<IMFMediaType> mediaTypeOut;
-	MFCreateMediaType(&mediaTypeOut);
-	mediaTypeOut->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-	mediaTypeOut->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32); // 중요
-	sourceReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, mediaTypeOut.Get());
+	FlushCommands();
 
-	ComPtr<IMFMediaType> currentType;
-	sourceReader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, &currentType);
-
-	UINT64 frameSize;
-	UINT32 width = 0, height = 0;
-	if (SUCCEEDED(currentType->GetUINT64(MF_MT_FRAME_SIZE, &frameSize))) {
-		width = static_cast<UINT32>(frameSize >> 32);
-		height = static_cast<UINT32>(frameSize & 0xFFFFFFFF);
-		std::wcout << L"Video Size: " << width << L"x" << height << std::endl;
-	}
-
-	ComPtr<IMFSample> sample;
-	DWORD streamIndex = 0, flags = 0;
-	LONGLONG timestamp = 0;
-	HRESULT hr = sourceReader->ReadSample(MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, &streamIndex, &flags, &timestamp, &sample);
-
-	if (FAILED(hr) || !sample) {
-		std::cerr << "Failed to read frame\n";
-		return false;
-	}
-
-	// 6. 프레임에서 픽셀 데이터 꺼내기
-	ComPtr<IMFMediaBuffer> buffer;
-	sample->ConvertToContiguousBuffer(&buffer);
-
-	BYTE* data = nullptr;
-	DWORD maxLen = 0, curLen = 0;
-	buffer->Lock(&data, &maxLen, &curLen);
-
-	std::cout << "Decoded frame: " << curLen << " bytes (expected: " << width * height * 4 << ")\n";
-
-	// 여기서 'data'를 GPU 텍스처에 업로드하면 됩니다 (DirectX12 + UpdateSubresources 사용)
-
-	// 꼭 해제
-	buffer->Unlock();
-
-	MFShutdown();
 
 	return true;
 }
 
-bool Core::SimpleApp::InitGUI()
+bool Core::VideoApp::InitGUI()
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -188,7 +176,7 @@ bool Core::SimpleApp::InitGUI()
 	return true;
 }
 
-void Core::SimpleApp::OnResize()
+void Core::VideoApp::OnResize()
 {
 	if (m_swapChain == nullptr) return;
 
@@ -197,10 +185,10 @@ void Core::SimpleApp::OnResize()
 		m_swapChainResources[i].Reset();
 	}
 
-	m_swapChain->ResizeBuffers(m_swapChainBufferCount, 
-		m_width, 
-		m_height, 
-		DXGI_FORMAT_UNKNOWN, 
+	m_swapChain->ResizeBuffers(m_swapChainBufferCount,
+		m_width,
+		m_height,
+		DXGI_FORMAT_UNKNOWN,
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
 
 
@@ -215,38 +203,78 @@ void Core::SimpleApp::OnResize()
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
 	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)m_width, (LONG)m_height);
+
+	std::cout << m_width << ' ' << m_height << '\n';
+}
+
+void Core::VideoApp::Update(float deltaTime)
+{
+	time += deltaTime;
+
+	if (time > 1 / 30.f)
+	{
+		
+		time = 0;
+		while (av_read_frame(fmtCtx, &pkt) >= 0) {
+		
+			if (pkt.stream_index == videoStreamIdx) {
+				avcodec_send_packet(codecCtx, &pkt);
+				if (avcodec_receive_frame(codecCtx, frame) == 0) {
+
+					m_commandAllocator->Reset();
+					m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+
+					currentFrameIndex++;
+					sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, rgbFrame->data, rgbFrame->linesize);
+					rgbFrame->format = AV_PIX_FMT_BGRA;
+
+					avSubresource.pData = rgbBuffer.data();
+					avSubresource.RowPitch = codecCtx->width * 4;
+					avSubresource.SlicePitch = avSubresource.RowPitch * codecCtx->height;
+
+					UpdateSubresources(m_commandList.Get(), m_gpuTexture.Get(), m_uploadBuffer.Get(), 0, 0, 1, &avSubresource);
+
+					m_commandList->Close();
+
+					ID3D12CommandList* cmds[] = { m_commandList.Get() };
+					m_commandQueue->ExecuteCommandLists(_countof(cmds), cmds);
+
+					FlushCommands();
+
+					//std::cout << currentFrameIndex << '\n';
+					break;
+				}
+			}
+		}
+	}
+
 	
-	std::cout << m_width << ' ' << m_height <<'\n';
 }
 
-void Core::SimpleApp::Update(float deltaTime)
-{
-	localConstant.model.m[3][0] += 1 / 60.f;
-	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
-}
-
-void Core::SimpleApp::UpdateGUI(float deltaTime)
+void Core::VideoApp::UpdateGUI(float deltaTime)
 {
 }
 
-void Core::SimpleApp::Render(float deltaTime)
+void Core::VideoApp::Render(float deltaTime)
 {
 	RenderScene();
 }
 
-void  Core::SimpleApp::RenderScene()
+void  Core::VideoApp::RenderScene()
 {
 	m_commandAllocator->Reset();
-	m_commandList->Reset(m_commandAllocator.Get(), sm_PSOs[0].GetPSO());
+	GraphicsPSO pso = sm_PSOs[0];
+	m_commandList->Reset(m_commandAllocator.Get(), pso.GetPSO());
 
 
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 	m_commandList->RSSetViewports(1, &m_viewport);
-	
+
 	m_commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	m_commandList->SetPipelineState(sm_PSOs[0].GetPSO());
-	m_commandList->SetGraphicsRootSignature(sm_PSOs[0].GetRootSignature()->GetSignature());
+	m_commandList->SetPipelineState(pso.GetPSO());
+	
+	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
 
 
 	m_commandList->ResourceBarrier(
@@ -270,7 +298,7 @@ void  Core::SimpleApp::RenderScene()
 
 	m_commandList->SetDescriptorHeaps(1, heaps);
 	m_commandList->SetGraphicsRootDescriptorTable(0, m_texturesHeap->GetGPUDescriptorHandleForHeapStart());
-	
+
 	mesh->Render(m_commandList.Get());
 
 	m_commandList->ResourceBarrier(
@@ -293,21 +321,21 @@ void  Core::SimpleApp::RenderScene()
 	FlushCommands();
 }
 
-void Core::SimpleApp::RenderGUI(float deltaTime)
+void Core::VideoApp::RenderGUI(float deltaTime)
 {
 }
 
-bool Core::SimpleApp::FinDirectX()
+bool Core::VideoApp::FinDirectX()
 {
 	return true;
 }
 
-void Core::SimpleApp::Finalize(float deltaTime)
+void Core::VideoApp::Finalize(float deltaTime)
 {
-	
+
 }
 
-void Core::SimpleApp::CreateCommandObjects()
+void Core::VideoApp::CreateCommandObjects()
 {
 	ThrowIfFailed(
 		m_device->CreateCommandAllocator(
@@ -338,7 +366,7 @@ void Core::SimpleApp::CreateCommandObjects()
 
 }
 
-void Core::SimpleApp::CreateSwapChain()
+void Core::VideoApp::CreateSwapChain()
 {
 	ComPtr<IDXGISwapChain1> swapChain;
 
@@ -365,72 +393,134 @@ void Core::SimpleApp::CreateSwapChain()
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 }
 
-void Core::SimpleApp::BuildGeometry()
+void Core::VideoApp::BuildGeometry()
 {
-	m_commandAllocator->Reset();
-	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
 	mesh = std::make_shared<StaticMesh>();
 	mesh->Initialize(m_device.Get(), m_commandList.Get());
 
-	m_commandList->Close();
 
-	ID3D12CommandList* commands[] = { m_commandList.Get() };
-	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
-
-	FlushCommands();
 }
 
-void Core::SimpleApp::BuildConstantBuffers()
+void Core::VideoApp::BuildConstantBuffers()
 {
 
 	m_utility->CreateConstantBuffer(sizeof(LocalConstant), m_localCB, reinterpret_cast<void**>(&pLocalConstant));
 	m_utility->CreateConstantBuffer(sizeof(GlobalConstant), m_globalCB, reinterpret_cast<void**>(&pGlobalConstant));
-	
-	localConstant.model.m[3][0] = 1/60.f;
+
+	//localConstant.model.m[3][0] = 1 / 60.f;
 	//localConstant.model = localConstant.model.Transpose();
 	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 
-	
+
 }
 
-void Core::SimpleApp::CreateTextures()
+void Core::VideoApp::CreateTextures()
 {
+	avformat_network_init();
 
-	ResourceUploadBatch resourceUpload(m_device.Get());
-	resourceUpload.Begin();
+	avformat_open_input(&fmtCtx, "videos/test.mp4", nullptr, nullptr);
+	avformat_find_stream_info(fmtCtx, nullptr);
 
-	ThrowIfFailed(CreateDDSTextureFromFile(m_device.Get(), resourceUpload, L"Textures/bricks.dds", m_texture.GetAddressOf()));
+	videoStreamIdx = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = m_texture->GetDesc().Format;
+	AVCodecParameters* codecPar = fmtCtx->streams[videoStreamIdx]->codecpar;
+	const AVCodec* codec = avcodec_find_decoder(codecPar->codec_id);
+	codecCtx = avcodec_alloc_context3(codec);
+	avcodec_parameters_to_context(codecCtx, codecPar);
+	avcodec_open2(codecCtx, codec, nullptr);
 
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Texture2D.MipLevels = m_texture->GetDesc().MipLevels;
-	srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	// BGRA 변환용 SWS 컨텍스트
+	swsCtx = sws_getContext(
+		codecCtx->width, codecCtx->height, codecCtx->pix_fmt,
+		codecCtx->width, codecCtx->height, AV_PIX_FMT_BGRA,
+		SWS_BILINEAR, nullptr, nullptr, nullptr);
+
+	frame = av_frame_alloc();
+	rgbFrame = av_frame_alloc();
+	int numBytes = av_image_get_buffer_size(AV_PIX_FMT_BGRA, codecCtx->width, codecCtx->height, 1);
+	rgbBuffer.resize(numBytes);
+	av_image_fill_arrays(rgbFrame->data, rgbFrame->linesize, rgbBuffer.data(), AV_PIX_FMT_BGRA, codecCtx->width, codecCtx->height, 1);
+
+	while (av_read_frame(fmtCtx, &pkt) >= 0) {
+		if (pkt.stream_index == videoStreamIdx) {
+			avcodec_send_packet(codecCtx, &pkt);
+			if (avcodec_receive_frame(codecCtx, frame) == 0) {
+				
+				sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, rgbFrame->data, rgbFrame->linesize);
+				rgbFrame->format = AV_PIX_FMT_BGRA;  				
+				//SaveFrameAsBMP("debug_frame0.bmp", rgbBuffer.data(), codecCtx->width, codecCtx->height, rgbFrame->linesize[0]);
 
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE textureHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());
-	m_device->CreateShaderResourceView(m_texture.Get(), &srvDesc, textureHandle);
+				D3D12_RESOURCE_DESC texDesc = {};
+				texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+				texDesc.Width = codecCtx->width;
+				texDesc.Height = codecCtx->height;
+				texDesc.DepthOrArraySize = 1;
+				texDesc.MipLevels = 1;
+				texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+				texDesc.SampleDesc.Count = 1;
+				texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+				texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-	auto uploadResourcesFinished = resourceUpload.End(m_commandQueue.Get());
+				m_device->CreateCommittedResource(
+					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+					D3D12_HEAP_FLAG_NONE,
+					&texDesc,
+					D3D12_RESOURCE_STATE_COPY_DEST,
+					nullptr,
+					IID_PPV_ARGS(&m_gpuTexture));
 
-	uploadResourcesFinished.wait();
+				UINT64 uploadSize = 0;
+				D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+				UINT numRows;
+				UINT64 rowSize, totalSize;
+				m_device->GetCopyableFootprints(&texDesc, 0, 1, 0, &footprint, &numRows, &rowSize, &totalSize);
 
+				m_device->CreateCommittedResource(
+					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+					D3D12_HEAP_FLAG_NONE,
+					&CD3DX12_RESOURCE_DESC::Buffer(totalSize),
+					D3D12_RESOURCE_STATE_GENERIC_READ,
+					nullptr,
+					IID_PPV_ARGS(&m_uploadBuffer));
+
+				
+				avSubresource.pData = rgbBuffer.data();
+				avSubresource.RowPitch = codecCtx->width * 4;
+				avSubresource.SlicePitch = avSubresource.RowPitch * codecCtx->height;
+
+				UpdateSubresources(m_commandList.Get(), m_gpuTexture.Get(), m_uploadBuffer.Get(), 0, 0, 1, &avSubresource);
+
+				// SRV 생성
+				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+				srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+				srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+				srvDesc.Texture2D.MipLevels = 1;
+
+				CD3DX12_CPU_DESCRIPTOR_HANDLE heapHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());
+				m_device->CreateShaderResourceView(m_gpuTexture.Get(), &srvDesc, heapHandle);
+				
+				break;
+				
+			}
+		}
+	}
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE Core::SimpleApp::GetCurrentRtvCpuHandle() const
+
+D3D12_CPU_DESCRIPTOR_HANDLE Core::VideoApp::GetCurrentRtvCpuHandle() const
 {
-	return CD3DX12_CPU_DESCRIPTOR_HANDLE( m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
 }
 
-ID3D12Resource* Core::SimpleApp::GetCurrentSwapChainResource() const
+ID3D12Resource* Core::VideoApp::GetCurrentSwapChainResource() const
 {
 	return m_swapChainResources[m_frameIndex].Get();
 }
 
-void Core::SimpleApp::FlushCommands()
+void Core::VideoApp::FlushCommands()
 {
 	m_currentFence++;
 

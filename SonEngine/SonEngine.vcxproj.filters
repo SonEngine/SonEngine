@@ -45,6 +45,9 @@
     <ClCompile Include="StaticMesh.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="VideoApp.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseApp.h">
@@ -92,9 +95,13 @@
     <ClInclude Include="dds.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="VideoApp.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultVS.hlsl" />
     <FxCompile Include="DefaultPS.hlsl" />
+    <FxCompile Include="VideoPS.hlsl" />
   </ItemGroup>
 </Project>

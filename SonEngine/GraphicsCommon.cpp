@@ -13,7 +13,8 @@ namespace Graphics
 
     D3D12_DEPTH_STENCIL_DESC depthStateDisabled;
 
-    RootSignature g_commonRS;
+	RootSignature g_commonRS;
+	RootSignature g_videoRS;
 }
 
 
@@ -47,5 +48,14 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	g_commonRS.InitStaticSampler(0, wrapLinearSampler);
 	
 	g_commonRS.Finalize(device, L"CommonRS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	g_videoRS.Reset(3, 1);
+	g_videoRS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 2);
+	g_videoRS[1].InitCBV();
+	g_videoRS[2].InitCBV(1);
+	g_videoRS.InitStaticSampler(0, wrapLinearSampler);
+
+	g_videoRS.Finalize(device, L"VideoRS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
 }
 
