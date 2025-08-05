@@ -424,89 +424,116 @@ void Core::VideoApp::CreateTextures()
 
 	videoStreamIdx = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
 
-	AVCodecParameters* codecPar = fmtCtx->streams[videoStreamIdx]->codecpar;
-	const AVCodec* codec = avcodec_find_decoder(codecPar->codec_id);
-	codecCtx = avcodec_alloc_context3(codec);
-	avcodec_parameters_to_context(codecCtx, codecPar);
-	avcodec_open2(codecCtx, codec, nullptr);
+	//AVCodecParameters* codecPar = fmtCtx->streams[videoStreamIdx]->codecpar;
+	//const AVCodec* codec = avcodec_find_decoder(codecPar->codec_id);
+	//codecCtx = avcodec_alloc_context3(codec);
+	//avcodec_parameters_to_context(codecCtx, codecPar);
+	//avcodec_open2(codecCtx, codec, nullptr);
 
-	// BGRA 변환용 SWS 컨텍스트
-	swsCtx = sws_getContext(
-		codecCtx->width, codecCtx->height, codecCtx->pix_fmt,
-		codecCtx->width, codecCtx->height, AV_PIX_FMT_BGRA,
-		SWS_BILINEAR, nullptr, nullptr, nullptr);
+	//// BGRA 변환용 SWS 컨텍스트
+	//swsCtx = sws_getContext(
+	//	codecCtx->width, codecCtx->height, codecCtx->pix_fmt,
+	//	codecCtx->width, codecCtx->height, AV_PIX_FMT_BGRA,
+	//	SWS_BILINEAR, nullptr, nullptr, nullptr);
 
-	frame = av_frame_alloc();
-	rgbFrame = av_frame_alloc();
-	int numBytes = av_image_get_buffer_size(AV_PIX_FMT_BGRA, codecCtx->width, codecCtx->height, 1);
-	rgbBuffer.resize(numBytes);
-	av_image_fill_arrays(rgbFrame->data, rgbFrame->linesize, rgbBuffer.data(), AV_PIX_FMT_BGRA, codecCtx->width, codecCtx->height, 1);
+	//frame = av_frame_alloc();
+	//rgbFrame = av_frame_alloc();
+	//int numBytes = av_image_get_buffer_size(AV_PIX_FMT_BGRA, codecCtx->width, codecCtx->height, 1);
+	//rgbBuffer.resize(numBytes);
+	//av_image_fill_arrays(rgbFrame->data, rgbFrame->linesize, rgbBuffer.data(), AV_PIX_FMT_BGRA, codecCtx->width, codecCtx->height, 1);
 
-	while (av_read_frame(fmtCtx, &pkt) >= 0) {
-		if (pkt.stream_index == videoStreamIdx) {
-			avcodec_send_packet(codecCtx, &pkt);
-			if (avcodec_receive_frame(codecCtx, frame) == 0) {
-				
-				sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, rgbFrame->data, rgbFrame->linesize);
-				rgbFrame->format = AV_PIX_FMT_BGRA;  				
-				//SaveFrameAsBMP("debug_frame0.bmp", rgbBuffer.data(), codecCtx->width, codecCtx->height, rgbFrame->linesize[0]);
+	//while (av_read_frame(fmtCtx, &pkt) >= 0) {
+	//	if (pkt.stream_index == videoStreamIdx) {
+	//		avcodec_send_packet(codecCtx, &pkt);
+	//		if (avcodec_receive_frame(codecCtx, frame) == 0) {
+	//			
+	//			sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, rgbFrame->data, rgbFrame->linesize);
+	//			rgbFrame->format = AV_PIX_FMT_BGRA;  				
+	//			//SaveFrameAsBMP("debug_frame0.bmp", rgbBuffer.data(), codecCtx->width, codecCtx->height, rgbFrame->linesize[0]);
 
 
-				D3D12_RESOURCE_DESC texDesc = {};
-				texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-				texDesc.Width = codecCtx->width;
-				texDesc.Height = codecCtx->height;
-				texDesc.DepthOrArraySize = 1;
-				texDesc.MipLevels = 1;
-				texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-				texDesc.SampleDesc.Count = 1;
-				texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-				texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	//			D3D12_RESOURCE_DESC texDesc = {};
+	//			texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	//			texDesc.Width = codecCtx->width;
+	//			texDesc.Height = codecCtx->height;
+	//			texDesc.DepthOrArraySize = 1;
+	//			texDesc.MipLevels = 1;
+	//			texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	//			texDesc.SampleDesc.Count = 1;
+	//			texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	//			texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-				m_device->CreateCommittedResource(
-					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-					D3D12_HEAP_FLAG_NONE,
-					&texDesc,
-					D3D12_RESOURCE_STATE_COPY_DEST,
-					nullptr,
-					IID_PPV_ARGS(&m_gpuTexture));
+	//			m_device->CreateCommittedResource(
+	//				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+	//				D3D12_HEAP_FLAG_NONE,
+	//				&texDesc,
+	//				D3D12_RESOURCE_STATE_COPY_DEST,
+	//				nullptr,
+	//				IID_PPV_ARGS(&m_gpuTexture));
 
-				UINT64 uploadSize = 0;
-				D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
-				UINT numRows;
-				UINT64 rowSize, totalSize;
-				m_device->GetCopyableFootprints(&texDesc, 0, 1, 0, &footprint, &numRows, &rowSize, &totalSize);
+	//			UINT64 uploadSize = 0;
+	//			D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+	//			UINT numRows;
+	//			UINT64 rowSize, totalSize;
+	//			m_device->GetCopyableFootprints(&texDesc, 0, 1, 0, &footprint, &numRows, &rowSize, &totalSize);
 
-				m_device->CreateCommittedResource(
-					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-					D3D12_HEAP_FLAG_NONE,
-					&CD3DX12_RESOURCE_DESC::Buffer(totalSize),
-					D3D12_RESOURCE_STATE_GENERIC_READ,
-					nullptr,
-					IID_PPV_ARGS(&m_uploadBuffer));
+	//			m_device->CreateCommittedResource(
+	//				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+	//				D3D12_HEAP_FLAG_NONE,
+	//				&CD3DX12_RESOURCE_DESC::Buffer(totalSize),
+	//				D3D12_RESOURCE_STATE_GENERIC_READ,
+	//				nullptr,
+	//				IID_PPV_ARGS(&m_uploadBuffer));
 
-				
-				avSubresource.pData = rgbBuffer.data();
-				avSubresource.RowPitch = codecCtx->width * 4;
-				avSubresource.SlicePitch = avSubresource.RowPitch * codecCtx->height;
+	//			
+	//			avSubresource.pData = rgbBuffer.data();
+	//			avSubresource.RowPitch = codecCtx->width * 4;
+	//			avSubresource.SlicePitch = avSubresource.RowPitch * codecCtx->height;
 
-				UpdateSubresources(m_commandList.Get(), m_gpuTexture.Get(), m_uploadBuffer.Get(), 0, 0, 1, &avSubresource);
+	//			UpdateSubresources(m_commandList.Get(), m_gpuTexture.Get(), m_uploadBuffer.Get(), 0, 0, 1, &avSubresource);
 
-				// SRV 생성
-				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-				srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-				srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-				srvDesc.Texture2D.MipLevels = 1;
+	//			// SRV 생성
+	//			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	//			srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	//			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	//			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	//			srvDesc.Texture2D.MipLevels = 1;
 
-				CD3DX12_CPU_DESCRIPTOR_HANDLE heapHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());
-				m_device->CreateShaderResourceView(m_gpuTexture.Get(), &srvDesc, heapHandle);
-				
-				break;
-				
-			}
-		}
-	}
+	//			CD3DX12_CPU_DESCRIPTOR_HANDLE heapHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());
+	//			m_device->CreateShaderResourceView(m_gpuTexture.Get(), &srvDesc, heapHandle);
+	//			
+
+	//			break;
+	//			
+	//		}
+	//	}
+	//}
+
+	ComPtr<ID3D12VideoDevice> videoDevice;
+    if (FAILED(m_device->QueryInterface(IID_PPV_ARGS(&videoDevice))))
+    {
+        throw std::runtime_error("ID3D12VideoDevice 얻기 실패");
+    }
+
+    // Decode configuration 구조체 구성
+    D3D12_VIDEO_DECODE_CONFIGURATION config = {};
+    config.DecodeProfile = D3D12_VIDEO_DECODE_PROFILE_H264;
+    config.BitstreamEncryption = D3D12_BITSTREAM_ENCRYPTION_TYPE_NONE;
+    config.InterlaceType = D3D12_VIDEO_FRAME_CODED_INTERLACE_TYPE_NONE;
+
+    // Decoder descriptor 구성
+    D3D12_VIDEO_DECODER_DESC desc = {};
+    desc.NodeMask = 0;
+    desc.Configuration = config;
+
+    // 디코더 생성
+    ComPtr<ID3D12VideoDecoder> decoder;
+    HRESULT hr = videoDevice->CreateVideoDecoder(&desc, IID_PPV_ARGS(&decoder));
+    if (FAILED(hr))
+    {
+        throw std::runtime_error("CreateVideoDecoder 실패");
+    }
+
 }
 
 

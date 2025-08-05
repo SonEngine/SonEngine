@@ -4,6 +4,8 @@
 #include "Renderer.h"
 #include "Constants.h"
 
+#include "d3d12video.h"
+
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>

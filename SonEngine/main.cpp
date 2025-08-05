@@ -1,4 +1,5 @@
 #include "VideoApp.h"
+//#include "SimpleApp.h"
 
 int main()
 {
