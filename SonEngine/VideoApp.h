@@ -5,13 +5,13 @@
 #include "Constants.h"
 
 #include "d3d12video.h"
-
-extern "C" {
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libavutil/imgutils.h>
-#include <libswscale/swscale.h>
-}
+//
+//extern "C" {
+//#include <libavcodec/avcodec.h>
+//#include <libavformat/avformat.h>
+//#include <libavutil/imgutils.h>
+//#include <libswscale/swscale.h>
+//}
 class StaticMesh;
 
 namespace Core {
@@ -133,12 +133,12 @@ namespace Core {
 		void* pGlobalConstant = nullptr;
 
 	private:
-		AVFormatContext* fmtCtx = nullptr;
+		/*AVFormatContext* fmtCtx = nullptr;
 		AVCodecContext* codecCtx = nullptr;
 		SwsContext* swsCtx = nullptr;
 		AVFrame* frame = nullptr;
 		AVFrame* rgbFrame = nullptr;
-		AVPacket pkt;
+		AVPacket pkt;*/
 		int videoStreamIdx = -1;
 		std::vector<uint8_t> rgbBuffer;
 		int currentFrameIndex = 0;

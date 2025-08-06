@@ -211,42 +211,42 @@ void Core::VideoApp::Update(float deltaTime)
 {
 	time += deltaTime;
 
-	if (time > 1 / 30.f)
-	{
-		
-		time = 0;
-		while (av_read_frame(fmtCtx, &pkt) >= 0) {
-		
-			if (pkt.stream_index == videoStreamIdx) {
-				avcodec_send_packet(codecCtx, &pkt);
-				if (avcodec_receive_frame(codecCtx, frame) == 0) {
+	//if (time > 1 / 30.f)
+	//{
+	//	
+	//	time = 0;
+	//	while (av_read_frame(fmtCtx, &pkt) >= 0) {
+	//	
+	//		if (pkt.stream_index == videoStreamIdx) {
+	//			avcodec_send_packet(codecCtx, &pkt);
+	//			if (avcodec_receive_frame(codecCtx, frame) == 0) {
 
-					m_commandAllocator->Reset();
-					m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+	//				m_commandAllocator->Reset();
+	//				m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
-					currentFrameIndex++;
-					sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, rgbFrame->data, rgbFrame->linesize);
-					rgbFrame->format = AV_PIX_FMT_BGRA;
+	//				currentFrameIndex++;
+	//				sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, rgbFrame->data, rgbFrame->linesize);
+	//				rgbFrame->format = AV_PIX_FMT_BGRA;
 
-					avSubresource.pData = rgbBuffer.data();
-					avSubresource.RowPitch = codecCtx->width * 4;
-					avSubresource.SlicePitch = avSubresource.RowPitch * codecCtx->height;
+	//				avSubresource.pData = rgbBuffer.data();
+	//				avSubresource.RowPitch = codecCtx->width * 4;
+	//				avSubresource.SlicePitch = avSubresource.RowPitch * codecCtx->height;
 
-					UpdateSubresources(m_commandList.Get(), m_gpuTexture.Get(), m_uploadBuffer.Get(), 0, 0, 1, &avSubresource);
+	//				UpdateSubresources(m_commandList.Get(), m_gpuTexture.Get(), m_uploadBuffer.Get(), 0, 0, 1, &avSubresource);
 
-					m_commandList->Close();
+	//				m_commandList->Close();
 
-					ID3D12CommandList* cmds[] = { m_commandList.Get() };
-					m_commandQueue->ExecuteCommandLists(_countof(cmds), cmds);
+	//				ID3D12CommandList* cmds[] = { m_commandList.Get() };
+	//				m_commandQueue->ExecuteCommandLists(_countof(cmds), cmds);
 
-					FlushCommands();
+	//				FlushCommands();
 
-					//std::cout << currentFrameIndex << '\n';
-					break;
-				}
-			}
-		}
-	}
+	//				//std::cout << currentFrameIndex << '\n';
+	//				break;
+	//			}
+	//		}
+	//	}
+	//}
 
 	
 }
@@ -417,12 +417,12 @@ void Core::VideoApp::BuildConstantBuffers()
 
 void Core::VideoApp::CreateTextures()
 {
-	avformat_network_init();
+	/*avformat_network_init();
 
 	avformat_open_input(&fmtCtx, "videos/test.mp4", nullptr, nullptr);
 	avformat_find_stream_info(fmtCtx, nullptr);
 
-	videoStreamIdx = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
+	videoStreamIdx = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);*/
 
 	//AVCodecParameters* codecPar = fmtCtx->streams[videoStreamIdx]->codecpar;
 	//const AVCodec* codec = avcodec_find_decoder(codecPar->codec_id);

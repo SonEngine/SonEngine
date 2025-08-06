@@ -1,10 +1,10 @@
 #include "VideoApp.h"
-//#include "SimpleApp.h"
+#include "SimpleApp.h"
 
 int main()
 {
-	//Core::SimpleApp app(200, 200);
-	Core::VideoApp app(1280, 720);
+	Core::SimpleApp app(200, 200);
+	//Core::VideoApp app(1280, 720);
 
 	if (app.Initialize())
 	{
