@@ -29,8 +29,10 @@ psInput main(vsInput input)
     psInput output;
     
     float4 position = float4(input.pos, 1.f);
-
     position = mul(position, gLocalCB.model);
+    position = mul(position, gGlobalCB.view);
+    position = mul(position, gGlobalCB.proj);
+    
     
     output.svPosition = position;
     output.uv = input.uv;

@@ -102,56 +102,6 @@ bool Core::SimpleApp::InitDirectX()
 	BuildConstantBuffers();
 	CreateTextures();
 
-	MFStartup(MF_VERSION);
-
-	ComPtr<IMFSourceReader> sourceReader;
-	MFCreateSourceReaderFromURL(L"videos/test.mp4", nullptr, &sourceReader);
-
-	// 원하는 출력 형식으로 설정 (RGB32)
-	ComPtr<IMFMediaType> mediaTypeOut;
-	MFCreateMediaType(&mediaTypeOut);
-	mediaTypeOut->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-	mediaTypeOut->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32); // 중요
-	sourceReader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, mediaTypeOut.Get());
-
-	ComPtr<IMFMediaType> currentType;
-	sourceReader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, &currentType);
-
-	UINT64 frameSize;
-	UINT32 width = 0, height = 0;
-	if (SUCCEEDED(currentType->GetUINT64(MF_MT_FRAME_SIZE, &frameSize))) {
-		width = static_cast<UINT32>(frameSize >> 32);
-		height = static_cast<UINT32>(frameSize & 0xFFFFFFFF);
-		std::wcout << L"Video Size: " << width << L"x" << height << std::endl;
-	}
-
-	ComPtr<IMFSample> sample;
-	DWORD streamIndex = 0, flags = 0;
-	LONGLONG timestamp = 0;
-	HRESULT hr = sourceReader->ReadSample(MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, &streamIndex, &flags, &timestamp, &sample);
-
-	if (FAILED(hr) || !sample) {
-		std::cerr << "Failed to read frame\n";
-		return false;
-	}
-
-	// 6. 프레임에서 픽셀 데이터 꺼내기
-	ComPtr<IMFMediaBuffer> buffer;
-	sample->ConvertToContiguousBuffer(&buffer);
-
-	BYTE* data = nullptr;
-	DWORD maxLen = 0, curLen = 0;
-	buffer->Lock(&data, &maxLen, &curLen);
-
-	std::cout << "Decoded frame: " << curLen << " bytes (expected: " << width * height * 4 << ")\n";
-
-	// 여기서 'data'를 GPU 텍스처에 업로드하면 됩니다 (DirectX12 + UpdateSubresources 사용)
-
-	// 꼭 해제
-	buffer->Unlock();
-
-	MFShutdown();
-
 	return true;
 }
 
@@ -221,8 +171,8 @@ void Core::SimpleApp::OnResize()
 
 void Core::SimpleApp::Update(float deltaTime)
 {
-	localConstant.model.m[3][0] += 1 / 60.f;
-	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
+	/*localConstant.model.m[3][0] += 1 / 60.f;
+	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));*/
 }
 
 void Core::SimpleApp::UpdateGUI(float deltaTime)
@@ -387,7 +337,7 @@ void Core::SimpleApp::BuildConstantBuffers()
 	m_utility->CreateConstantBuffer(sizeof(LocalConstant), m_localCB, reinterpret_cast<void**>(&pLocalConstant));
 	m_utility->CreateConstantBuffer(sizeof(GlobalConstant), m_globalCB, reinterpret_cast<void**>(&pGlobalConstant));
 	
-	localConstant.model.m[3][0] = 1/60.f;
+	//localConstant.model.m[3][0] = 1/60.f;
 	//localConstant.model = localConstant.model.Transpose();
 	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 
