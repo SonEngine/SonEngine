@@ -1,5 +1,5 @@
 #include "StaticMesh.h"
-#include "Utility.h"
+
 #include "Vertex.h"
 #include <vector>
 
@@ -7,14 +7,14 @@ StaticMesh::StaticMesh()
 {
 }
 
-void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList)
+void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, GraphicsUtils::Utility* utility)
 {
 	// TODO : Utility 함수화
 
 	std::vector<SimpleVertex> vertices{
 		{Vector3(-1, -1, 1), Vector2(0, 1)},
-		{Vector3(-1, 1, 1), Vector2(0, 0)},
-		{Vector3(1, 1, 1), Vector2(1, 0)},
+		{Vector3(-1, 1, 2), Vector2(0, 0)},
+		{Vector3(1, 1, 2), Vector2(1, 0)},
 		{Vector3(1, -1, 1), Vector2(1, 1)}
 	};
 	std::vector<uint16_t> indices{
@@ -23,63 +23,9 @@ void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* co
 
 	m_indexCount = (UINT)indices.size();
 
-	ThrowIfFailed(device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(SimpleVertex)),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_vertexUpload)
-	));
-
-	ThrowIfFailed(device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(SimpleVertex)),
-		D3D12_RESOURCE_STATE_COMMON,
-		nullptr,
-		IID_PPV_ARGS(&m_vertexGpu)
-	));
-
-	ThrowIfFailed(device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(uint16_t)),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&m_indexUpload)
-	));
-
-	ThrowIfFailed(device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(uint16_t)),
-		D3D12_RESOURCE_STATE_COMMON,
-		nullptr,
-		IID_PPV_ARGS(&m_indexGpu)
-	));
-
-	D3D12_SUBRESOURCE_DATA subData;
-	subData.pData = vertices.data();
-	subData.RowPitch = vertices.size() * sizeof(SimpleVertex);
-	subData.SlicePitch = subData.RowPitch;
-
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexGpu.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST));
-
-	UpdateSubresources<1>(commandList, m_vertexGpu.Get(), m_vertexUpload.Get(), 0, 0, 1, &subData);
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_vertexGpu.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
-
-	D3D12_SUBRESOURCE_DATA subData2;
-	subData2.pData = indices.data();
-	subData2.RowPitch = indices.size() * sizeof(uint16_t);
-	subData2.SlicePitch = subData2.RowPitch;
-
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_indexGpu.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST));
-
-	UpdateSubresources<1>(commandList, m_indexGpu.Get(), m_indexUpload.Get(), 0, 0, 1, &subData2);
-	commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_indexGpu.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
-
-
+	utility->CreateBuffer<SimpleVertex>(vertices, m_vertexGpu, m_vertexUpload);
+	utility->CreateBuffer<uint16_t>(indices, m_indexGpu, m_indexUpload);
+	
 	m_vertexBufferView.BufferLocation = m_vertexGpu->GetGPUVirtualAddress();
 	m_vertexBufferView.SizeInBytes = (UINT)(vertices.size() * sizeof(SimpleVertex));
 	m_vertexBufferView.StrideInBytes = (UINT)(sizeof(SimpleVertex));

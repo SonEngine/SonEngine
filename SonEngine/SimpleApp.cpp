@@ -21,6 +21,7 @@ Core::SimpleApp::SimpleApp()
 Core::SimpleApp::SimpleApp(const int width, const int height)
 	:BaseApp(width, height)
 {
+	m_aspectRatio = width / (float)height;
 }
 
 Core::SimpleApp::~SimpleApp()
@@ -70,7 +71,7 @@ bool Core::SimpleApp::InitDirectX()
 	CreateSwapChain();
 
 	m_utility = new Utility(m_device.Get(), m_commandList.Get());
-	
+
 	m_cbvSrvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	m_dsvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
@@ -91,10 +92,10 @@ bool Core::SimpleApp::InitDirectX()
 
 	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
 	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)m_width, (LONG)m_height);
-	
+
 	Graphics::InitializeCommonState(m_device);
 	Renderer::Initialize(m_device);
-	
+
 	m_currentFence = 0;
 	m_device->CreateFence(m_currentFence, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
 
@@ -115,7 +116,7 @@ bool Core::SimpleApp::InitGUI()
 	// io.Fonts->TexID = (ImTextureID)m_guiFont->GetSpriteSheet().ptr;
 
 	ImGui::StyleColorsLight();
-	const char* fontPath = "Fonts/Hack-Bold.ttf";
+	const char* fontPath = "Fonts/Hack-Regular.ttf";
 	float fontSize = 15.0f;
 	// 폰트 로드
 	io.Fonts->AddFontFromFileTTF(fontPath, fontSize);
@@ -142,15 +143,21 @@ void Core::SimpleApp::OnResize()
 {
 	if (m_swapChain == nullptr) return;
 
+	m_aspectRatio = m_width / (float)m_height;
+	globalConstant.proj = XMMatrixPerspectiveFovLH(
+		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
+	
+	m_projFlag = true;
+
 	for (int i = 0; i < m_swapChainBufferCount; i++)
 	{
 		m_swapChainResources[i].Reset();
 	}
 
-	m_swapChain->ResizeBuffers(m_swapChainBufferCount, 
-		m_width, 
-		m_height, 
-		DXGI_FORMAT_UNKNOWN, 
+	m_swapChain->ResizeBuffers(m_swapChainBufferCount,
+		m_width,
+		m_height,
+		DXGI_FORMAT_UNKNOWN,
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
 
 
@@ -165,18 +172,25 @@ void Core::SimpleApp::OnResize()
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
 	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)m_width, (LONG)m_height);
-	
-	std::cout << m_width << ' ' << m_height <<'\n';
+
+	std::cout << m_width << ' ' << m_height << '\n';
 }
 
 void Core::SimpleApp::Update(float deltaTime)
 {
-	/*localConstant.model.m[3][0] += 1 / 60.f;
-	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));*/
+	localConstant.model.m[3][2] = m_zValue;
+	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
+
+	if (m_projFlag)
+	{
+		m_projFlag = false;
+		memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
+	}
 }
 
 void Core::SimpleApp::UpdateGUI(float deltaTime)
 {
+	ImGui::DragFloat("zValue", &m_zValue, 1.f, 0.f, 10.f);
 }
 
 void Core::SimpleApp::Render(float deltaTime)
@@ -192,7 +206,7 @@ void  Core::SimpleApp::RenderScene()
 
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 	m_commandList->RSSetViewports(1, &m_viewport);
-	
+
 	m_commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	m_commandList->SetPipelineState(sm_PSOs[0].GetPSO());
@@ -220,7 +234,7 @@ void  Core::SimpleApp::RenderScene()
 
 	m_commandList->SetDescriptorHeaps(1, heaps);
 	m_commandList->SetGraphicsRootDescriptorTable(0, m_texturesHeap->GetGPUDescriptorHandleForHeapStart());
-	
+
 	mesh->Render(m_commandList.Get());
 
 	m_commandList->ResourceBarrier(
@@ -236,8 +250,6 @@ void  Core::SimpleApp::RenderScene()
 	ID3D12CommandList* commands[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
 
-	ThrowIfFailed(m_swapChain->Present(1, 0));
-	m_frameIndex = (m_frameIndex + 1) % m_swapChainBufferCount;
 
 
 	FlushCommands();
@@ -245,6 +257,46 @@ void  Core::SimpleApp::RenderScene()
 
 void Core::SimpleApp::RenderGUI(float deltaTime)
 {
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	ImGui::Begin("GUI");
+	UpdateGUI(deltaTime);
+
+	ImGui::End();
+	ImGui::Render();
+
+	ThrowIfFailed(m_commandAllocator->Reset());
+	ThrowIfFailed(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+
+	m_commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			GetCurrentSwapChainResource(),
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_RENDER_TARGET
+		));
+
+	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), false, nullptr);
+	ID3D12DescriptorHeap* pHeaps[] = { m_guiFontHeap.Get() };
+	m_commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_commandList.Get());
+
+	m_commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			GetCurrentSwapChainResource(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PRESENT
+		));
+
+	m_commandList->Close();
+	ID3D12CommandList* lists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+
+	ThrowIfFailed(m_swapChain->Present(1, 0));
+	m_frameIndex = (m_frameIndex + 1) % m_swapChainBufferCount;
+
+
+	FlushCommands();
 }
 
 bool Core::SimpleApp::FinDirectX()
@@ -254,7 +306,7 @@ bool Core::SimpleApp::FinDirectX()
 
 void Core::SimpleApp::Finalize(float deltaTime)
 {
-	
+
 }
 
 void Core::SimpleApp::CreateCommandObjects()
@@ -321,7 +373,7 @@ void Core::SimpleApp::BuildGeometry()
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
 	mesh = std::make_shared<StaticMesh>();
-	mesh->Initialize(m_device.Get(), m_commandList.Get());
+	mesh->Initialize(m_device.Get(), m_commandList.Get(), m_utility);
 
 	m_commandList->Close();
 
@@ -334,14 +386,38 @@ void Core::SimpleApp::BuildGeometry()
 void Core::SimpleApp::BuildConstantBuffers()
 {
 
-	m_utility->CreateConstantBuffer(sizeof(LocalConstant), m_localCB, reinterpret_cast<void**>(&pLocalConstant));
-	m_utility->CreateConstantBuffer(sizeof(GlobalConstant), m_globalCB, reinterpret_cast<void**>(&pGlobalConstant));
-	
+	m_utility->CreateConstantBuffer(
+		sizeof(LocalConstant),
+		m_localCB,
+		reinterpret_cast<void**>(&pLocalConstant)
+	);
+
+	m_utility->CreateConstantBuffer(
+		sizeof(GlobalConstant),
+		m_globalCB,
+		reinterpret_cast<void**>(&pGlobalConstant)
+	);
+
 	//localConstant.model.m[3][0] = 1/60.f;
 	//localConstant.model = localConstant.model.Transpose();
-	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 
-	
+	memcpy(
+		pLocalConstant,
+		&localConstant,
+		sizeof(LocalConstant)
+	);
+
+	m_fovRadians = XMConvertToRadians(m_fovDegrees);
+	globalConstant.proj = XMMatrixPerspectiveFovLH(
+		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
+
+	memcpy(
+		pGlobalConstant,
+		&globalConstant,
+		sizeof(LocalConstant)
+	);
+
+
 }
 
 void Core::SimpleApp::CreateTextures()
@@ -372,7 +448,7 @@ void Core::SimpleApp::CreateTextures()
 
 D3D12_CPU_DESCRIPTOR_HANDLE Core::SimpleApp::GetCurrentRtvCpuHandle() const
 {
-	return CD3DX12_CPU_DESCRIPTOR_HANDLE( m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
 }
 
 ID3D12Resource* Core::SimpleApp::GetCurrentSwapChainResource() const

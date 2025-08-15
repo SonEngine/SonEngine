@@ -3,6 +3,7 @@
 #include "d3d12.h"
 #include "d3dx12.h"
 #include "wrl.h"
+#include "Utility.h"
 
 class StaticMesh {
 
@@ -10,7 +11,8 @@ public:
 
 	StaticMesh();
 
-	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList);
+	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, class GraphicsUtils::Utility* utility);
+
 	void Render(ID3D12GraphicsCommandList* commandList);
 
 private:

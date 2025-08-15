@@ -23,7 +23,7 @@ namespace Core {
 		// Init
 		virtual bool InitDirectX() override;
 		virtual bool InitGUI() override;
-		
+
 		// Called when the window is resized
 		virtual void OnResize() override;
 
@@ -89,7 +89,7 @@ namespace Core {
 		UINT m_cbvSrvDescriptorSize;
 		UINT m_rtvDescriptorSize;
 		UINT m_dsvDescriptorSize;
-		
+
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
 
@@ -104,7 +104,7 @@ namespace Core {
 	private:
 
 		GraphicsUtils::Utility* m_utility;
-		
+
 	private:
 
 		std::shared_ptr<StaticMesh> mesh;
@@ -112,7 +112,7 @@ namespace Core {
 	private:
 
 		LocalConstant localConstant;
-		LocalConstant globalConstant;
+		GlobalConstant globalConstant;
 
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_localCB;
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_globalCB;
@@ -120,6 +120,20 @@ namespace Core {
 
 		void* pLocalConstant = nullptr;
 		void* pGlobalConstant = nullptr;
-		
+
+	private:
+		float m_aspectRatio;
+		float m_fovDegrees = 70.f;
+		float m_fovRadians;
+		float m_fovAngle = 70.f;
+		float m_nearZ = 0.1f;
+		float m_farZ = 100.f;
+
+	private:
+		float m_zValue = 0.f;
+
+	private:
+		bool m_projFlag = false;
+
 	};
 }

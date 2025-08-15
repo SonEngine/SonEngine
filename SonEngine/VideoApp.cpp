@@ -397,7 +397,7 @@ void Core::VideoApp::BuildGeometry()
 {
 
 	mesh = std::make_shared<StaticMesh>();
-	mesh->Initialize(m_device.Get(), m_commandList.Get());
+	mesh->Initialize(m_device.Get(), m_commandList.Get(), m_utility);
 
 
 }
