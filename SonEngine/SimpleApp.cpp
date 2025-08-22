@@ -3,6 +3,7 @@
 #include "PipelineState.h"
 #include "Vertex.h"
 #include "StaticMesh.h"
+#include "GeometryGenerater.h"
 
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
@@ -70,14 +71,14 @@ bool Core::SimpleApp::InitDirectX()
 	CreateCommandObjects();
 	CreateSwapChain();
 
-	m_utility = new Utility(m_device.Get(), m_commandList.Get());
+	utility = std::make_shared<GraphicsUtils::Utility>(m_device.Get(), m_commandList.Get());
 
 	m_cbvSrvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	m_dsvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-	m_utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRtvHeap);
-	m_utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_texturesHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRtvHeap);
+	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_texturesHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	// Create SwapChain RTVs
 
@@ -188,11 +189,23 @@ void Core::SimpleApp::Update(float deltaTime)
 		m_projFlag = false;
 		memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
 	}
+
+	if (bMouseFlag)
+	{
+		bMouseFlag = false;
+		GetCursorPos(&mousePos);
+		
+	}
 }
 
 void Core::SimpleApp::UpdateGUI(float deltaTime)
 {
 	ImGui::DragFloat("zValue", &m_zValue, 1.f, 0.f, 10.f);
+	std::string str = "x : ";
+	str += std::to_string(mousePos.x);
+	str += ", y : ";
+	str += std::to_string(mousePos.y);
+	ImGui::Text(str.c_str());
 }
 
 void Core::SimpleApp::Render(float deltaTime)
@@ -373,7 +386,7 @@ void Core::SimpleApp::BuildGeometry()
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
 	mesh = std::make_shared<StaticMesh>();
-	mesh->Initialize(m_device.Get(), m_commandList.Get(), m_utility);
+	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleRect(2,2));
 
 	m_commandList->Close();
 
@@ -386,13 +399,13 @@ void Core::SimpleApp::BuildGeometry()
 void Core::SimpleApp::BuildConstantBuffers()
 {
 
-	m_utility->CreateConstantBuffer(
+	utility->CreateConstantBuffer(
 		sizeof(LocalConstant),
 		m_localCB,
 		reinterpret_cast<void**>(&pLocalConstant)
 	);
 
-	m_utility->CreateConstantBuffer(
+	utility->CreateConstantBuffer(
 		sizeof(GlobalConstant),
 		m_globalCB,
 		reinterpret_cast<void**>(&pGlobalConstant)

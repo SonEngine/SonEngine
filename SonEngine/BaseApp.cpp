@@ -142,6 +142,10 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_ACTIVATEAPP:
 	case WM_INPUT:
 	case WM_MOUSEMOVE:
+	{
+		bMouseFlag = true;
+	}
+		
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONUP:
 	case WM_RBUTTONDOWN:

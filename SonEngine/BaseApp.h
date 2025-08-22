@@ -45,5 +45,9 @@ namespace Core {
         int m_width;
         int m_height;
         HWND m_mainWnd;
+
+    protected:
+        bool bMouseFlag = false;
+        POINT mousePos;
     };
 }

@@ -103,10 +103,6 @@ namespace Core {
 
 	private:
 
-		GraphicsUtils::Utility* m_utility;
-
-	private:
-
 		std::shared_ptr<StaticMesh> mesh;
 
 	private:

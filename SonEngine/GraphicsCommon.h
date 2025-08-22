@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utility.h"
+#include <memory>
 
 class SamplerDesc;
 class RootSignature;
@@ -22,5 +23,8 @@ namespace Graphics
 
     extern RootSignature g_commonRS;
     extern RootSignature g_videoRS;
+
+
+    extern std::shared_ptr<GraphicsUtils::Utility> utility;
 
 }

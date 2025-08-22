@@ -15,6 +15,8 @@ namespace Graphics
 
 	RootSignature g_commonRS;
 	RootSignature g_videoRS;
+
+	std::shared_ptr<GraphicsUtils::Utility> utility;
 }
 
 

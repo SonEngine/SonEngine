@@ -3,6 +3,7 @@
 #include "PipelineState.h"
 #include "Vertex.h"
 #include "StaticMesh.h"
+#include "GeometryGenerater.h"
 
 #include <fstream>
 
@@ -397,7 +398,7 @@ void Core::VideoApp::BuildGeometry()
 {
 
 	mesh = std::make_shared<StaticMesh>();
-	mesh->Initialize(m_device.Get(), m_commandList.Get(), m_utility);
+	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleRect(2, 2));
 
 
 }
