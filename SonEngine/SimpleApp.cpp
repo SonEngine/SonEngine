@@ -103,6 +103,8 @@ bool Core::SimpleApp::InitDirectX()
 	BuildConstantBuffers();
 	CreateTextures();
 
+	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
+
 	return true;
 }
 
@@ -203,7 +205,6 @@ void  Core::SimpleApp::RenderScene()
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), sm_PSOs[0].GetPSO());
 
-
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 	m_commandList->RSSetViewports(1, &m_viewport);
 
@@ -221,8 +222,7 @@ void  Core::SimpleApp::RenderScene()
 			D3D12_RESOURCE_STATE_RENDER_TARGET
 		));
 
-	FLOAT black[4] = { 0.F, 0.F, 0.F , 1.F };
-	m_commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), black, 0, nullptr);
+	m_commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
 	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, nullptr);
 
 	m_commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());

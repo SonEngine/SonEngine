@@ -3,7 +3,7 @@
 #include "BaseApp.h"
 #include "Renderer.h"
 #include "Constants.h"
-
+#include <array>
 
 class StaticMesh;
 
@@ -134,6 +134,10 @@ namespace Core {
 
 	private:
 		bool m_projFlag = false;
+
+	private:
+		std::array<float, 4> rtvClearColor;
+
 
 	};
 }
