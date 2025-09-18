@@ -13,14 +13,23 @@ using namespace GraphicsUtils;
 using namespace Graphics;
 using namespace Renderer;
 using namespace DirectX;
+using DirectX::SimpleMath::Vector3;
 
 Core::SimpleApp::SimpleApp()
-	:BaseApp()
+	:BaseApp(),
+	m_eyePosition(Vector3(0, 0, -1)),
+	m_eyeDirection(Vector3(0, 0, 1)),
+	m_upDirection(Vector3(0, 1, 0)),
+	m_rightDirection(Vector3(1, 0, 0))
 {
 }
 
 Core::SimpleApp::SimpleApp(const int width, const int height)
-	:BaseApp(width, height)
+	:BaseApp(width, height),
+	m_eyePosition(Vector3(0, 0, -1)),
+	m_eyeDirection(Vector3(0, 0, 1)),
+	m_upDirection(Vector3(0, 1, 0)),
+	m_rightDirection(Vector3(1, 0, 0))
 {
 	m_aspectRatio = width / (float)height;
 }
@@ -149,8 +158,8 @@ void Core::SimpleApp::OnResize()
 	m_aspectRatio = m_width / (float)m_height;
 	globalConstant.proj = XMMatrixPerspectiveFovLH(
 		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
-	
-	m_projFlag = true;
+
+	//m_projFlag = true;
 
 	for (int i = 0; i < m_swapChainBufferCount; i++)
 	{
@@ -181,21 +190,21 @@ void Core::SimpleApp::OnResize()
 
 void Core::SimpleApp::Update(float deltaTime)
 {
+	// local
 	localConstant.model.m[3][2] = m_zValue;
-	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
+	
+	// global
+	m_eyePosition += m_inputHelper.ExecuteCommands(deltaTime, m_eyeDirection, m_upDirection, m_rightDirection);
 
-	if (m_projFlag)
-	{
-		m_projFlag = false;
-		memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
-	}
-
+	globalConstant.view = XMMatrixLookToLH(m_eyePosition, m_eyeDirection, m_upDirection);
+	
 	if (bMouseFlag)
 	{
 		bMouseFlag = false;
 		GetCursorPos(&mousePos);
-		
 	}
+	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
+	memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
 }
 
 void Core::SimpleApp::UpdateGUI(float deltaTime)
@@ -386,7 +395,7 @@ void Core::SimpleApp::BuildGeometry()
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
 	mesh = std::make_shared<StaticMesh>();
-	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleRect(2,2));
+	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleRect(2, 2));
 
 	m_commandList->Close();
 

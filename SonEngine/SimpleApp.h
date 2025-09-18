@@ -134,6 +134,11 @@ namespace Core {
 	private:
 		std::array<float, 4> rtvClearColor;
 
-
+	// character
+	private:
+		DirectX::SimpleMath::Vector3 m_eyePosition;
+		DirectX::SimpleMath::Vector3 m_eyeDirection;
+		DirectX::SimpleMath::Vector3 m_upDirection;
+		DirectX::SimpleMath::Vector3 m_rightDirection;
 	};
 }

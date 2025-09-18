@@ -150,6 +150,7 @@
     <ClCompile Include="BaseApp.cpp" />
     <ClCompile Include="GeometryGenerater.cpp" />
     <ClCompile Include="GraphicsCommon.cpp" />
+    <ClCompile Include="InputHelper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PipelineState.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -169,6 +170,7 @@
     <ClInclude Include="GeometryGenerater.h" />
     <ClInclude Include="GpuResource.h" />
     <ClInclude Include="GraphicsCommon.h" />
+    <ClInclude Include="InputHelper.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="PipelineState.h" />
@@ -179,6 +181,7 @@
     <ClInclude Include="Utility.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VideoApp.h" />
+    <ClInclude Include="Actor.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultPS.hlsl">

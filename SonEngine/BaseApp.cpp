@@ -137,7 +137,13 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		return 0;
 	}
 	break;
+	case WM_KEYDOWN:
+		m_inputHelper.SetInputState((size_t)wParam, true);
+		break;
 	case WM_KEYUP:
+		m_inputHelper.SetInputState((size_t)wParam, false);
+		break;
+
 	case WM_ACTIVATE:
 	case WM_ACTIVATEAPP:
 	case WM_INPUT:

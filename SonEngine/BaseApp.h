@@ -7,7 +7,7 @@
 #include "imgui_impl_dx12.h"
 
 #include "Timer.h"
-
+#include "InputHelper.h"
 
 namespace Core {
     class BaseApp {
@@ -40,6 +40,7 @@ namespace Core {
     public:
         static BaseApp* m_appPtr;
         Core::Timer m_timer;
+        Input::InputHelper m_inputHelper;
 
     protected:
         int m_width;
