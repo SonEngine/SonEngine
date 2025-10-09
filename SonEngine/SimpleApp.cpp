@@ -17,7 +17,7 @@ using DirectX::SimpleMath::Vector3;
 
 Core::SimpleApp::SimpleApp()
 	:BaseApp(),
-	m_eyePosition(Vector3(0, 0, -1)),
+	m_eyePosition(Vector3(0, 0, -3)),
 	m_eyeDirection(Vector3(0, 0, 1)),
 	m_upDirection(Vector3(0, 1, 0)),
 	m_rightDirection(Vector3(1, 0, 0))
@@ -26,7 +26,7 @@ Core::SimpleApp::SimpleApp()
 
 Core::SimpleApp::SimpleApp(const int width, const int height)
 	:BaseApp(width, height),
-	m_eyePosition(Vector3(0, 0, -1)),
+	m_eyePosition(Vector3(0, 0, -3)),
 	m_eyeDirection(Vector3(0, 0, 1)),
 	m_upDirection(Vector3(0, 1, 0)),
 	m_rightDirection(Vector3(1, 0, 0))
@@ -395,7 +395,7 @@ void Core::SimpleApp::BuildGeometry()
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
 	mesh = std::make_shared<StaticMesh>();
-	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleRect(2, 2));
+	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleCube(2, 2, 2));
 
 	m_commandList->Close();
 

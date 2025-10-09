@@ -26,3 +26,32 @@ Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakeSimpleRect(float x, float y)
 
 	return mesh;
 }
+
+Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakeSimpleCube(float x, float y, float z)
+{
+	float halfX = x / 2.f;
+	float halfY = y / 2.f;
+	float halfZ = z / 2.f;
+	std::vector<SimpleVertex> vertices{
+		{Vector3(-halfX, -halfY, -halfZ), Vector2(0, 1)},
+		{Vector3(-halfX, halfY,  -halfZ), Vector2(0, 0)},
+		{Vector3(halfX, halfY,  -halfZ), Vector2(1, 0)},
+		{Vector3(halfX, -halfY,  -halfZ), Vector2(1, 1)},
+		{Vector3(-halfX, -halfY, halfZ), Vector2(0, 1)},
+		{Vector3(-halfX, halfY,  halfZ), Vector2(0, 0)},
+		{Vector3(halfX, halfY,  halfZ), Vector2(1, 0)},
+		{Vector3(halfX, -halfY,  halfZ), Vector2(1, 1)}
+	};
+	std::vector<uint16_t> indices{
+		0, 1, 2, 0, 2, 3,
+		3, 2, 5 ,3, 5 ,4
+
+	};
+
+	Mesh<SimpleVertex, uint16_t> mesh;
+
+	mesh.m_vertices = vertices;
+	mesh.m_indices = indices;
+
+	return mesh;
+}
