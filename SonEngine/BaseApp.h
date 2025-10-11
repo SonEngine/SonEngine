@@ -50,5 +50,7 @@ namespace Core {
     protected:
         bool bMouseFlag = false;
         POINT mousePos;
+        int mouseDeltaX = 0;
+        int mouseDeltaY = 0;
     };
 }

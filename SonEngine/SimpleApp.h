@@ -119,7 +119,7 @@ namespace Core {
 
 	private:
 		float m_aspectRatio;
-		float m_fovDegrees = 70.f;
+		float m_fovDegrees = 80.f;
 		float m_fovRadians;
 		float m_fovAngle = 70.f;
 		float m_nearZ = 0.1f;
@@ -134,11 +134,25 @@ namespace Core {
 	private:
 		std::array<float, 4> rtvClearColor;
 
-	// character
+		// character
 	private:
 		DirectX::SimpleMath::Vector3 m_eyePosition;
+		DirectX::SimpleMath::Vector3 m_baseEyeDirection;
 		DirectX::SimpleMath::Vector3 m_eyeDirection;
 		DirectX::SimpleMath::Vector3 m_upDirection;
+		DirectX::SimpleMath::Vector3 m_baseUpDirection;
 		DirectX::SimpleMath::Vector3 m_rightDirection;
+
+		DirectX::SimpleMath::Matrix m_eyeRotation;
+
+		float mouseSpeed = 0.5f;
+		float yAngle = 0.f;
+		float xAngle = 0.f;
+
+		float maxYAngle = 89.f;
+		float minYAngle = -89.f;
+
+	private:
+		RECT windowRect;
 	};
 }

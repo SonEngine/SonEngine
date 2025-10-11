@@ -137,6 +137,21 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		return 0;
 	}
 	break;
+	case WM_INPUT:
+	{
+		RAWINPUT raw;
+		UINT rawSize = sizeof(raw);
+
+		const UINT resultData =
+			GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
+				&raw, &rawSize, sizeof(RAWINPUTHEADER));
+
+		mouseDeltaX = raw.data.mouse.lLastX;
+		mouseDeltaY = raw.data.mouse.lLastY;
+	}
+	break;
+
+
 	case WM_KEYDOWN:
 		m_inputHelper.SetInputState((size_t)wParam, true);
 		break;
@@ -146,7 +161,6 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	case WM_ACTIVATE:
 	case WM_ACTIVATEAPP:
-	case WM_INPUT:
 	case WM_MOUSEMOVE:
 	{
 		bMouseFlag = true;

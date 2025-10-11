@@ -19,7 +19,9 @@ Core::SimpleApp::SimpleApp()
 	:BaseApp(),
 	m_eyePosition(Vector3(0, 0, -3)),
 	m_eyeDirection(Vector3(0, 0, 1)),
+	m_baseEyeDirection(Vector3(0, 0, 1)),
 	m_upDirection(Vector3(0, 1, 0)),
+	m_baseUpDirection(Vector3(0, 1, 0)),
 	m_rightDirection(Vector3(1, 0, 0))
 {
 }
@@ -28,7 +30,9 @@ Core::SimpleApp::SimpleApp(const int width, const int height)
 	:BaseApp(width, height),
 	m_eyePosition(Vector3(0, 0, -3)),
 	m_eyeDirection(Vector3(0, 0, 1)),
+	m_baseEyeDirection(Vector3(0, 0, 1)),
 	m_upDirection(Vector3(0, 1, 0)),
+	m_baseUpDirection(Vector3(0, 1, 0)),
 	m_rightDirection(Vector3(1, 0, 0))
 {
 	m_aspectRatio = width / (float)height;
@@ -190,21 +194,57 @@ void Core::SimpleApp::OnResize()
 
 void Core::SimpleApp::Update(float deltaTime)
 {
-	// local
+	// set cursor pos center
+	GetWindowRect(m_mainWnd, &windowRect);
+	int x = (windowRect.right + windowRect.left) / 2;
+	int y = (windowRect.bottom + windowRect.top) / 2;
+	SetCursorPos(x, y);
+
 	localConstant.model.m[3][2] = m_zValue;
-	
+
+	float delX = mouseDeltaX * mouseSpeed;
+	float delY = mouseDeltaY * mouseSpeed;
+	xAngle += delX;
+	if (xAngle >= 360) {
+		xAngle -= 360;
+	}
+	if (xAngle <= -360) {
+		xAngle += 360;
+	}
+
+	float xRadian = DirectX::XMConvertToRadians(xAngle);
+
+	m_eyeRotation = DirectX::XMMatrixRotationY(xRadian);
+
+	m_eyeDirection = DirectX::SimpleMath::Vector3::Transform(m_baseEyeDirection, m_eyeRotation);
+	m_rightDirection = m_baseUpDirection.Cross(m_eyeDirection);;
+
+	if (yAngle + delY >= maxYAngle)
+		delY = maxYAngle - yAngle;
+	else if (yAngle + delY <= minYAngle)
+		delY = minYAngle - yAngle;
+
+	yAngle += delY;
+	//std::cout << yAngle << '\n';
+	float yRadian = DirectX::XMConvertToRadians(yAngle);
+
+
+	m_eyeRotation = DirectX::XMMatrixRotationAxis(m_rightDirection, yRadian);
+	m_eyeDirection = DirectX::SimpleMath::Vector3::Transform(m_eyeDirection, m_eyeRotation);
+	m_upDirection = m_eyeDirection.Cross(m_rightDirection);
+
 	// global
 	m_eyePosition += m_inputHelper.ExecuteCommands(deltaTime, m_eyeDirection, m_upDirection, m_rightDirection);
 
 	globalConstant.view = XMMatrixLookToLH(m_eyePosition, m_eyeDirection, m_upDirection);
-	
-	if (bMouseFlag)
-	{
-		bMouseFlag = false;
-		GetCursorPos(&mousePos);
-	}
+
+
 	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 	memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
+
+	mouseDeltaX = 0;
+	mouseDeltaY = 0;
+
 }
 
 void Core::SimpleApp::UpdateGUI(float deltaTime)
