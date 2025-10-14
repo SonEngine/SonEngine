@@ -54,6 +54,15 @@
     <ClCompile Include="InputHelper.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Actor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseApp.h">
@@ -116,10 +125,21 @@
     <ClInclude Include="Actor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultVS.hlsl" />
     <FxCompile Include="DefaultPS.hlsl" />
     <FxCompile Include="VideoPS.hlsl" />
+    <FxCompile Include="PhongVS.hlsl" />
+    <FxCompile Include="PhongPS.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PhongCommon.hlsli" />
   </ItemGroup>
 </Project>

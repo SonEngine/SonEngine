@@ -14,37 +14,33 @@ using namespace Graphics;
 using namespace Renderer;
 using namespace DirectX;
 using DirectX::SimpleMath::Vector3;
+using namespace DirectX::SimpleMath;
 
 Core::SimpleApp::SimpleApp()
-	:BaseApp(),
-	m_eyePosition(Vector3(0, 0, -3)),
-	m_eyeDirection(Vector3(0, 0, 1)),
-	m_baseEyeDirection(Vector3(0, 0, 1)),
-	m_upDirection(Vector3(0, 1, 0)),
-	m_baseUpDirection(Vector3(0, 1, 0)),
-	m_rightDirection(Vector3(1, 0, 0))
+	:BaseApp()
 {
+	m_aspectRatio = 1280.f / 720.f;
 }
 
 Core::SimpleApp::SimpleApp(const int width, const int height)
-	:BaseApp(width, height),
-	m_eyePosition(Vector3(0, 0, -3)),
-	m_eyeDirection(Vector3(0, 0, 1)),
-	m_baseEyeDirection(Vector3(0, 0, 1)),
-	m_upDirection(Vector3(0, 1, 0)),
-	m_baseUpDirection(Vector3(0, 1, 0)),
-	m_rightDirection(Vector3(1, 0, 0))
+	:BaseApp(width, height)
 {
 	m_aspectRatio = width / (float)height;
 }
 
 Core::SimpleApp::~SimpleApp()
 {
-
+	m_camera.reset();
 }
 
 bool Core::SimpleApp::InitDirectX()
 {
+	m_camera = std::make_shared<Camera>();
+	m_camera->SetSpeed(3.f);
+	m_camera->SetRotateSpeed(0.5f);
+
+	m_directionLight = std::make_shared<Light>();
+
 	UINT dxgiFactoryFlags = 0;
 
 	// Enable the debug layer
@@ -119,6 +115,8 @@ bool Core::SimpleApp::InitDirectX()
 
 	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
 
+
+
 	return true;
 }
 
@@ -150,7 +148,6 @@ bool Core::SimpleApp::InitGUI()
 		m_guiFontHeap.Get(),
 		m_guiFontHeap->GetCPUDescriptorHandleForHeapStart(),
 		m_guiFontHeap->GetGPUDescriptorHandleForHeapStart());
-
 
 	return true;
 }
@@ -194,86 +191,76 @@ void Core::SimpleApp::OnResize()
 
 void Core::SimpleApp::Update(float deltaTime)
 {
-	// set cursor pos center
-	GetWindowRect(m_mainWnd, &windowRect);
-	int x = (windowRect.right + windowRect.left) / 2;
-	int y = (windowRect.bottom + windowRect.top) / 2;
-	SetCursorPos(x, y);
+	if (isFocused)
+	{
+		// set cursor pos center
+		GetWindowRect(m_mainWnd, &windowRect);
+		int x = (windowRect.right + windowRect.left) / 2;
+		int y = (windowRect.bottom + windowRect.top) / 2;
+		SetCursorPos(x, y);
 
-	localConstant.model.m[3][2] = m_zValue;
+		// gui test
+		localConstant.model.m[3][2] = m_zValue;
 
-	float delX = mouseDeltaX * mouseSpeed;
-	float delY = mouseDeltaY * mouseSpeed;
-	xAngle += delX;
-	if (xAngle >= 360) {
-		xAngle -= 360;
+		// update camera
+		m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY);
+		m_camera->UpdateCameraPosition(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
+
+		// update consatant
+		globalConstant.view = m_camera->GetViewMatrix();
+
+		phongGC.view = globalConstant.view;
+		phongGC.cameraPos = ToVector4(m_camera->GetPosition(), 0.f);
+		phongGC.cameraDir = ToVector4(m_camera->GetFrontDirection(), 0.f);
+		phongGC.DirectionLightPos = ToVector4(m_directionLight->GetPosition(), 0.f);
+		phongGC.DirectionLightDir = ToVector4(m_directionLight->GetFrontDirection(), 0.f);
+
+		memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
+		memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
+		memcpy(pPhongCB, &phongGC, sizeof(PhongGlobalConstant));
+
+		// reset mouse
+		mouseDeltaX = 0;
+		mouseDeltaY = 0;
 	}
-	if (xAngle <= -360) {
-		xAngle += 360;
-	}
-
-	float xRadian = DirectX::XMConvertToRadians(xAngle);
-
-	m_eyeRotation = DirectX::XMMatrixRotationY(xRadian);
-
-	m_eyeDirection = DirectX::SimpleMath::Vector3::Transform(m_baseEyeDirection, m_eyeRotation);
-	m_rightDirection = m_baseUpDirection.Cross(m_eyeDirection);;
-
-	if (yAngle + delY >= maxYAngle)
-		delY = maxYAngle - yAngle;
-	else if (yAngle + delY <= minYAngle)
-		delY = minYAngle - yAngle;
-
-	yAngle += delY;
-	//std::cout << yAngle << '\n';
-	float yRadian = DirectX::XMConvertToRadians(yAngle);
-
-
-	m_eyeRotation = DirectX::XMMatrixRotationAxis(m_rightDirection, yRadian);
-	m_eyeDirection = DirectX::SimpleMath::Vector3::Transform(m_eyeDirection, m_eyeRotation);
-	m_upDirection = m_eyeDirection.Cross(m_rightDirection);
-
-	// global
-	m_eyePosition += m_inputHelper.ExecuteCommands(deltaTime, m_eyeDirection, m_upDirection, m_rightDirection);
-
-	globalConstant.view = XMMatrixLookToLH(m_eyePosition, m_eyeDirection, m_upDirection);
-
-
-	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
-	memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
-
-	mouseDeltaX = 0;
-	mouseDeltaY = 0;
-
 }
 
 void Core::SimpleApp::UpdateGUI(float deltaTime)
 {
 	ImGui::DragFloat("zValue", &m_zValue, 1.f, 0.f, 10.f);
-	std::string str = "x : ";
-	str += std::to_string(mousePos.x);
-	str += ", y : ";
-	str += std::to_string(mousePos.y);
+	std::string str = "FPS : ";
+	str += std::to_string(int(1 / deltaTime));
 	ImGui::Text(str.c_str());
 }
 
 void Core::SimpleApp::Render(float deltaTime)
 {
-	RenderScene();
+	RenderScene("phongPSO");
 }
 
-void  Core::SimpleApp::RenderScene()
+void  Core::SimpleApp::RenderScene(const std::string& psoName)
 {
+	GraphicsPSO pso;
+	if (m_PSOs.find(psoName) != m_PSOs.end())
+	{
+		pso = m_PSOs[psoName];
+	}
+	else
+	{
+		pso = m_PSOs["defaultPSO"];
+	}
+
+
 	m_commandAllocator->Reset();
-	m_commandList->Reset(m_commandAllocator.Get(), sm_PSOs[0].GetPSO());
+	m_commandList->Reset(m_commandAllocator.Get(), pso.GetPSO());
 
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 	m_commandList->RSSetViewports(1, &m_viewport);
 
 	m_commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	m_commandList->SetPipelineState(sm_PSOs[0].GetPSO());
-	m_commandList->SetGraphicsRootSignature(sm_PSOs[0].GetRootSignature()->GetSignature());
+	m_commandList->SetPipelineState(pso.GetPSO());
+	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
 
 
 	m_commandList->ResourceBarrier(
@@ -288,7 +275,7 @@ void  Core::SimpleApp::RenderScene()
 	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, nullptr);
 
 	m_commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
-	m_commandList->SetGraphicsRootConstantBufferView(2, m_globalCB->GetGPUVirtualAddress());
+	m_commandList->SetGraphicsRootConstantBufferView(2, m_phongGCB->GetGPUVirtualAddress());
 
 	ID3D12DescriptorHeap* heaps[] = {
 		m_texturesHeap.Get()
@@ -460,8 +447,13 @@ void Core::SimpleApp::BuildConstantBuffers()
 		reinterpret_cast<void**>(&pGlobalConstant)
 	);
 
-	//localConstant.model.m[3][0] = 1/60.f;
-	//localConstant.model = localConstant.model.Transpose();
+	utility->CreateConstantBuffer(
+		sizeof(PhongGlobalConstant),
+		m_phongGCB,
+		reinterpret_cast<void**>(&pPhongCB)
+	);
+
+	// Initalize Constant Buffers
 
 	memcpy(
 		pLocalConstant,
@@ -469,22 +461,38 @@ void Core::SimpleApp::BuildConstantBuffers()
 		sizeof(LocalConstant)
 	);
 
+
 	m_fovRadians = XMConvertToRadians(m_fovDegrees);
 	globalConstant.proj = XMMatrixPerspectiveFovLH(
 		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
+	globalConstant.view = m_camera->GetViewMatrix();
 
 	memcpy(
 		pGlobalConstant,
 		&globalConstant,
-		sizeof(LocalConstant)
+		sizeof(GlobalConstant)
 	);
 
+	m_fovRadians = XMConvertToRadians(m_fovDegrees);
+	phongGC.proj = XMMatrixPerspectiveFovLH(
+		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
+	phongGC.view = m_camera->GetViewMatrix();
+
+	phongGC.cameraPos = ToVector4(m_camera->GetPosition(), 0.f);
+	phongGC.cameraDir = ToVector4(m_camera->GetFrontDirection(), 0.f);
+	phongGC.DirectionLightPos = ToVector4(m_directionLight->GetPosition(), 0.f);
+	phongGC.DirectionLightDir = ToVector4(m_directionLight->GetFrontDirection(), 0.f);
+
+	memcpy(
+		pPhongCB,
+		&phongGC,
+		sizeof(PhongGlobalConstant)
+	);
 
 }
 
 void Core::SimpleApp::CreateTextures()
 {
-
 	ResourceUploadBatch resourceUpload(m_device.Get());
 	resourceUpload.Begin();
 
@@ -530,7 +538,6 @@ void Core::SimpleApp::FlushCommands()
 		m_fence->SetEventOnCompletion(m_currentFence, eventHandle);
 
 		WaitForSingleObject(eventHandle, INFINITE);
-
 		CloseHandle(eventHandle);
 	}
 }

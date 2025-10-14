@@ -37,6 +37,9 @@ namespace Core {
         virtual void RenderGUI(float deltaTime) = 0;
         virtual void Finalize(float deltaTime) = 0;
 
+    protected:
+        bool IsWindowFocused();
+
     public:
         static BaseApp* m_appPtr;
         Core::Timer m_timer;
@@ -46,10 +49,10 @@ namespace Core {
         int m_width;
         int m_height;
         HWND m_mainWnd;
+        bool isFocused = true;
 
     protected:
         bool bMouseFlag = false;
-        POINT mousePos;
         int mouseDeltaX = 0;
         int mouseDeltaY = 0;
     };

@@ -57,5 +57,7 @@ float4 MakeCheckPattern(int c, float2 inputUV)
 
 float4 main(psInput input) : SV_TARGET
 {
-    return MakeCheckPattern(7, input.uv);
+    //return MakeCheckPattern(7, input.uv);
+    
+    return float4(1, 1, 1, 1);
 }

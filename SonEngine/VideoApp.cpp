@@ -264,7 +264,7 @@ void Core::VideoApp::Render(float deltaTime)
 void  Core::VideoApp::RenderScene()
 {
 	m_commandAllocator->Reset();
-	GraphicsPSO pso = sm_PSOs[0];
+	GraphicsPSO pso = m_PSOs["videoPSO"];
 	m_commandList->Reset(m_commandAllocator.Get(), pso.GetPSO());
 
 

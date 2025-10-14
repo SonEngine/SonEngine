@@ -3,6 +3,8 @@
 #include "BaseApp.h"
 #include "Renderer.h"
 #include "Constants.h"
+#include "Camera.h"
+#include "Light.h"
 #include <array>
 
 class StaticMesh;
@@ -31,7 +33,7 @@ namespace Core {
 		virtual void UpdateGUI(float deltaTime) override;
 
 		virtual void Render(float deltaTime) override;
-		void RenderScene();
+		void RenderScene(const std::string & psoName);
 		virtual void RenderGUI(float deltaTime) override;
 
 		// Fin
@@ -108,14 +110,26 @@ namespace Core {
 	private:
 
 		LocalConstant localConstant;
-		GlobalConstant globalConstant;
 
+		// Global Constant
+		GlobalConstant globalConstant;
+		PhongGlobalConstant phongGC;
+
+		// Local Constant Buffers
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_localCB;
+
+		// Global Constant Buffers
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_globalCB;
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_phongGCB;
+
+		// Texture Buffers
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_texture;
 
+		// ConstantBuffer Pointers
+		// cpu에서 gpu 갱신 시 사용
 		void* pLocalConstant = nullptr;
 		void* pGlobalConstant = nullptr;
+		void* pPhongCB = nullptr;
 
 	private:
 		float m_aspectRatio;
@@ -136,21 +150,8 @@ namespace Core {
 
 		// character
 	private:
-		DirectX::SimpleMath::Vector3 m_eyePosition;
-		DirectX::SimpleMath::Vector3 m_baseEyeDirection;
-		DirectX::SimpleMath::Vector3 m_eyeDirection;
-		DirectX::SimpleMath::Vector3 m_upDirection;
-		DirectX::SimpleMath::Vector3 m_baseUpDirection;
-		DirectX::SimpleMath::Vector3 m_rightDirection;
-
-		DirectX::SimpleMath::Matrix m_eyeRotation;
-
-		float mouseSpeed = 0.5f;
-		float yAngle = 0.f;
-		float xAngle = 0.f;
-
-		float maxYAngle = 89.f;
-		float minYAngle = -89.f;
+		std::shared_ptr<Camera> m_camera;
+		std::shared_ptr<Light> m_directionLight;
 
 	private:
 		RECT windowRect;

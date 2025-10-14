@@ -4,7 +4,11 @@
 
 #include "CompiledShaders/DefaultPS.h"
 #include "CompiledShaders/DefaultVS.h"
+
 #include "CompiledShaders/VideoPS.h"
+
+#include "CompiledShaders/PhongVS.h"
+#include "CompiledShaders/PhongPS.h"
 
 using namespace Graphics;
 using namespace Renderer;
@@ -12,13 +16,14 @@ using namespace Renderer;
 
 namespace Renderer
 {
-    std::vector<GraphicsPSO> sm_PSOs;
+    std::map<std::string, GraphicsPSO> m_PSOs;
 }
 
 void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 {
     GraphicsPSO defaultPSO(L"default PSO");
-    GraphicsPSO vidoePSO(L"video PSO");
+    GraphicsPSO videoPSO(L"video PSO");
+    GraphicsPSO phongPSO(L"phong PSO");
 
     D3D12_INPUT_ELEMENT_DESC posOnlyIL[] =
     {
@@ -41,25 +46,35 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     defaultPSO.SetSampleMask(UINT_MAX);
     defaultPSO.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, 1, 0);
     defaultPSO.Finalize(device);
+    m_PSOs["defaultPSO"] = defaultPSO;
 
-    sm_PSOs.push_back(defaultPSO);
+    videoPSO.SetInputLayout(_countof(simpleIL), simpleIL);
+    videoPSO.SetRootSignature(g_videoRS);
+    videoPSO.SetRasterizerState(rasterizerDefault);
+    videoPSO.SetBlendState(blendNoColorWrite);
+    videoPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+    videoPSO.SetVertexShader(g_pDefaultVS, sizeof(g_pDefaultVS));
+    videoPSO.SetPixelShader(g_pVideoPS, sizeof(g_pVideoPS));
+    videoPSO.SetSampleMask(UINT_MAX);
+    videoPSO.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, 1, 0);
+    videoPSO.Finalize(device);
+    m_PSOs["videoPSO"] = videoPSO;
 
-    vidoePSO.SetInputLayout(_countof(simpleIL), simpleIL);
-    vidoePSO.SetRootSignature(g_videoRS);
-    vidoePSO.SetRasterizerState(rasterizerDefault);
-    vidoePSO.SetBlendState(blendNoColorWrite);
-    vidoePSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
-    vidoePSO.SetVertexShader(g_pDefaultVS, sizeof(g_pDefaultVS));
-    vidoePSO.SetPixelShader(g_pVideoPS, sizeof(g_pVideoPS));
-    vidoePSO.SetSampleMask(UINT_MAX);
-    vidoePSO.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, 1, 0);
-    vidoePSO.Finalize(device);
-    
-    sm_PSOs.push_back(vidoePSO);
+    phongPSO.SetInputLayout(_countof(simpleIL), simpleIL);
+    phongPSO.SetRootSignature(g_commonRS);
+    phongPSO.SetRasterizerState(rasterizerDefault);
+    phongPSO.SetBlendState(blendNoColorWrite);
+    phongPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+    phongPSO.SetVertexShader(g_pPhongVS, sizeof(g_pPhongVS));
+    phongPSO.SetPixelShader(g_pPhongPS, sizeof(g_pPhongPS));
+    phongPSO.SetSampleMask(UINT_MAX);
+    phongPSO.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, 1, 0);
+    phongPSO.Finalize(device);
+    m_PSOs["phongPSO"] = phongPSO;
 
 }
 
-ID3D12PipelineState* Renderer::GetPSO(UINT index)
+ID3D12PipelineState* Renderer::GetPSO(std::string psoName)
 {
-    return sm_PSOs[index].GetPSO();
+    return m_PSOs[psoName].GetPSO();
 }

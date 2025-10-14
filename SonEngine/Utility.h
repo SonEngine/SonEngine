@@ -8,6 +8,7 @@
 #include "d3d12.h"
 #include "d3dx12.h"
 #include "dxgi1_6.h"
+#include <directxtk12/SimpleMath.h>
 
 #define D3D12_GPU_VIRTUAL_ADDRESS_NULL      ((D3D12_GPU_VIRTUAL_ADDRESS)0)
 #define D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN   ((D3D12_GPU_VIRTUAL_ADDRESS)-1)
@@ -37,6 +38,11 @@ inline std::wstring AnsiToWString(const std::string& str)
             __debugbreak(); \
         }
 #endif
+
+inline DirectX::SimpleMath::Vector4 ToVector4(const DirectX::SimpleMath::Vector3& v, float w = 0.f)
+{
+	return DirectX::SimpleMath::Vector4(v.x, v.y, v.z, w);
+}
 
 class DxException
 {

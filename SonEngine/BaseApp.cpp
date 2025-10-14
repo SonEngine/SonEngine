@@ -16,6 +16,7 @@ BaseApp::BaseApp()
 	if (m_appPtr != nullptr) {
 		delete m_appPtr;
 	}
+
 	m_appPtr = this;
 	m_timer = Timer();
 }
@@ -116,6 +117,11 @@ bool BaseApp::InitWindow()
 	return true;
 }
 
+bool Core::BaseApp::IsWindowFocused()
+{
+	return (GetForegroundWindow() == m_mainWnd);
+}
+
 LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -160,6 +166,19 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_ACTIVATE:
+		if (LOWORD(wParam) == WA_INACTIVE)
+		{
+			// 포커스 잃음
+			isFocused = false;
+			ShowCursor(true);
+		}
+		else
+		{
+			// 포커스 얻음 
+			isFocused = true;
+			ShowCursor(false);
+		}
+		return 0;
 	case WM_ACTIVATEAPP:
 	case WM_MOUSEMOVE:
 	{
