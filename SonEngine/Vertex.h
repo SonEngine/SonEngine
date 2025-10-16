@@ -13,3 +13,9 @@ struct SimpleVertex {
 	Vector3 position;
 	Vector2 uv;
 };
+
+struct Vertex {
+	Vector3 position;
+	Vector3 normal;
+	Vector2 uv;
+};

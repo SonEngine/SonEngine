@@ -106,6 +106,8 @@ namespace Core {
 	private:
 
 		std::shared_ptr<StaticMesh> mesh;
+	
+		std::vector< std::shared_ptr<StaticMesh>> phongMeshes;
 
 	private:
 
@@ -155,5 +157,9 @@ namespace Core {
 
 	private:
 		RECT windowRect;
+
+	private:
+		int selectedPSOIdx = 1;
+		std::string renderPSO = "phongPSO";
 	};
 }

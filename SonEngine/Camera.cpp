@@ -42,5 +42,5 @@ void Camera::UpdateCameraRotation(const int & mouseDeltaX, const int& mouseDelta
 
 	m_rotation = DirectX::XMMatrixRotationAxis(m_rightDirection, yRadian);
 	m_frontDirection = DirectX::SimpleMath::Vector3::Transform(m_frontDirection, m_rotation);
-	m_upDirection = m_frontDirection.Cross(m_rightDirection);
+	//m_upDirection = m_frontDirection.Cross(m_rightDirection);
 }

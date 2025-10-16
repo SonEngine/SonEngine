@@ -38,7 +38,7 @@ bool Core::SimpleApp::InitDirectX()
 	m_camera = std::make_shared<Camera>();
 	m_camera->SetSpeed(3.f);
 	m_camera->SetRotateSpeed(0.5f);
-
+	m_camera->SetPosition(Vector3(0, 1, 0.f));
 	m_directionLight = std::make_shared<Light>();
 
 	UINT dxgiFactoryFlags = 0;
@@ -191,7 +191,7 @@ void Core::SimpleApp::OnResize()
 
 void Core::SimpleApp::Update(float deltaTime)
 {
-	if (isFocused)
+	if (isFocused && isFPSMode)
 	{
 		// set cursor pos center
 		GetWindowRect(m_mainWnd, &windowRect);
@@ -227,15 +227,31 @@ void Core::SimpleApp::Update(float deltaTime)
 
 void Core::SimpleApp::UpdateGUI(float deltaTime)
 {
-	ImGui::DragFloat("zValue", &m_zValue, 1.f, 0.f, 10.f);
 	std::string str = "FPS : ";
 	str += std::to_string(int(1 / deltaTime));
 	ImGui::Text(str.c_str());
+
+	ImGui::Text("Select PSO Mode");
+	if (ImGui::BeginCombo("pso combo", psoNames[selectedPSOIdx].c_str()))
+	{
+		for (int i = 0; i < psoNames.size(); i++)
+		{
+			bool isSelected = (selectedPSOIdx == i);
+			if (ImGui::Selectable(psoNames[i].c_str(), isSelected)) {
+				selectedPSOIdx = i;
+				renderPSO = psoNames[i];
+			}
+			if (isSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
 }
 
 void Core::SimpleApp::Render(float deltaTime)
 {
-	RenderScene("phongPSO");
+	RenderScene(renderPSO);
 }
 
 void  Core::SimpleApp::RenderScene(const std::string& psoName)
@@ -274,9 +290,7 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 	m_commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
 	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, nullptr);
 
-	m_commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
-	m_commandList->SetGraphicsRootConstantBufferView(2, m_phongGCB->GetGPUVirtualAddress());
-
+	
 	ID3D12DescriptorHeap* heaps[] = {
 		m_texturesHeap.Get()
 	};
@@ -284,7 +298,21 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 	m_commandList->SetDescriptorHeaps(1, heaps);
 	m_commandList->SetGraphicsRootDescriptorTable(0, m_texturesHeap->GetGPUDescriptorHandleForHeapStart());
 
-	mesh->Render(m_commandList.Get());
+	m_commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
+
+	if (renderPSO == "defaultPSO")
+	{
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_globalCB->GetGPUVirtualAddress());
+		mesh->Render(m_commandList.Get());
+	}
+	else if (renderPSO == "phongPSO")
+	{
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_phongGCB->GetGPUVirtualAddress());
+		for (auto & mesh : phongMeshes)
+		{
+			mesh->Render(m_commandList.Get());
+		}
+	}
 
 	m_commandList->ResourceBarrier(
 		1,
@@ -423,6 +451,13 @@ void Core::SimpleApp::BuildGeometry()
 
 	mesh = std::make_shared<StaticMesh>();
 	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleCube(2, 2, 2));
+	
+	//std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
+	//plane->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakePlane(4, 4, 2));
+	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
+	sphere->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
+
+	phongMeshes.push_back(sphere);
 
 	m_commandList->Close();
 
@@ -496,15 +531,8 @@ void Core::SimpleApp::CreateTextures()
 	ResourceUploadBatch resourceUpload(m_device.Get());
 	resourceUpload.Begin();
 
-	ThrowIfFailed(CreateDDSTextureFromFile(m_device.Get(), resourceUpload, L"Textures/bricks.dds", m_texture.GetAddressOf()));
-
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = m_texture->GetDesc().Format;
-
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Texture2D.MipLevels = m_texture->GetDesc().MipLevels;
-	srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	ThrowIfFailed(CreateDDSTextureFromFile(m_device.Get(), resourceUpload, L"Textures/8k_earth_srgb.dds", m_texture.GetAddressOf()));
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = utility->CreateSRVDesc(m_texture.Get());
 
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE textureHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());

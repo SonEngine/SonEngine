@@ -17,6 +17,7 @@ using namespace Renderer;
 namespace Renderer
 {
     std::map<std::string, GraphicsPSO> m_PSOs;
+    std::vector<std::string> psoNames;
 }
 
 void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -36,6 +37,13 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 
     };
+    D3D12_INPUT_ELEMENT_DESC phongIL[] =
+    {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+
+    };
     defaultPSO.SetInputLayout(_countof(simpleIL), simpleIL);
     defaultPSO.SetRootSignature(g_commonRS);
     defaultPSO.SetRasterizerState(rasterizerDefault);
@@ -47,6 +55,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     defaultPSO.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, 1, 0);
     defaultPSO.Finalize(device);
     m_PSOs["defaultPSO"] = defaultPSO;
+    psoNames.push_back("defaultPSO");
 
     videoPSO.SetInputLayout(_countof(simpleIL), simpleIL);
     videoPSO.SetRootSignature(g_videoRS);
@@ -60,7 +69,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     videoPSO.Finalize(device);
     m_PSOs["videoPSO"] = videoPSO;
 
-    phongPSO.SetInputLayout(_countof(simpleIL), simpleIL);
+    phongPSO.SetInputLayout(_countof(phongIL), phongIL);
     phongPSO.SetRootSignature(g_commonRS);
     phongPSO.SetRasterizerState(rasterizerDefault);
     phongPSO.SetBlendState(blendNoColorWrite);
@@ -71,7 +80,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     phongPSO.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, 1, 0);
     phongPSO.Finalize(device);
     m_PSOs["phongPSO"] = phongPSO;
-
+    psoNames.push_back("phongPSO");
 }
 
 ID3D12PipelineState* Renderer::GetPSO(std::string psoName)

@@ -50,6 +50,7 @@ namespace Core {
         int m_height;
         HWND m_mainWnd;
         bool isFocused = true;
+        bool isFPSMode = true;
 
     protected:
         bool bMouseFlag = false;

@@ -71,6 +71,19 @@ namespace GraphicsUtils {
 		ThrowIfFailed(buffer->Map(0, &range, pConstant));
 	}
 
+	D3D12_SHADER_RESOURCE_VIEW_DESC Utility::CreateSRVDesc(ID3D12Resource* resource)
+	{
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = resource->GetDesc().Format;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Texture2D.MipLevels = resource->GetDesc().MipLevels;
+		srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+		return srvDesc;
+
+	}
+
 	ByteArray ReadFileHelper(const wstring& fileName)
 	{
 		ByteArray NullFile = make_shared<vector<byte> >(vector<byte>());

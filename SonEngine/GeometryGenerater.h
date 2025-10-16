@@ -5,8 +5,11 @@
 
 struct GeometryGenerator
 {
-	static Mesh<SimpleVertex, uint16_t> MakeSimpleBox(int x, int y);
 	static Mesh<SimpleVertex, uint16_t> MakeSimpleRect(float x, float y);
 	static Mesh<SimpleVertex, uint16_t> MakeSimpleCube(float x, float y, float z);
+
+	static Mesh<Vertex, uint16_t> MakePlane(float x, float z, int c);
+
+	static Mesh<Vertex, uint16_t> GeometryGenerator::MakeSphere(int c, float r);
 
 };
