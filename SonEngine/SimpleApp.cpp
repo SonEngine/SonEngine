@@ -77,6 +77,9 @@ bool Core::SimpleApp::InitDirectX()
 
 	ThrowIfFailed(device.As(&m_device));
 
+	Graphics::InitializeCommonState(m_device);
+	Renderer::Initialize(m_device);
+
 	CreateCommandObjects();
 	CreateSwapChain();
 
@@ -103,8 +106,7 @@ bool Core::SimpleApp::InitDirectX()
 	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
 	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)m_width, (LONG)m_height);
 
-	Graphics::InitializeCommonState(m_device);
-	Renderer::Initialize(m_device);
+
 
 	m_currentFence = 0;
 	m_device->CreateFence(m_currentFence, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
@@ -144,7 +146,7 @@ bool Core::SimpleApp::InitGUI()
 	// Setup Platform/Renderer backends
 	ImGui_ImplWin32_Init(m_mainWnd);
 
-	ImGui_ImplDX12_Init(m_device.Get(), m_swapChainBufferCount, m_backbufferFormat,
+	ImGui_ImplDX12_Init(m_device.Get(), m_swapChainBufferCount, backbufferFormat,
 		m_guiFontHeap.Get(),
 		m_guiFontHeap->GetCPUDescriptorHandleForHeapStart(),
 		m_guiFontHeap->GetGPUDescriptorHandleForHeapStart());
@@ -425,7 +427,7 @@ void Core::SimpleApp::CreateSwapChain()
 	swapChainDesc.BufferCount = m_swapChainBufferCount;
 	swapChainDesc.Width = m_width;
 	swapChainDesc.Height = m_height;
-	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.Format = backbufferFormat;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.SampleDesc.Count = 1;
@@ -528,12 +530,19 @@ void Core::SimpleApp::BuildConstantBuffers()
 
 void Core::SimpleApp::CreateTextures()
 {
+	textureFolderPath = "Build/";
+	m_textureLoader = std::make_shared<TextureLoader>(textureFolderPath);
+	m_textureLoader->LoadIdx();
+
 	ResourceUploadBatch resourceUpload(m_device.Get());
 	resourceUpload.Begin();
 
-	ThrowIfFailed(CreateDDSTextureFromFile(m_device.Get(), resourceUpload, L"Textures/8k_earth_srgb.dds", m_texture.GetAddressOf()));
+	//ThrowIfFailed(CreateDDSTextureFromFile(m_device.Get(), resourceUpload, L"Textures/earth.dds", m_texture.GetAddressOf()));
+	ThrowIfFailed(CreateDDSTextureFromFileEx(m_device.Get(), resourceUpload, L"Textures/earth_Albedo.dds", 0,
+		D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
+		DDS_LOADER_MIP_AUTOGEN | DDS_LOADER_FORCE_SRGB,
+		m_texture.ReleaseAndGetAddressOf()));
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = utility->CreateSRVDesc(m_texture.Get());
-
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE textureHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());
 	m_device->CreateShaderResourceView(m_texture.Get(), &srvDesc, textureHandle);

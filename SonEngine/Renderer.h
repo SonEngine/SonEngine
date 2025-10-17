@@ -12,6 +12,7 @@ namespace Renderer
 {
     extern std::map<std::string, GraphicsPSO> m_PSOs;
     extern std::vector<std::string> psoNames;
+    extern DXGI_FORMAT backbufferFormat;
 
     void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device);
     void Shutdown(void);

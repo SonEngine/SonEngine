@@ -5,6 +5,8 @@
 #include "Constants.h"
 #include "Camera.h"
 #include "Light.h"
+#include "TextureLoader.h"
+
 #include <array>
 
 class StaticMesh;
@@ -96,12 +98,7 @@ namespace Core {
 		D3D12_RECT m_scissorRect;
 
 	private:
-
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_swapChainResources[m_swapChainBufferCount];
-
-	private:
-
-		DXGI_FORMAT m_backbufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	private:
 
@@ -161,5 +158,10 @@ namespace Core {
 	private:
 		int selectedPSOIdx = 1;
 		std::string renderPSO = "phongPSO";
+
+
+	private:
+		std::shared_ptr<TextureLoader> m_textureLoader;
+		std::string textureFolderPath;
 	};
 }

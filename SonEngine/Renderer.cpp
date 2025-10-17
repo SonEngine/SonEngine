@@ -18,6 +18,7 @@ namespace Renderer
 {
     std::map<std::string, GraphicsPSO> m_PSOs;
     std::vector<std::string> psoNames;
+    DXGI_FORMAT backbufferFormat;
 }
 
 void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -25,6 +26,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     GraphicsPSO defaultPSO(L"default PSO");
     GraphicsPSO videoPSO(L"video PSO");
     GraphicsPSO phongPSO(L"phong PSO");
+    backbufferFormat  = DXGI_FORMAT_B8G8R8A8_UNORM;
 
     D3D12_INPUT_ELEMENT_DESC posOnlyIL[] =
     {
@@ -52,7 +54,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     defaultPSO.SetVertexShader(g_pDefaultVS, sizeof(g_pDefaultVS));
     defaultPSO.SetPixelShader(g_pDefaultPS,sizeof(g_pDefaultPS));
     defaultPSO.SetSampleMask(UINT_MAX);
-    defaultPSO.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, 1, 0);
+    defaultPSO.SetRenderTargetFormat(backbufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
     defaultPSO.Finalize(device);
     m_PSOs["defaultPSO"] = defaultPSO;
     psoNames.push_back("defaultPSO");
@@ -65,7 +67,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     videoPSO.SetVertexShader(g_pDefaultVS, sizeof(g_pDefaultVS));
     videoPSO.SetPixelShader(g_pVideoPS, sizeof(g_pVideoPS));
     videoPSO.SetSampleMask(UINT_MAX);
-    videoPSO.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, 1, 0);
+    videoPSO.SetRenderTargetFormat(backbufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
     videoPSO.Finalize(device);
     m_PSOs["videoPSO"] = videoPSO;
 
@@ -77,7 +79,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     phongPSO.SetVertexShader(g_pPhongVS, sizeof(g_pPhongVS));
     phongPSO.SetPixelShader(g_pPhongPS, sizeof(g_pPhongPS));
     phongPSO.SetSampleMask(UINT_MAX);
-    phongPSO.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, 1, 0);
+    phongPSO.SetRenderTargetFormat(backbufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
     phongPSO.Finalize(device);
     m_PSOs["phongPSO"] = phongPSO;
     psoNames.push_back("phongPSO");

@@ -63,6 +63,9 @@
     <ClCompile Include="Light.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="TextureLoader.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseApp.h">
@@ -131,6 +134,12 @@
     <ClInclude Include="Light.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="TextureLoader.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureGPUResource.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultVS.hlsl" />
@@ -141,5 +150,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Textures\earth_Albedo.dds">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="Textures\bricks_Albedo.dds">
+      <Filter>리소스 파일</Filter>
+    </Image>
   </ItemGroup>
 </Project>

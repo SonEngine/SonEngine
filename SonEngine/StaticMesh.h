@@ -5,6 +5,9 @@
 #include "wrl.h"
 #include "GraphicsCommon.h"
 #include "Mesh.h"
+#include "TextureGPUResource.h"
+
+
 class StaticMesh {
 
 public:
@@ -25,6 +28,9 @@ private:
 
 	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
 	D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
+
+	std::vector<TextureGPUResource> GPUResources;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_texturesHeap;
 
 	UINT m_indexCount = 0;
 };
