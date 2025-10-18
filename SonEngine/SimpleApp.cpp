@@ -130,11 +130,11 @@ bool Core::SimpleApp::InitGUI()
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	// io.Fonts->TexID = (ImTextureID)m_guiFont->GetSpriteSheet().ptr;
-
+	 
 	ImGui::StyleColorsLight();
 	const char* fontPath = "Fonts/Hack-Regular.ttf";
 	float fontSize = 15.0f;
-	// 폰트 로드
+	// 폰트 로드 
 	io.Fonts->AddFontFromFileTTF(fontPath, fontSize);
 
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
