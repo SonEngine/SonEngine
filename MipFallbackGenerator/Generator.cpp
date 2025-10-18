@@ -1,5 +1,5 @@
-// 1. dds, fallback ÆÄÀÏ »ı¼º
-// 2. bin, idx ÆÄÀÏ »ı¼º
+ï»¿// 1. dds, fallback íŒŒì¼ ìƒì„±
+// 2. bin, idx íŒŒì¼ ìƒì„±
 
 #include <DirectXTex.h>
 #include <filesystem>
@@ -125,7 +125,7 @@ bool GenerateDDS(const std::wstring& ddsPath, const std::wstring& fileName, cons
 		return false;
 	}
 
-	// fallback »ı¼º ÈÄ ÀúÀå
+	// fallback ìƒì„± í›„ ì €ì¥
 	const TexMetadata& meta = image.GetMetadata();
 	size_t mipCount = image.GetMetadata().mipLevels;
 
