@@ -5,8 +5,6 @@ VisualStudioVersion = 17.10.35013.160
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SonEngine", "SonEngine\SonEngine.vcxproj", "{CBDC3C7F-7A9F-4DB8-B1F2-4C0E29F78B50}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TextureCooker", "TextureCooker\TextureCooker.vcxproj", "{50DD6165-38A9-44F0-A75A-FD09BB2D2CCF}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MipFallbackGenerator", "MipFallbackGenerator\MipFallbackGenerator.vcxproj", "{ADF12CEF-ADBE-4D39-B474-830E334226C3}"
 EndProject
 Global
@@ -25,14 +23,6 @@ Global
 		{CBDC3C7F-7A9F-4DB8-B1F2-4C0E29F78B50}.Release|x64.Build.0 = Release|x64
 		{CBDC3C7F-7A9F-4DB8-B1F2-4C0E29F78B50}.Release|x86.ActiveCfg = Release|Win32
 		{CBDC3C7F-7A9F-4DB8-B1F2-4C0E29F78B50}.Release|x86.Build.0 = Release|Win32
-		{50DD6165-38A9-44F0-A75A-FD09BB2D2CCF}.Debug|x64.ActiveCfg = Debug|x64
-		{50DD6165-38A9-44F0-A75A-FD09BB2D2CCF}.Debug|x64.Build.0 = Debug|x64
-		{50DD6165-38A9-44F0-A75A-FD09BB2D2CCF}.Debug|x86.ActiveCfg = Debug|Win32
-		{50DD6165-38A9-44F0-A75A-FD09BB2D2CCF}.Debug|x86.Build.0 = Debug|Win32
-		{50DD6165-38A9-44F0-A75A-FD09BB2D2CCF}.Release|x64.ActiveCfg = Release|x64
-		{50DD6165-38A9-44F0-A75A-FD09BB2D2CCF}.Release|x64.Build.0 = Release|x64
-		{50DD6165-38A9-44F0-A75A-FD09BB2D2CCF}.Release|x86.ActiveCfg = Release|Win32
-		{50DD6165-38A9-44F0-A75A-FD09BB2D2CCF}.Release|x86.Build.0 = Release|Win32
 		{ADF12CEF-ADBE-4D39-B474-830E334226C3}.Debug|x64.ActiveCfg = Debug|x64
 		{ADF12CEF-ADBE-4D39-B474-830E334226C3}.Debug|x64.Build.0 = Debug|x64
 		{ADF12CEF-ADBE-4D39-B474-830E334226C3}.Debug|x86.ActiveCfg = Debug|Win32

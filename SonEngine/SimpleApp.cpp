@@ -530,9 +530,17 @@ void Core::SimpleApp::BuildConstantBuffers()
 
 void Core::SimpleApp::CreateTextures()
 {
-	textureFolderPath = "Build/";
-	m_textureLoader = std::make_shared<TextureLoader>(textureFolderPath);
+	texturePath = "Build/";
+	fallbackPath = "Build/Fallback/";
+	
+	DDSPath = "Textures/DDS/";
+	fallbackDDSPath = "Textures/Falback/";
+
+	m_textureLoader = std::make_shared<TextureLoader>(texturePath);
+	m_fallbackLoader = std::make_shared<TextureLoader>(fallbackPath);
+
 	m_textureLoader->LoadIdx();
+	m_fallbackLoader->LoadIdx();
 
 	ResourceUploadBatch resourceUpload(m_device.Get());
 	resourceUpload.Begin();

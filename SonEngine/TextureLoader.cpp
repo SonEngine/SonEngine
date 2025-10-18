@@ -15,8 +15,8 @@ TextureLoader::TextureLoader(std::string path)
 	:folder(path)
 {
 	count = 0;
-	binPath = folder + "/textures.bin";
-	idxPath = folder + "/textures.idx";
+	binPath = folder + "textures.bin";
+	idxPath = folder + "textures.idx";
 }
 
 void TextureLoader::LoadIdx()

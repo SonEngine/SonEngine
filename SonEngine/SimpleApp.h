@@ -162,6 +162,10 @@ namespace Core {
 
 	private:
 		std::shared_ptr<TextureLoader> m_textureLoader;
-		std::string textureFolderPath;
+		std::shared_ptr<TextureLoader> m_fallbackLoader;
+		std::string texturePath;
+		std::string fallbackPath;
+		std::string DDSPath;
+		std::string fallbackDDSPath;
 	};
 }
