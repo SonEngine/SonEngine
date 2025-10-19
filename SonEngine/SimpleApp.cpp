@@ -233,8 +233,10 @@ void Core::SimpleApp::UpdateGUI(float deltaTime)
 	str += std::to_string(int(1 / deltaTime));
 	ImGui::Text(str.c_str());
 
-	ImGui::Text("Select PSO Mode");
-	if (ImGui::BeginCombo("pso combo", psoNames[selectedPSOIdx].c_str()))
+	ImGui::Separator();
+	ImGui::Text("PSO Mode");
+	ImGui::SameLine();
+	if (ImGui::BeginCombo("##pso combo", psoNames[selectedPSOIdx].c_str()))
 	{
 		for (int i = 0; i < psoNames.size(); i++)
 		{
@@ -247,6 +249,27 @@ void Core::SimpleApp::UpdateGUI(float deltaTime)
 				ImGui::SetItemDefaultFocus();
 		}
 		ImGui::EndCombo();
+	}
+
+	//TODO 선택 기능 추가
+	if (selectedMesh != nullptr)
+	{
+		ImGui::Separator();
+		ImGui::Text("current mesh texture");
+		ImGui::SameLine();
+		if (ImGui::BeginCombo("##texture", selectedMesh->GetAlbedoTextureName().c_str()))
+		{
+			for (int i = 0; i < m_textureLoader->filenames.size(); i++)
+			{
+				bool isSelected = (selectedMesh->GetAlbedoTextureName() == m_textureLoader->filenames[i]);
+				if (ImGui::Selectable(m_textureLoader->filenames[i].c_str(), isSelected)) {
+					selectedMesh->SetAlbedoTexture(m_textureLoader->filenames[i]);
+				}
+				if (isSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
 	}
 
 }
@@ -294,25 +317,25 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 
 	
 	ID3D12DescriptorHeap* heaps[] = {
-		m_texturesHeap.Get()
+		m_textureLoader->GetHeap()
 	};
 
 	m_commandList->SetDescriptorHeaps(1, heaps);
-	m_commandList->SetGraphicsRootDescriptorTable(0, m_texturesHeap->GetGPUDescriptorHandleForHeapStart());
+	//m_commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(1));
 
 	m_commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
 
 	if (renderPSO == "defaultPSO")
 	{
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_globalCB->GetGPUVirtualAddress());
-		mesh->Render(m_commandList.Get());
+		mesh->Render(m_commandList.Get(), m_textureLoader.get());
 	}
 	else if (renderPSO == "phongPSO")
 	{
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_phongGCB->GetGPUVirtualAddress());
 		for (auto & mesh : phongMeshes)
 		{
-			mesh->Render(m_commandList.Get());
+			mesh->Render(m_commandList.Get(), m_textureLoader.get());
 		}
 	}
 
@@ -453,12 +476,13 @@ void Core::SimpleApp::BuildGeometry()
 
 	mesh = std::make_shared<StaticMesh>();
 	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleCube(2, 2, 2));
-	
+	mesh->SetAlbedoTexture("8k_earth_albedo");
+
 	//std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
 	//plane->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakePlane(4, 4, 2));
 	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
 	sphere->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
-
+	sphere->SetAlbedoTexture("8k_earth_albedo");
 	phongMeshes.push_back(sphere);
 
 	m_commandList->Close();
@@ -539,25 +563,26 @@ void Core::SimpleApp::CreateTextures()
 	m_textureLoader = std::make_shared<TextureLoader>(texturePath);
 	m_fallbackLoader = std::make_shared<TextureLoader>(fallbackPath);
 
-	m_textureLoader->LoadIdx();
-	m_fallbackLoader->LoadIdx();
+	m_textureLoader->LoadIdx(m_device);
+	m_fallbackLoader->LoadIdx(m_device);
+	m_textureLoader->LoadTextures(m_device, m_commandQueue);
 
-	ResourceUploadBatch resourceUpload(m_device.Get());
-	resourceUpload.Begin();
+	//ResourceUploadBatch resourceUpload(m_device.Get());
+	//resourceUpload.Begin();
 
-	//ThrowIfFailed(CreateDDSTextureFromFile(m_device.Get(), resourceUpload, L"Textures/earth.dds", m_texture.GetAddressOf()));
-	ThrowIfFailed(CreateDDSTextureFromFileEx(m_device.Get(), resourceUpload, L"Textures/earth_Albedo.dds", 0,
-		D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
-		DDS_LOADER_MIP_AUTOGEN | DDS_LOADER_FORCE_SRGB,
-		m_texture.ReleaseAndGetAddressOf()));
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = utility->CreateSRVDesc(m_texture.Get());
+	////ThrowIfFailed(CreateDDSTextureFromFile(m_device.Get(), resourceUpload, L"Textures/earth.dds", m_texture.GetAddressOf()));
+	//ThrowIfFailed(CreateDDSTextureFromFileEx(m_device.Get(), resourceUpload, L"Textures/earth_Albedo.dds", 0,
+	//	D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
+	//	DDS_LOADER_MIP_AUTOGEN | DDS_LOADER_FORCE_SRGB,
+	//	m_texture.ReleaseAndGetAddressOf()));
+	//D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = utility->CreateSRVDesc(m_texture.Get());
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE textureHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());
-	m_device->CreateShaderResourceView(m_texture.Get(), &srvDesc, textureHandle);
+	//CD3DX12_CPU_DESCRIPTOR_HANDLE textureHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());
+	//m_device->CreateShaderResourceView(m_texture.Get(), &srvDesc, textureHandle);
 
-	auto uploadResourcesFinished = resourceUpload.End(m_commandQueue.Get());
+	//auto uploadResourcesFinished = resourceUpload.End(m_commandQueue.Get());
 
-	uploadResourcesFinished.wait();
+	//uploadResourcesFinished.wait();
 
 }
 

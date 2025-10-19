@@ -167,5 +167,9 @@ namespace Core {
 		std::string fallbackPath;
 		std::string DDSPath;
 		std::string fallbackDDSPath;
+	
+	// gui에서 사용
+	private:
+		StaticMesh* selectedMesh = nullptr;
 	};
 }

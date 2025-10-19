@@ -42,7 +42,7 @@ void PackDDSTextures(const std::wstring& inputFolder, const std::wstring& buildF
 			info.size = size;
 
 			infos.push_back(info);
-
+			file.seekg(0);
 			std::vector<char> texture(size);
 			file.read(texture.data(), size);
 
