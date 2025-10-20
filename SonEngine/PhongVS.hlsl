@@ -16,7 +16,6 @@ psInput main(vsInput input)
     output.svPosition = position;
     output.uv = input.uv;
     
-    output.fog = distance(input.pos , gPhongGCB.cameraPos.xyz);
     output.normal = input.normal;
     return output;
 }
