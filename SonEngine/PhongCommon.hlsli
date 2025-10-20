@@ -28,5 +28,4 @@ struct psInput
     float4 svPosition : SV_Position;
     float2 uv : TEXCOORD;
     float3 normal : NORMAL;
-    float fog : FOG;
 };
