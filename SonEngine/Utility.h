@@ -98,6 +98,7 @@ namespace GraphicsUtils {
 			Microsoft::WRL::ComPtr<ID3D12Resource>& gpuBuffer,
 			Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer
 		);
+
 	};
 
 

@@ -55,7 +55,7 @@ void TextureLoader::LoadIdx(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 		idx.read(reinterpret_cast<char*>(&info.offset), sizeof(info.offset));
 		idx.read(reinterpret_cast<char*>(&info.size), sizeof(info.size));
 
-		std::cout << "File name : " << filename << info;
+		//std::cout << "File name : " << filename << info;
 		textureMap[filename] = info;
 		nameMap[i] = filename;
 		idxMap[filename] = i;

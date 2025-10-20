@@ -46,6 +46,7 @@ namespace Core {
 		void CreateCommandObjects();
 
 		void CreateSwapChain();
+		void CreateDepthBuffer();
 
 		void BuildGeometry();
 
@@ -56,6 +57,7 @@ namespace Core {
 	private:
 
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRtvCpuHandle() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCpuHandle() const;
 
 		ID3D12Resource* GetCurrentSwapChainResource() const;
 
@@ -87,19 +89,20 @@ namespace Core {
 
 	private:
 
-		int m_frameIndex;
+		int m_frameIndex = 0;
 		static const UINT m_swapChainBufferCount = 2;
 		static const UINT m_dsBufferCount = 1;
 
-		UINT m_cbvSrvDescriptorSize;
-		UINT m_rtvDescriptorSize;
-		UINT m_dsvDescriptorSize;
+		UINT m_cbvSrvDescriptorSize = 0;
+		UINT m_rtvDescriptorSize = 0;
+		UINT m_dsvDescriptorSize = 0;
 
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
 
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_swapChainResources[m_swapChainBufferCount];
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_depthStencilBuffer;
 
 	private:
 
@@ -119,8 +122,6 @@ namespace Core {
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_globalCB;
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_phongGCB;
 
-		// Texture Buffers
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_texture;
 
 		// ConstantBuffer Pointers
 		// cpu에서 gpu 갱신 시 사용

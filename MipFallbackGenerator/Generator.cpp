@@ -13,8 +13,8 @@ namespace fs = std::filesystem;
 
 struct TextureInfo {
 	std::string name;
-	uint64_t offset;
-	uint64_t size;
+	uint64_t offset = 0;
+	uint64_t size = 0;
 };
 
 void PackDDSTextures(const std::wstring& inputFolder, const std::wstring& buildFolder)

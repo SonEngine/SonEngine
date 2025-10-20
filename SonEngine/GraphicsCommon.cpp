@@ -11,7 +11,7 @@ namespace Graphics
 
     D3D12_BLEND_DESC blendNoColorWrite;		
 
-    D3D12_DEPTH_STENCIL_DESC depthStateDisabled;
+    D3D12_DEPTH_STENCIL_DESC depthStateDefault;
 
 	RootSignature g_commonRS;
 	RootSignature g_videoRS;
@@ -41,7 +41,7 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 
 	blendNoColorWrite = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 
-	depthStateDisabled = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	depthStateDefault = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 
     g_commonRS.Reset(3, 1);
 	g_commonRS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);

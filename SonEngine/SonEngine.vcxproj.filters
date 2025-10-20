@@ -134,10 +134,10 @@
     <ClInclude Include="Light.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="TextureLoader.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
     <ClInclude Include="TextureGPUResource.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureLoader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

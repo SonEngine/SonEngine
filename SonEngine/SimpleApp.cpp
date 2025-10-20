@@ -20,12 +20,14 @@ Core::SimpleApp::SimpleApp()
 	:BaseApp()
 {
 	m_aspectRatio = 1280.f / 720.f;
+	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
 }
 
 Core::SimpleApp::SimpleApp(const int width, const int height)
 	:BaseApp(width, height)
 {
 	m_aspectRatio = width / (float)height;
+	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
 }
 
 Core::SimpleApp::~SimpleApp()
@@ -81,8 +83,7 @@ bool Core::SimpleApp::InitDirectX()
 	Renderer::Initialize(m_device);
 
 	CreateCommandObjects();
-	CreateSwapChain();
-
+	
 	utility = std::make_shared<GraphicsUtils::Utility>(m_device.Get(), m_commandList.Get());
 
 	m_cbvSrvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -92,6 +93,9 @@ bool Core::SimpleApp::InitDirectX()
 	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRTVHeap);
 	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
 	
+	CreateSwapChain();
+	CreateDepthBuffer();
+
 	// Create SwapChain RTVs
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart());
 	for (int i = 0; i < m_swapChainBufferCount; i++)
@@ -114,7 +118,7 @@ bool Core::SimpleApp::InitDirectX()
 	BuildConstantBuffers();
 	CreateTextures();
 
-	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
+
 
 
 
@@ -145,7 +149,7 @@ bool Core::SimpleApp::InitGUI()
 	// Setup Platform/Renderer backends
 	ImGui_ImplWin32_Init(m_mainWnd);
 
-	ImGui_ImplDX12_Init(m_device.Get(), m_swapChainBufferCount, backbufferFormat,
+	ImGui_ImplDX12_Init(m_device.Get(), m_swapChainBufferCount, backBufferFormat,
 		m_guiFontHeap.Get(),
 		m_guiFontHeap->GetCPUDescriptorHandleForHeapStart(),
 		m_guiFontHeap->GetGPUDescriptorHandleForHeapStart());
@@ -174,6 +178,8 @@ void Core::SimpleApp::OnResize()
 		DXGI_FORMAT_UNKNOWN,
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
 
+
+	CreateDepthBuffer();
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart());
 	for (int i = 0; i < m_swapChainBufferCount; i++)
@@ -308,7 +314,8 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 		));
 
 	m_commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
-	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, nullptr);
+	m_commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
+	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
 
 	
 	ID3D12DescriptorHeap* heaps[] = {
@@ -443,7 +450,7 @@ void Core::SimpleApp::CreateSwapChain()
 	swapChainDesc.BufferCount = m_swapChainBufferCount;
 	swapChainDesc.Width = m_width;
 	swapChainDesc.Height = m_height;
-	swapChainDesc.Format = backbufferFormat;
+	swapChainDesc.Format = backBufferFormat;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.SampleDesc.Count = 1;
@@ -462,6 +469,42 @@ void Core::SimpleApp::CreateSwapChain()
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 }
 
+void Core::SimpleApp::CreateDepthBuffer()
+{
+	D3D12_RESOURCE_DESC rDesc = {};
+	rDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	rDesc.Format = dsBufferFormat;
+	rDesc.MipLevels = 0;
+	rDesc.DepthOrArraySize = 1;
+	rDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	rDesc.Width = m_width;
+	rDesc.Height = m_height;
+	rDesc.SampleDesc = { 1,0 };
+
+	D3D12_CLEAR_VALUE cValue = {};
+	cValue.DepthStencil.Depth = 1.f;
+	cValue.DepthStencil.Stencil = 0;
+	cValue.Format = dsBufferFormat;
+
+	m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&rDesc,
+		D3D12_RESOURCE_STATE_COMMON,
+		&cValue,
+		IID_PPV_ARGS(m_depthStencilBuffer.ReleaseAndGetAddressOf())
+	);
+	
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Texture2D.MipSlice = 0;
+	dsvDesc.Format = dsBufferFormat;
+	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+	
+	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_DSVHeap->GetCPUDescriptorHandleForHeapStart();
+	m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &dsvDesc, handle);
+
+}
 void Core::SimpleApp::BuildGeometry()
 {
 	m_commandAllocator->Reset();
@@ -563,6 +606,12 @@ D3D12_CPU_DESCRIPTOR_HANDLE Core::SimpleApp::GetCurrentRtvCpuHandle() const
 {
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
 }
+
+D3D12_CPU_DESCRIPTOR_HANDLE Core::SimpleApp::GetDSVCpuHandle() const
+{
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_DSVHeap->GetCPUDescriptorHandleForHeapStart());
+}
+
 
 ID3D12Resource* Core::SimpleApp::GetCurrentSwapChainResource() const
 {

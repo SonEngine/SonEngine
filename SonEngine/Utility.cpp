@@ -84,6 +84,7 @@ namespace GraphicsUtils {
 
 	}
 
+
 	ByteArray ReadFileHelper(const wstring& fileName)
 	{
 		ByteArray NullFile = make_shared<vector<byte> >(vector<byte>());
