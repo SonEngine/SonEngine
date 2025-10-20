@@ -76,9 +76,9 @@ namespace Core {
 
 	private:
 
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_swapChainRtvHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_swapChainRTVHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_texturesHeap;
 
 	private:
 
@@ -89,6 +89,7 @@ namespace Core {
 
 		int m_frameIndex;
 		static const UINT m_swapChainBufferCount = 2;
+		static const UINT m_dsBufferCount = 1;
 
 		UINT m_cbvSrvDescriptorSize;
 		UINT m_rtvDescriptorSize;
@@ -114,9 +115,6 @@ namespace Core {
 		GlobalConstant globalConstant;
 		PhongGlobalConstant phongGC;
 
-		// Local Constant Buffers
-		Microsoft::WRL::ComPtr<ID3D12Resource> m_localCB;
-
 		// Global Constant Buffers
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_globalCB;
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_phongGCB;
@@ -126,13 +124,12 @@ namespace Core {
 
 		// ConstantBuffer Pointers
 		// cpu에서 gpu 갱신 시 사용
-		void* pLocalConstant = nullptr;
 		void* pGlobalConstant = nullptr;
 		void* pPhongCB = nullptr;
 
 	private:
 		float m_aspectRatio;
-		float m_fovDegrees = 80.f;
+		float m_fovDegrees = 60.f;
 		float m_fovRadians;
 		float m_fovAngle = 70.f;
 		float m_nearZ = 0.1f;

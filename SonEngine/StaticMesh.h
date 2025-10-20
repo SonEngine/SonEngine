@@ -6,6 +6,7 @@
 #include "GraphicsCommon.h"
 #include "Mesh.h"
 #include "TextureGPUResource.h"
+#include "Constants.h"
 
 class TextureLoader;
 
@@ -22,6 +23,10 @@ public:
 	void Render(ID3D12GraphicsCommandList* commandList);
 	
 	void SetAlbedoTexture(const std::string& filename) { albedoTexture = filename; }
+	
+	void SetPosition(const float& x, const float& y, const float& z);
+	void Translate(const float& delX, const float& delY, const float& delZ);
+
 	std::string GetAlbedoTextureName() const { return albedoTexture; }
 
 private:
@@ -39,6 +44,11 @@ private:
 	UINT m_indexCount = 0;
 
 	std::string albedoTexture;
+
+private:
+	void* pLocalConstant = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_localCB;
+	LocalConstant localConstant;
 };
 
 template<typename V, typename I>
@@ -56,6 +66,19 @@ inline void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandL
 	m_indexBufferView.BufferLocation = m_indexGpu->GetGPUVirtualAddress();
 	m_indexBufferView.Format = ((sizeof(I) == sizeof(uint16_t)) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT);
 	m_indexBufferView.SizeInBytes = (UINT)(mesh.m_indices.size() * sizeof(I));
+
+	utility->CreateConstantBuffer(
+		sizeof(LocalConstant),
+		m_localCB,
+		reinterpret_cast<void**>(&pLocalConstant)
+	);
+
+	memcpy(
+		pLocalConstant,
+		&localConstant,
+		sizeof(LocalConstant)
+	);
+
 }
 
 

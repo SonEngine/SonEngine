@@ -89,12 +89,11 @@ bool Core::SimpleApp::InitDirectX()
 	m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	m_dsvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRtvHeap);
-	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_texturesHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
+	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRTVHeap);
+	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
+	
 	// Create SwapChain RTVs
-
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart());
 	for (int i = 0; i < m_swapChainBufferCount; i++)
 	{
 		m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_swapChainResources[i].ReleaseAndGetAddressOf()));
@@ -176,7 +175,7 @@ void Core::SimpleApp::OnResize()
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
 
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart());
 	for (int i = 0; i < m_swapChainBufferCount; i++)
 	{
 		m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_swapChainResources[i].ReleaseAndGetAddressOf()));
@@ -201,9 +200,6 @@ void Core::SimpleApp::Update(float deltaTime)
 		int y = (windowRect.bottom + windowRect.top) / 2;
 		SetCursorPos(x, y);
 
-		// gui test
-		localConstant.model.m[3][2] = m_zValue;
-
 		// update camera
 		m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY);
 		m_camera->UpdateCameraPosition(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
@@ -217,7 +213,6 @@ void Core::SimpleApp::Update(float deltaTime)
 		phongGC.DirectionLightPos = ToVector4(m_directionLight->GetPosition(), 0.f);
 		phongGC.DirectionLightDir = ToVector4(m_directionLight->GetFrontDirection(), 0.f);
 
-		memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 		memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
 		memcpy(pPhongCB, &phongGC, sizeof(PhongGlobalConstant));
 
@@ -321,9 +316,7 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 	};
 
 	m_commandList->SetDescriptorHeaps(1, heaps);
-	//m_commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(1));
 
-	m_commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
 
 	if (renderPSO == "defaultPSO")
 	{
@@ -478,12 +471,24 @@ void Core::SimpleApp::BuildGeometry()
 	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleCube(2, 2, 2));
 	mesh->SetAlbedoTexture("8k_earth_albedo");
 
-	//std::shared_ptr<StaticMesh> plane = std::make_shared<StaticMesh>();
-	//plane->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakePlane(4, 4, 2));
-	std::shared_ptr<StaticMesh> sphere = std::make_shared<StaticMesh>();
-	sphere->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
-	sphere->SetAlbedoTexture("8k_earth_albedo");
-	phongMeshes.push_back(sphere);
+	std::shared_ptr<StaticMesh> sphere1 = std::make_shared<StaticMesh>();
+	sphere1->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
+	sphere1->SetAlbedoTexture("8k_earth_albedo");
+	sphere1->SetPosition(0, 0, 3);
+	phongMeshes.push_back(sphere1);
+
+	std::shared_ptr<StaticMesh> sphere2 = std::make_shared<StaticMesh>();
+	sphere2->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
+	sphere2->SetAlbedoTexture("8k_earth_albedo");
+	sphere2->SetPosition(-3, 0, 3);
+	phongMeshes.push_back(sphere2);
+
+	std::shared_ptr<StaticMesh> sphere3 = std::make_shared<StaticMesh>();
+	sphere3->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
+	sphere3->SetAlbedoTexture("8k_earth_albedo");
+	sphere3->SetPosition(3, 0, 3);
+	phongMeshes.push_back(sphere3);
+
 
 	m_commandList->Close();
 
@@ -497,12 +502,6 @@ void Core::SimpleApp::BuildConstantBuffers()
 {
 
 	utility->CreateConstantBuffer(
-		sizeof(LocalConstant),
-		m_localCB,
-		reinterpret_cast<void**>(&pLocalConstant)
-	);
-
-	utility->CreateConstantBuffer(
 		sizeof(GlobalConstant),
 		m_globalCB,
 		reinterpret_cast<void**>(&pGlobalConstant)
@@ -514,14 +513,7 @@ void Core::SimpleApp::BuildConstantBuffers()
 		reinterpret_cast<void**>(&pPhongCB)
 	);
 
-	// Initalize Constant Buffers
-
-	memcpy(
-		pLocalConstant,
-		&localConstant,
-		sizeof(LocalConstant)
-	);
-
+	// Initalize Constant Buffers	
 
 	m_fovRadians = XMConvertToRadians(m_fovDegrees);
 	globalConstant.proj = XMMatrixPerspectiveFovLH(
@@ -534,7 +526,6 @@ void Core::SimpleApp::BuildConstantBuffers()
 		sizeof(GlobalConstant)
 	);
 
-	m_fovRadians = XMConvertToRadians(m_fovDegrees);
 	phongGC.proj = XMMatrixPerspectiveFovLH(
 		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
 	phongGC.view = m_camera->GetViewMatrix();
@@ -566,29 +557,11 @@ void Core::SimpleApp::CreateTextures()
 	m_textureLoader->LoadIdx(m_device);
 	m_fallbackLoader->LoadIdx(m_device);
 	m_textureLoader->LoadTextures(m_device, m_commandQueue);
-
-	//ResourceUploadBatch resourceUpload(m_device.Get());
-	//resourceUpload.Begin();
-
-	////ThrowIfFailed(CreateDDSTextureFromFile(m_device.Get(), resourceUpload, L"Textures/earth.dds", m_texture.GetAddressOf()));
-	//ThrowIfFailed(CreateDDSTextureFromFileEx(m_device.Get(), resourceUpload, L"Textures/earth_Albedo.dds", 0,
-	//	D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
-	//	DDS_LOADER_MIP_AUTOGEN | DDS_LOADER_FORCE_SRGB,
-	//	m_texture.ReleaseAndGetAddressOf()));
-	//D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = utility->CreateSRVDesc(m_texture.Get());
-
-	//CD3DX12_CPU_DESCRIPTOR_HANDLE textureHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());
-	//m_device->CreateShaderResourceView(m_texture.Get(), &srvDesc, textureHandle);
-
-	//auto uploadResourcesFinished = resourceUpload.End(m_commandQueue.Get());
-
-	//uploadResourcesFinished.wait();
-
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE Core::SimpleApp::GetCurrentRtvCpuHandle() const
 {
-	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_swapChainRtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
 }
 
 ID3D12Resource* Core::SimpleApp::GetCurrentSwapChainResource() const
