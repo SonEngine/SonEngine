@@ -82,7 +82,6 @@ void PackDDSTextures(const std::wstring& inputFolder, const std::wstring& buildF
 }
 void ConvertWICToDDS(const std::wstring& textureFolder, const std::wstring& texconvPath, const std::wstring& outputDir)
 {
-
 	for (auto& entry : fs::directory_iterator(textureFolder))
 	{
 		if (!entry.is_regular_file())
@@ -94,10 +93,17 @@ void ConvertWICToDDS(const std::wstring& textureFolder, const std::wstring& texc
 		if (ext != L".jpg" && ext != L".jpeg" && ext != L".png")
 			continue;
 
-		std::wstring fileName = entry.path().filename().wstring();
+		
+		std::wstring filename = entry.path().filename().wstring();
 		std::wstring fullPath = entry.path().wstring();
+		std::wstring outputFullPath = outputDir + entry.path().stem().wstring() + L".dds";
 
-		bool isAlbedo = (fileName.find(L"albedo") != std::wstring::npos);
+		if (fs::exists(outputFullPath)) {
+			
+			std::wcout << outputFullPath << " 파일이 존재합니다" << '\n';
+			continue;
+		}
+		bool isAlbedo = (filename.find(L"albedo") != std::wstring::npos);
 
 		std::wstring format = isAlbedo ? L"BC7_UNORM_SRGB" : L"BC7_UNORM";
 
@@ -109,9 +115,9 @@ void ConvertWICToDDS(const std::wstring& textureFolder, const std::wstring& texc
 
 		int result = _wsystem(command.c_str());
 		if (result != 0)
-			std::wcout << L"Failed: " << fileName << std::endl;
+			std::wcout << L"Failed: " << filename << std::endl;
 		else
-			std::wcout << L"Converted: " << fileName << std::endl;
+			std::wcout << L"Converted: " << filename << std::endl;
 	}
 
 }
@@ -185,12 +191,17 @@ int main()
 	fs::create_directories(ddsFolder);
 	fs::create_directories(fallbackFolder);
 
+	std::cout << "- ConvertWICToDDS\n\n";
+
 	ConvertWICToDDS(texturesFolder, texconvPath, ddsFolder);
+
+	std::cout << "\n- GenerateFallback\n\n";
 	GenerateFallback(ddsFolder, fallbackFolder);
 
+	std::cout << "\n- Packing 시작\n\n";
 	// dds packing
 	PackDDSTextures(ddsFolder, buildFolder);
-
+	std::cout << '\n';
 	// fallback packing
 	PackDDSTextures(fallbackFolder, fallbackBuildFolder);
 }
