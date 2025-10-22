@@ -7,7 +7,7 @@ DirectX 12을 사용한 로우레벨 3D 렌더링 엔진.
 ## 🔧 주요 기능
 
 
-## Windows
+## 💻 Windows
 ### Installing Dependencies
 ```
 vcpkg install directxtex[core,dx11,openexr]:x64-windows
