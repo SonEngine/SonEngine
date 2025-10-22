@@ -1,0 +1,134 @@
+#pragma once
+
+#include <atomic>
+#include <condition_variable>
+#include <thread>
+#include <mutex>
+#include <array>
+
+#include "BaseApp.h"
+#include "Renderer.h"
+#include "Constants.h"
+#include "Camera.h"
+#include "Light.h"
+#include "TextureLoader.h"
+#include "FrameResource.h"
+#include "Actor.h"
+
+
+
+namespace Core {
+	class MultiThreadApp : public BaseApp
+	{
+	public:
+
+		MultiThreadApp();
+		MultiThreadApp(const int width, const int height);
+
+		virtual ~MultiThreadApp();
+		virtual int Run() override;
+	
+	protected:
+		virtual bool InitDirectX() override;
+		virtual bool InitGUI() override;
+
+		// Called when the window is resized
+		virtual void OnResize() override;
+
+	protected:
+		void CreateCommandObjects();
+		void CreateSwapChain();
+		void CreateDepthBuffer();
+		void CreateTextures();
+
+		void BuildGeometry();
+		void BuildFrameResources();
+
+		void PostActorChanges();
+		void Update(float deltaTime);
+		void BuildProxy();
+		void Render(const std::string& psoName);
+		void UpdateGUI(float deltaTime);
+
+	protected:
+		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRtvCpuHandle() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCpuHandle() const;
+		ID3D12Resource* GetCurrentSwapChainResource() const;
+	
+	private:
+		void FlushCommands();
+
+	private:
+		Microsoft::WRL::ComPtr<IDXGIFactory7> m_dxgiFactory;
+		Microsoft::WRL::ComPtr<IDXGIAdapter4> m_adapter;
+		Microsoft::WRL::ComPtr<ID3D12Device5> m_device;
+		Microsoft::WRL::ComPtr<IDXGISwapChain3> m_swapChain;
+
+	private:
+		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator;
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList;
+		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
+		
+	private:
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_swapChainRTVHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
+
+	private:
+		D3D12_VIEWPORT m_viewport;
+		D3D12_RECT m_scissorRect;
+
+	private:
+		int m_currentBackBufferIndex = 0;
+		static const UINT m_swapChainBufferCount = 2;
+		static const UINT m_dsBufferCount = 1;
+		UINT m_cbvSrvDescriptorSize = 0;
+		UINT m_rtvDescriptorSize = 0;
+		UINT m_dsvDescriptorSize = 0;
+		std::array<float, 4> rtvClearColor;
+
+	// Projection 
+	private:
+		float m_aspectRatio;
+		float m_fovDegrees = 60.f;
+		float m_fovRadians;
+		float m_fovAngle = 70.f;
+		float m_nearZ = 0.1f;
+		float m_farZ = 100.f;
+
+	private:
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_swapChainResources[m_swapChainBufferCount];
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_depthStencilBuffer;
+	
+	// Texture
+	private:
+		std::shared_ptr<TextureLoader> m_textureLoader;
+		std::shared_ptr<TextureLoader> m_fallbackLoader;
+		std::string texturePath;
+		std::string fallbackPath;
+		std::string DDSPath;
+		std::string fallbackDDSPath;
+		
+	private:
+		std::vector<std::shared_ptr<Actor>> m_actors;
+		
+	private:
+		std::atomic<bool> isRunning = true;
+		std::atomic<bool> frameReady = false;
+		std::atomic<std::string> renderPSO = "phongPSO";
+		std::mutex r_mtx;
+		std::mutex g_mtx;
+		std::condition_variable cv;
+		float deltaTime;
+
+	//FrameResource
+	private:
+		static const int m_frameResourceCount = 3;
+		FrameResource m_frameResources[m_frameResourceCount];
+		int m_currentResourceIndex = 0;
+		UINT64 m_currentFence = 0;
+		Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
+
+	
+	};
+}
