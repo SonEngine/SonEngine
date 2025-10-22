@@ -21,7 +21,7 @@ namespace Core {
 		SimpleApp(const int width, const int height);
 
 		virtual ~SimpleApp();
-
+		virtual int Run() override;
 	private:
 
 		// Init
@@ -31,17 +31,17 @@ namespace Core {
 		// Called when the window is resized
 		virtual void OnResize() override;
 
-		virtual void Update(float deltaTime) override;
-		virtual void UpdateGUI(float deltaTime) override;
+		void Update(float deltaTime);
+		void UpdateGUI(float deltaTime);
 
-		virtual void Render(float deltaTime) override;
-		void RenderScene(const std::string & psoName);
-		virtual void RenderGUI(float deltaTime) override;
+		void Render(float deltaTime);
+		void RenderScene(const std::string& psoName);
+		void RenderGUI(float deltaTime);
 
 		// Fin
 
-		virtual bool FinDirectX() override;
-		virtual void Finalize(float deltaTime) override;
+		virtual bool FinDirectX();
+		virtual void Finalize(float deltaTime);
 
 		void CreateCommandObjects();
 
@@ -107,7 +107,7 @@ namespace Core {
 	private:
 
 		std::shared_ptr<StaticMesh> mesh;
-	
+
 		std::vector< std::shared_ptr<StaticMesh>> phongMeshes;
 		std::vector <std::shared_ptr<Actor>> m_actors;
 	private:
@@ -165,8 +165,8 @@ namespace Core {
 		std::string fallbackPath;
 		std::string DDSPath;
 		std::string fallbackDDSPath;
-	
-	// gui에서 사용
+
+		// gui에서 사용
 	private:
 		StaticMesh* selectedMesh = nullptr;
 	};

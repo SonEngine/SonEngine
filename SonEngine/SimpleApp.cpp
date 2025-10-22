@@ -35,6 +35,29 @@ Core::SimpleApp::~SimpleApp()
 	m_camera.reset();
 }
 
+int Core::SimpleApp::Run()
+{
+	MSG msg = { };
+	m_timer.Reset();
+
+	while (msg.message != WM_QUIT) {
+		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		else {
+			m_timer.Tick();
+			float deltaTime = (float)m_timer.GetDeltaTime();
+
+			Update(deltaTime);
+			Render(deltaTime);
+			RenderGUI(deltaTime);
+			Finalize(deltaTime);
+		}
+	}
+	return (int)msg.wParam;
+}
+
 bool Core::SimpleApp::InitDirectX()
 {
 	m_camera = std::make_shared<Camera>();
@@ -42,7 +65,7 @@ bool Core::SimpleApp::InitDirectX()
 	m_camera->SetActorLocation(Vector3(0, 1, 0.f));
 	m_directionLight = std::make_shared<Light>();
 	m_directionLight->SetActorLocation(Vector3(0, 1, 0.f));
-	
+
 	UINT dxgiFactoryFlags = 0;
 
 	// Enable the debug layer
@@ -83,7 +106,7 @@ bool Core::SimpleApp::InitDirectX()
 	Renderer::Initialize(m_device);
 
 	CreateCommandObjects();
-	
+
 	utility = std::make_shared<GraphicsUtils::Utility>(m_device.Get(), m_commandList.Get());
 
 	m_cbvSrvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -92,7 +115,7 @@ bool Core::SimpleApp::InitDirectX()
 
 	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRTVHeap);
 	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
-	
+
 	CreateSwapChain();
 	CreateDepthBuffer();
 
@@ -129,7 +152,7 @@ bool Core::SimpleApp::InitGUI()
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	// io.Fonts->TexID = (ImTextureID)m_guiFont->GetSpriteSheet().ptr;
-	 
+
 	ImGui::StyleColorsLight();
 	const char* fontPath = "Fonts/Hack-Regular.ttf";
 	float fontSize = 15.0f;
@@ -313,7 +336,7 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 	m_commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
 	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
 
-	
+
 	ID3D12DescriptorHeap* heaps[] = {
 		m_textureLoader->GetHeap()
 	};
@@ -329,7 +352,7 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 	else if (renderPSO == "phongPSO")
 	{
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_phongGCB->GetGPUVirtualAddress());
-		for (auto & mesh : phongMeshes)
+		for (auto& mesh : phongMeshes)
 		{
 			mesh->Render(m_commandList.Get(), m_textureLoader.get());
 		}
@@ -488,17 +511,18 @@ void Core::SimpleApp::CreateDepthBuffer()
 		&cValue,
 		IID_PPV_ARGS(m_depthStencilBuffer.ReleaseAndGetAddressOf())
 	);
-	
+
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	dsvDesc.Texture2D.MipSlice = 0;
 	dsvDesc.Format = dsBufferFormat;
 	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-	
+
 	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_DSVHeap->GetCPUDescriptorHandleForHeapStart();
 	m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &dsvDesc, handle);
 
 }
+
 void Core::SimpleApp::BuildGeometry()
 {
 	m_commandAllocator->Reset();
@@ -584,7 +608,7 @@ void Core::SimpleApp::CreateTextures()
 {
 	texturePath = "Build/";
 	fallbackPath = "Build/Fallback/";
-	
+
 	DDSPath = "Textures/DDS/";
 	fallbackDDSPath = "Textures/Falback/";
 

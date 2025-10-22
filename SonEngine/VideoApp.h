@@ -24,6 +24,7 @@ namespace Core {
 		VideoApp(const int width, const int height);
 
 		virtual ~VideoApp();
+		int Run() override;
 
 	private:
 
@@ -34,17 +35,17 @@ namespace Core {
 		// Called when the window is resized
 		virtual void OnResize() override;
 
-		virtual void Update(float deltaTime) override;
-		virtual void UpdateGUI(float deltaTime) override;
+		void Update(float deltaTime);
+		void UpdateGUI(float deltaTime);
 
-		virtual void Render(float deltaTime) override;
+		void Render(float deltaTime);
 		void RenderScene();
-		virtual void RenderGUI(float deltaTime) override;
+		void RenderGUI(float deltaTime);
 
 		// Fin
 
-		virtual bool FinDirectX() override;
-		virtual void Finalize(float deltaTime) override;
+		virtual bool FinDirectX();
+		virtual void Finalize(float deltaTime);
 
 		void CreateCommandObjects();
 

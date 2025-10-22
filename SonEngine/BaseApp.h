@@ -19,7 +19,7 @@ namespace Core {
 
         virtual bool Initialize();
         LRESULT MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-        int Run();
+        virtual int Run() = 0;
 
     private:
         virtual bool InitDirectX() = 0;
@@ -29,13 +29,6 @@ namespace Core {
         // Called when the window is resized
         virtual void OnResize() = 0;
         bool InitWindow();
-
-        virtual void Update(float deltaTime) = 0;
-        virtual void UpdateGUI(float deltaTime) = 0;
-
-        virtual void Render(float deltaTime) = 0;
-        virtual void RenderGUI(float deltaTime) = 0;
-        virtual void Finalize(float deltaTime) = 0;
 
     protected:
         bool IsWindowFocused();

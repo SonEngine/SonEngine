@@ -56,6 +56,29 @@ Core::VideoApp::~VideoApp()
 
 }
 
+int Core::VideoApp::Run()
+{
+	MSG msg = { };
+	m_timer.Reset();
+
+	while (msg.message != WM_QUIT) {
+		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		else {
+			m_timer.Tick();
+			float deltaTime = (float)m_timer.GetDeltaTime();
+
+			Update(deltaTime);
+			Render(deltaTime);
+			RenderGUI(deltaTime);
+			Finalize(deltaTime);
+		}
+	}
+	return (int)msg.wParam;
+}
+
 bool Core::VideoApp::InitDirectX()
 {
 	UINT dxgiFactoryFlags = 0;
