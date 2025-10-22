@@ -1,5 +1,9 @@
 #pragma once
 
+#include "d3d12.h"
+#include "Constants.h"
+#include "wrl.h"
+
 class FrameResource {
 public:
 	FrameResource() {};
@@ -7,7 +11,10 @@ public:
 	void Initialize();
 
 private:
+	PhongGlobalConstant phongGC;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_phongGCBuffer;
+	void* pPhongGCB = nullptr;
 
 private:
-	//UINT64 m_currentFence = 0;
+	UINT64 m_currentFence = 0;
 };

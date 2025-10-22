@@ -9,11 +9,8 @@ public:
 	StaticMeshComponent(Actor* owner);
 
 public:
-	void Render(ID3D12GraphicsCommandList* commandList, const TextureLoader* texLoader) override;
-
 	void SetMesh(std::shared_ptr<StaticMesh> newMesh);
 
 private:
 	std::shared_ptr<StaticMesh> m_mesh;
-
 };

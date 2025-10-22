@@ -11,18 +11,19 @@ class Actor
 {
 public:
 	Actor();
+	Actor(std::string actorName);
 
 protected:
 	virtual void Initialize();
 
 public:
 	virtual void Tick(const float& deltaTime);
-	void Render(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
 
 public:
 	void SetActorLocation(const DirectX::SimpleMath::Vector3& newLocation);
 	void UpdateActorLocation(const DirectX::SimpleMath::Vector3& delLocation);
 	void SetActorSpeed(const float& newSpeed);
+	void SetRootComponent(std::shared_ptr<SceneComponent> newRootComponent);
 
 public:
 	DirectX::SimpleMath::Vector3 GetActorLocation() const;

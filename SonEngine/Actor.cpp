@@ -5,15 +5,16 @@ using DirectX::SimpleMath::Vector3;
 Actor::Actor()
 {
 }
+Actor::Actor(std::string actorName)
+	:m_name(actorName)
+{
+}
 void Actor::Initialize()
 {
 }
+
 void Actor::Tick(const float& deltaTime)
 {
-}
-void Actor::Render(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader)
-{
-	
 }
 
 void Actor::SetActorLocation(const DirectX::SimpleMath::Vector3& newLocation)
@@ -38,6 +39,11 @@ void Actor::SetActorSpeed(const float& newSpeed)
 	{
 		m_rootComponent->SetSpeed(newSpeed);
 	}
+}
+
+void Actor::SetRootComponent(std::shared_ptr<SceneComponent> newRootComponent)
+{
+	m_rootComponent = std::move(newRootComponent);
 }
 
 DirectX::SimpleMath::Vector3 Actor::GetActorLocation() const

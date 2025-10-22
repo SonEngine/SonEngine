@@ -151,11 +151,13 @@
     <ClCompile Include="ActorComponent.cpp" />
     <ClCompile Include="BaseApp.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="FrameResource.cpp" />
     <ClCompile Include="GeometryGenerater.cpp" />
     <ClCompile Include="GraphicsCommon.cpp" />
     <ClCompile Include="InputHelper.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MultiThreadApp.cpp" />
     <ClCompile Include="PipelineState.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RootSignature.cpp" />
@@ -181,6 +183,7 @@
     <ClInclude Include="InputHelper.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MultiThreadApp.h" />
     <ClInclude Include="PrimitiveComponent.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="PipelineState.h" />

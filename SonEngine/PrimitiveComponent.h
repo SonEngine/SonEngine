@@ -8,8 +8,6 @@ public:
     PrimitiveComponent(Actor* owner)
         : SceneComponent(owner), m_visible(true) {}
 
-    virtual void Render(ID3D12GraphicsCommandList* commandList, const TextureLoader* texLoader) = 0;
-
     void SetVisible(bool visible) { m_visible = visible; }
     bool IsVisible() const { return m_visible; }
 
