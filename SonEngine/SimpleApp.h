@@ -109,7 +109,7 @@ namespace Core {
 		std::shared_ptr<StaticMesh> mesh;
 	
 		std::vector< std::shared_ptr<StaticMesh>> phongMeshes;
-
+		std::vector <std::shared_ptr<Actor>> m_actors;
 	private:
 
 		LocalConstant localConstant;

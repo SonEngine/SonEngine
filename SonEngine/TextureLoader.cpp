@@ -80,7 +80,7 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 	{
 		std::string filename = nameMap[i];
 		TextureInfo info = textureMap[filename];
-		uint32_t size = info.size;
+		uint64_t size = info.size;
 		std::vector<uint8_t> texture(size);
 		bin.seekg(info.offset);
 		bin.read(reinterpret_cast<char*>(texture.data()), size);

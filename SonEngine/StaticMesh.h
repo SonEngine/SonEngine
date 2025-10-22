@@ -1,7 +1,7 @@
 #pragma once
 
 #include "d3d12.h"
-#include "d3dx12.h"
+#include "directx/d3dx12.h"
 #include "wrl.h"
 #include "GraphicsCommon.h"
 #include "Mesh.h"
@@ -15,7 +15,7 @@ class StaticMesh {
 public:
 
 	StaticMesh();
-
+	 
 	template<typename V, typename I>
 	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, Mesh<V,I>& mesh);
 
@@ -24,7 +24,7 @@ public:
 	
 	void SetAlbedoTexture(const std::string& filename) { albedoTexture = filename; }
 	
-	void SetPosition(const float& x, const float& y, const float& z);
+	void SetLocation(const float& x, const float& y, const float& z);
 	void Translate(const float& delX, const float& delY, const float& delZ);
 
 	std::string GetAlbedoTextureName() const { return albedoTexture; }

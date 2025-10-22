@@ -25,9 +25,9 @@ void StaticMesh::Render(ID3D12GraphicsCommandList* commandList)
 	commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
 
 	commandList->DrawIndexedInstanced(m_indexCount, 1, 0, 0, 0);
-}
+} 
 
-void StaticMesh::SetPosition(const float& x, const float& y, const float& z)
+void StaticMesh::SetLocation(const float& x, const float& y, const float& z)
 {
 	localConstant.model.m[3][0] = x;
 	localConstant.model.m[3][1] = y;

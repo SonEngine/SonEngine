@@ -23,10 +23,10 @@ bool Input::InputHelper::GetInputState(size_t wParam)
 Vector3 Input::InputHelper::ExecuteCommands(const float& deltaTime ,const Actor* actor)
 {
 	Vector3 delPosition;
-	Vector3 eyeDirection = actor->GetFrontDirection();
-	Vector3 upDirection = actor->GetUpDirection();
-	Vector3 rightDirection = actor->GetRightDirection();
-	float speed = actor->GetSpeed();
+	Vector3 eyeDirection = actor->GetActorFrontDir();
+	Vector3 upDirection = actor->GetActorUpDir();
+	Vector3 rightDirection = actor->GetActorRightDir();
+	float speed = actor->GetActorSpeed();
 
 	if (GetInputState(upKey))
 	{

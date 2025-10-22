@@ -38,11 +38,11 @@ Core::SimpleApp::~SimpleApp()
 bool Core::SimpleApp::InitDirectX()
 {
 	m_camera = std::make_shared<Camera>();
-	m_camera->SetSpeed(3.f);
-	m_camera->SetRotateSpeed(0.5f);
-	m_camera->SetPosition(Vector3(0, 1, 0.f));
+	m_camera->SetActorSpeed(3.f);
+	m_camera->SetActorLocation(Vector3(0, 1, 0.f));
 	m_directionLight = std::make_shared<Light>();
-
+	m_directionLight->SetActorLocation(Vector3(0, 1, 0.f));
+	
 	UINT dxgiFactoryFlags = 0;
 
 	// Enable the debug layer
@@ -117,10 +117,6 @@ bool Core::SimpleApp::InitDirectX()
 	BuildGeometry();
 	BuildConstantBuffers();
 	CreateTextures();
-
-
-
-
 
 	return true;
 }
@@ -214,10 +210,10 @@ void Core::SimpleApp::Update(float deltaTime)
 		globalConstant.view = m_camera->GetViewMatrix();
 
 		phongGC.view = globalConstant.view;
-		phongGC.cameraPos = ToVector4(m_camera->GetPosition(), 0.f);
-		phongGC.cameraDir = ToVector4(m_camera->GetFrontDirection(), 0.f);
-		phongGC.DirectionLightPos = ToVector4(m_directionLight->GetPosition(), 0.f);
-		phongGC.DirectionLightDir = ToVector4(m_directionLight->GetFrontDirection(), 0.f);
+		phongGC.cameraPos = ToVector4(m_camera->GetActorLocation(), 0.f);
+		phongGC.cameraDir = ToVector4(m_camera->GetActorFrontDir(), 0.f);
+		phongGC.DirectionLightPos = ToVector4(m_directionLight->GetActorLocation(), 0.f);
+		phongGC.DirectionLightDir = ToVector4(m_directionLight->GetActorFrontDir(), 0.f);
 
 		memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
 		memcpy(pPhongCB, &phongGC, sizeof(PhongGlobalConstant));
@@ -351,8 +347,6 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 
 	ID3D12CommandList* commands[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
-
-
 
 	FlushCommands();
 }
@@ -517,19 +511,19 @@ void Core::SimpleApp::BuildGeometry()
 	std::shared_ptr<StaticMesh> sphere1 = std::make_shared<StaticMesh>();
 	sphere1->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
 	sphere1->SetAlbedoTexture("8k_earth_albedo");
-	sphere1->SetPosition(0, 0, 3);
+	sphere1->SetLocation(0, 0, 3);
 	phongMeshes.push_back(sphere1);
 
 	std::shared_ptr<StaticMesh> sphere2 = std::make_shared<StaticMesh>();
 	sphere2->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
 	sphere2->SetAlbedoTexture("8k_earth_albedo");
-	sphere2->SetPosition(-3, 0, 3);
+	sphere2->SetLocation(-3, 0, 3);
 	phongMeshes.push_back(sphere2);
 
 	std::shared_ptr<StaticMesh> sphere3 = std::make_shared<StaticMesh>();
 	sphere3->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
 	sphere3->SetAlbedoTexture("8k_earth_albedo");
-	sphere3->SetPosition(3, 0, 3);
+	sphere3->SetLocation(3, 0, 3);
 	phongMeshes.push_back(sphere3);
 
 
@@ -573,10 +567,10 @@ void Core::SimpleApp::BuildConstantBuffers()
 		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
 	phongGC.view = m_camera->GetViewMatrix();
 
-	phongGC.cameraPos = ToVector4(m_camera->GetPosition(), 0.f);
-	phongGC.cameraDir = ToVector4(m_camera->GetFrontDirection(), 0.f);
-	phongGC.DirectionLightPos = ToVector4(m_directionLight->GetPosition(), 0.f);
-	phongGC.DirectionLightDir = ToVector4(m_directionLight->GetFrontDirection(), 0.f);
+	phongGC.cameraPos = ToVector4(m_camera->GetActorLocation(), 0.f);
+	phongGC.cameraDir = ToVector4(m_camera->GetActorFrontDir(), 0.f);
+	phongGC.DirectionLightPos = ToVector4(m_directionLight->GetActorLocation(), 0.f);
+	phongGC.DirectionLightDir = ToVector4(m_directionLight->GetActorFrontDir(), 0.f);
 
 	memcpy(
 		pPhongCB,

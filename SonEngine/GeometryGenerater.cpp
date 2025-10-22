@@ -58,7 +58,7 @@ Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakeSimpleCube(float x, float y,
 		vertices.push_back({ v[v2], Vector2(1,0) });
 		vertices.push_back({ v[v3], Vector2(1,1) });
 
-		int base = i * 4;
+		size_t base = i * 4;
 		indices.push_back(base + 0);
 		indices.push_back(base + 1);
 		indices.push_back(base + 2);
@@ -92,10 +92,10 @@ Mesh<Vertex, uint16_t> GeometryGenerator::MakePlane(float x, float z, int c)
 	for (int i = 0; i <= c; i++)
 	{
 		
-		Vector3 xBase = baseV + Vector3(0, 0, delZ) * i;
+		Vector3 xBase = baseV + Vector3(0.f, 0.f, delZ) * (float)i;
 		for (int j = 0; j <= c ; j++)
 		{
-			Vector3 v = xBase + j * Vector3(delX, 0, 0);
+			Vector3 v = xBase + (float)j * Vector3(delX, 0, 0);
 			vertices.push_back({ v, Vector3(0, 1, 0), Vector2(deluv * j, deluv * i) });
 			if (j != c && i!=c)
 			{
@@ -124,7 +124,7 @@ Mesh<Vertex, uint16_t> GeometryGenerator::MakePlane(float x, float z, int c)
 }
 Mesh<Vertex, uint16_t> GeometryGenerator::MakeSphere(int c, float r)
 {
-	float pi = std::acos(-1);
+	float pi = (float)std::acos(-1);
 	float thetaZ = pi / c;
 	float thetaY = pi * 2.f / c;
 

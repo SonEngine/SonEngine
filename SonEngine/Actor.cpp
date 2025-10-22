@@ -2,31 +2,108 @@
 
 using DirectX::SimpleMath::Vector3;
 
-Actor::Actor() :
-	m_position(Vector3(0, 0, -3)),
-	m_frontDirection(Vector3(0, 0, 1)),
-	m_baseFrontDirection(Vector3(0, 0, 1)),
-	m_upDirection(Vector3(0, 1, 0)),
-	m_baseUpDirection(Vector3(0, 1, 0)),
-	m_rightDirection(Vector3(1, 0, 0))
+Actor::Actor()
 {
+}
+void Actor::Initialize()
+{
+}
+void Actor::Tick(const float& deltaTime)
+{
+}
+void Actor::Render(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader)
+{
+	
 }
 
-void Actor::SetSpeed(const float& newSpeed)
+void Actor::SetActorLocation(const DirectX::SimpleMath::Vector3& newLocation)
 {
-	m_speed = newSpeed;
-}
-void Actor::SetRotateSpeed(const float& newSpeed)
-{
-	m_rotateSpeed = newSpeed;
+	if (m_rootComponent)
+	{
+		m_rootComponent->SetLocation(newLocation);
+	}
 }
 
-void Actor::SetPosition(const DirectX::SimpleMath::Vector3& newPos)
+void Actor::UpdateActorLocation(const DirectX::SimpleMath::Vector3& delLocation)
 {
-	m_position = newPos;
+	if (m_rootComponent)
+	{
+		m_rootComponent->AddLocation(delLocation);
+	}
+}
+
+void Actor::SetActorSpeed(const float& newSpeed)
+{
+	if (m_rootComponent)
+	{
+		m_rootComponent->SetSpeed(newSpeed);
+	}
+}
+
+DirectX::SimpleMath::Vector3 Actor::GetActorLocation() const
+{
+	if (m_rootComponent)
+	{
+		return m_rootComponent->GetLocation();
+	}
+	else {
+		return DirectX::SimpleMath::Vector3::Zero;
+	}
+
+}
+
+DirectX::SimpleMath::Vector3 Actor::GetActorFrontDir() const
+{
+	if (m_rootComponent)
+	{
+		return m_rootComponent->GetFrontDirection();
+	}
+	else {
+		return DirectX::SimpleMath::Vector3::Zero;
+	}
+}
+
+DirectX::SimpleMath::Vector3 Actor::GetActorUpDir() const
+{
+	if (m_rootComponent)
+	{
+		return m_rootComponent->GetUpDirection();
+
+	}
+	else {
+		return DirectX::SimpleMath::Vector3::Zero;
+	}
+}
+
+DirectX::SimpleMath::Vector3 Actor::GetActorRightDir() const
+{
+	if (m_rootComponent)
+	{
+		return m_rootComponent->GetRightDirection();
+	}
+	else {
+		return DirectX::SimpleMath::Vector3::Zero;
+	}
+}
+
+float Actor::GetActorSpeed() const
+{
+	if (m_rootComponent)
+	{
+		return m_rootComponent->GetSpeed();
+	}
+	else {
+		return 0.f;
+	}
 }
 
 DirectX::SimpleMath::Matrix Actor::GetViewMatrix() const
 {
-	return XMMatrixLookToLH(m_position, m_frontDirection, m_upDirection);
+	if (m_rootComponent)
+	{
+		return m_rootComponent->GetViewMatrix();
+	}
+	else {
+		return DirectX::SimpleMath::Matrix();
+	}
 }

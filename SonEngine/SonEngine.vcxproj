@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)include\directx;$(OutDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4819</DisableSpecificWarnings>
     </ClCompile>
@@ -129,7 +129,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)include\directx;$(OutDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4819</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
+    <ClCompile Include="ActorComponent.cpp" />
     <ClCompile Include="BaseApp.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="GeometryGenerater.cpp" />
@@ -158,31 +159,36 @@
     <ClCompile Include="PipelineState.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RootSignature.cpp" />
+    <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="StaticMesh.cpp" />
+    <ClCompile Include="StaticMeshComponent.cpp" />
     <ClCompile Include="TextureLoader.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="VideoApp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="BaseApp.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="dds.h" />
-    <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="GeometryGenerater.h" />
     <ClInclude Include="GpuResource.h" />
     <ClInclude Include="GraphicsCommon.h" />
     <ClInclude Include="InputHelper.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="PrimitiveComponent.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="PipelineState.h" />
     <ClInclude Include="RootSignature.h" />
+    <ClInclude Include="SceneComponent.h" />
     <ClInclude Include="SimpleApp.h" />
     <ClInclude Include="StaticMesh.h" />
+    <ClInclude Include="StaticMeshComponent.h" />
     <ClInclude Include="TextureGPUResource.h" />
     <ClInclude Include="TextureLoader.h" />
     <ClInclude Include="Timer.h" />
@@ -190,6 +196,7 @@
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VideoApp.h" />
     <ClInclude Include="Actor.h" />
+    <ClInclude Include="FrameResource.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultPS.hlsl">
