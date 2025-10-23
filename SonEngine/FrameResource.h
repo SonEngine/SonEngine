@@ -15,6 +15,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_phongGCBuffer;
 	void* pPhongGCB = nullptr;
 
-private:
+public:
 	UINT64 m_currentFence = 0;
 };
