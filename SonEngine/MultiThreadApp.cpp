@@ -241,8 +241,6 @@ void Core::MultiThreadApp::OnResize()
 
 }
 
-
-
 void Core::MultiThreadApp::CreateCommandObjects()
 {
 	ThrowIfFailed(
@@ -271,7 +269,6 @@ void Core::MultiThreadApp::CreateCommandObjects()
 	);
 
 	m_commandList->Close();
-
 }
 
 void Core::MultiThreadApp::CreateSwapChain()
@@ -379,7 +376,21 @@ void Core::MultiThreadApp::PostActorChanges()
 
 void Core::MultiThreadApp::Update(float deltaTime)
 {
-	// 0번 프레임일 경우
+	m_currentResourceIndex = (m_currentResourceIndex + 1) % m_frameResourceCount;
+	FrameResource& currentFrameResource = m_frameResources[m_currentResourceIndex];
+
+	// currentFrameResource가 초기값이 아니면서,
+	// 현재 사용하려는 리소스의 이전 명령이 아직 이행되지 않았을 경우 
+	// 완료할 때까지 기다린다.
+	if (currentFrameResource.m_currentFence != 0 &&
+		m_fence->GetCompletedValue() < currentFrameResource.m_currentFence)
+	{
+		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+		m_fence->SetEventOnCompletion(currentFrameResource.m_currentFence, eventHandle);
+
+		WaitForSingleObject(eventHandle, INFINITE);
+		CloseHandle(eventHandle);
+	}
 }
 
 void Core::MultiThreadApp::BuildProxy()
