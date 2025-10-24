@@ -7,13 +7,14 @@ public:
 	Camera();
 
 public:
-	void UpdateCameraLocation(const DirectX::SimpleMath::Vector3& delLoc);
-	void UpdateCameraRotation(const int& mouseDeltaX, const int& mouseDeltaY);
-	void UpdateProjMatrix();
-
+	virtual void Initialize();
 	void Tick(const float& deltaTime) override;
 
 public:
+	void UpdateCameraLocation(const DirectX::SimpleMath::Vector3& delLoc);
+	void UpdateCameraRotation(const int& mouseDeltaX, const int& mouseDeltaY);
+	void UpdateProjMatrix();
+	public:
 	DirectX::SimpleMath::Matrix GetProjMatrix() const;
 
 

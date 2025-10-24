@@ -7,6 +7,15 @@ Camera::Camera():
 	std::shared_ptr<SceneComponent> c = std::make_shared<SceneComponent>(this);
 	m_rootComponent = c;
 }
+void Camera::Initialize()
+{
+	UpdateProjMatrix();
+}
+
+void Camera::Tick(const float& deltaTime)
+{
+}
+
 
 void Camera::UpdateCameraLocation(const DirectX::SimpleMath::Vector3& delLoc)
 {
@@ -50,9 +59,6 @@ void Camera::UpdateCameraRotation(const int & mouseDeltaX, const int& mouseDelta
 	//m_upDirection = m_frontDirection.Cross(m_rightDirection);
 }
 
-void Camera::Tick(const float& deltaTime)
-{
-}
 
 DirectX::SimpleMath::Matrix Camera::GetProjMatrix() const
 {
@@ -61,6 +67,7 @@ DirectX::SimpleMath::Matrix Camera::GetProjMatrix() const
 
 void Camera::UpdateProjMatrix()
 {
+	m_fovRadians = DirectX::XMConvertToRadians(m_fovDegrees);
 	projMatrix = DirectX::XMMatrixPerspectiveFovLH(
 		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
 }

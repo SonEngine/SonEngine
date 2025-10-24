@@ -20,6 +20,7 @@ Core::MultiThreadApp::MultiThreadApp()
 	m_camera = std::make_shared<Camera>();
 
 	m_camera->m_aspectRatio = 1280.f / 720.f;
+	m_camera->Initialize();
 }
 
 Core::MultiThreadApp::MultiThreadApp(const int width, const int height)
@@ -29,6 +30,7 @@ Core::MultiThreadApp::MultiThreadApp(const int width, const int height)
 	m_camera = std::make_shared<Camera>();
 
 	m_camera->m_aspectRatio = width / (float)height;
+	m_camera->Initialize();
 }
 
 Core::MultiThreadApp::~MultiThreadApp()
@@ -48,12 +50,6 @@ int Core::MultiThreadApp::Run()
 			if (!isRunning)
 			{
 				break;
-			}
-			if (isFirstFrame)
-			{
-				isFirstFrame = false;
-				frameReady = false;
-				continue;
 			}
 
 			frameReady = false;
@@ -81,7 +77,9 @@ int Core::MultiThreadApp::Run()
 			PostActorChanges();
 			Update(deltaTime);
 			BuildProxy();
-
+			std::cout << "Main Thread : " << m_currentResourceIndex << std::endl;
+			m_currentResourceIndex = (m_currentResourceIndex + 1) % m_frameResourceCount;
+			
 			{
 				std::lock_guard<std::mutex> lock(g_mtx);
 				frameReady = true;
@@ -340,7 +338,7 @@ void Core::MultiThreadApp::CreateDepthBuffer()
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&rDesc,
-		D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
 		&cValue,
 		IID_PPV_ARGS(m_depthStencilBuffer.ReleaseAndGetAddressOf())
 	);
@@ -397,13 +395,13 @@ void Core::MultiThreadApp::PostActorChanges()
 
 void Core::MultiThreadApp::Update(float deltaTime)
 {
-	m_currentResourceIndex = (m_currentResourceIndex + 1) % m_frameResourceCount;
+	
 	FrameResource& currentFrameResource = m_frameResources[m_currentResourceIndex];
-
+	
 	// currentFrameResource가 초기값이 아니면서,
 	// 현재 사용하려는 리소스의 이전 명령이 아직 이행되지 않았을 경우 
 	// 완료할 때까지 기다린다.
-	if (currentFrameResource.m_currentFence != 0 &&
+	if (currentFrameResource.m_currentFence != 0 && 
 		m_fence->GetCompletedValue() < currentFrameResource.m_currentFence)
 	{
 		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
@@ -431,7 +429,8 @@ void Core::MultiThreadApp::Update(float deltaTime)
 		m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY);
 		m_camera->UpdateCameraLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
 
-	
+		mouseDeltaX = 0;
+		mouseDeltaY = 0;
 	}
 	m_camera->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
 	
@@ -448,7 +447,7 @@ void Core::MultiThreadApp::BuildProxy()
 {
 	FrameResource& currentFrameResource = m_frameResources[m_currentResourceIndex];
 	currentFrameResource.proxyBuffer.clear();
-
+	//std::cout << m_currentResourceIndex << "build 중\n";
 	int id = 0;
 	for (auto& actor : m_actors)
 	{
@@ -480,9 +479,16 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 
 	// N번을 update했을 때 N-1 번 프레임을 렌더링 
 	// update의 경우 m_frameResourceCount만큼 미리 업데이트 가능
-	r_currentResourceIndex = (r_currentResourceIndex + 1) % m_frameResourceCount;
 	FrameResource& currentFrameResource = m_frameResources[r_currentResourceIndex];
+	if (currentFrameResource.m_currentFence != 0 &&
+		m_fence->GetCompletedValue() < currentFrameResource.m_currentFence)
+	{
+		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+		m_fence->SetEventOnCompletion(currentFrameResource.m_currentFence, eventHandle);
 
+		WaitForSingleObject(eventHandle, INFINITE);
+		CloseHandle(eventHandle);
+	}
 
 	GraphicsPSO pso;
 	if (m_PSOs.find(psoName) != m_PSOs.end())
@@ -507,6 +513,8 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 
 	m_commandList->ResourceBarrier(
 		1,
+
+
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			GetCurrentSwapChainResource(),
 			D3D12_RESOURCE_STATE_PRESENT,
@@ -546,6 +554,7 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 
 	ThrowIfFailed(m_swapChain->Present(1, 0));
 	m_currentBackBufferIndex = (m_currentBackBufferIndex + 1) % m_swapChainBufferCount;
+	r_currentResourceIndex = (r_currentResourceIndex + 1) % m_frameResourceCount;
 
 	m_currentFence++;
 	m_commandQueue->Signal(m_fence.Get(), m_currentFence);
