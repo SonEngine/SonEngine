@@ -14,15 +14,21 @@ using namespace GraphicsUtils;
 using namespace Graphics;
 
 Core::MultiThreadApp::MultiThreadApp()
+	:BaseApp()
 {
 	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
-	m_aspectRatio = 1280.f / 720.f;
+	m_camera = std::make_shared<Camera>();
+
+	m_camera->m_aspectRatio = 1280.f / 720.f;
 }
 
 Core::MultiThreadApp::MultiThreadApp(const int width, const int height)
+	:BaseApp(width, height)
 {
 	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
-	m_aspectRatio = width / (float)height;
+	m_camera = std::make_shared<Camera>();
+
+	m_camera->m_aspectRatio = width / (float)height;
 }
 
 Core::MultiThreadApp::~MultiThreadApp()
@@ -35,16 +41,27 @@ int Core::MultiThreadApp::Run()
 	m_timer.Reset();
 
 	std::thread renderThread([&] {
-		std::unique_lock<std::mutex> lock(g_mtx);
-		cv.wait(lock, [&] { return !isRunning || frameReady; });
+		while (isRunning) {
+			std::unique_lock<std::mutex> lock(g_mtx);
+			cv.wait(lock, [&] { return !isRunning || frameReady; });
 
-		if (!isRunning)
-			return;
+			if (!isRunning)
+			{
+				break;
+			}
+			if (isFirstFrame)
+			{
+				isFirstFrame = false;
+				frameReady = false;
+				continue;
+			}
 
-		frameReady = false;
-		lock.unlock();
-		Render(renderPSO);
-	});
+			frameReady = false;
+			lock.unlock();
+			Render(renderPSO);
+		}});
+		
+		
 
 	while (isRunning) {
 		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
@@ -122,17 +139,20 @@ bool Core::MultiThreadApp::InitDirectX()
 
 	ThrowIfFailed(device.As(&m_device));
 
-	utility = std::make_shared<GraphicsUtils::Utility>(m_device.Get(), m_commandList.Get());
+	
 	Graphics::InitializeCommonState(m_device);
 	Renderer::Initialize(m_device);
 
 	CreateCommandObjects();
-	
+	utility = std::make_shared<GraphicsUtils::Utility>(m_device.Get(), m_commandList.Get());
+
+	m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.GetAddressOf()));
+
 	// Descriptor Handle offset 구하기
 	m_cbvSrvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	m_dsvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-	
+
 	// DescriptorHeap 생성
 	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRTVHeap);
 	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
@@ -206,7 +226,8 @@ void Core::MultiThreadApp::OnResize()
 {
 	if (m_swapChain == nullptr) return;
 
-	m_aspectRatio = m_width / (float)m_height;
+	m_camera->m_aspectRatio = m_width / (float)m_height;
+	m_camera->UpdateProjMatrix();
 
 	// swapchain 버퍼 리셋
 	for (int i = 0; i < m_swapChainBufferCount; i++)
@@ -344,7 +365,7 @@ void Core::MultiThreadApp::UpdateGUI(float deltaTime)
 
 void Core::MultiThreadApp::BuildGeometry()
 {
-	
+
 	std::shared_ptr<Actor> sphereActor = std::make_shared<Actor>("sphere");
 
 	std::shared_ptr<StaticMesh> sphere1 = std::make_shared<StaticMesh>();
@@ -358,15 +379,15 @@ void Core::MultiThreadApp::BuildGeometry()
 	sphereActor->SetRootComponent(cmp);
 
 	m_actors.push_back(sphereActor);
-	
-	
+
+
 }
 
 void Core::MultiThreadApp::BuildFrameResources()
 {
 	for (int i = 0; i < m_frameResourceCount; i++)
 	{
-		m_frameResources[i].Initialize();
+		m_frameResources[i].Initialize(m_device);
 	}
 }
 
@@ -391,15 +412,77 @@ void Core::MultiThreadApp::Update(float deltaTime)
 		WaitForSingleObject(eventHandle, INFINITE);
 		CloseHandle(eventHandle);
 	}
+
+	for (auto& actor : m_actors)
+	{
+		actor->Tick(deltaTime);
+	}
+
+	// view 회전 업데이트
+	if (isFocused && isFPSMode)
+	{
+		// set cursor pos center
+		GetWindowRect(m_mainWnd, &windowRect);
+		int x = (windowRect.right + windowRect.left) / 2;
+		int y = (windowRect.bottom + windowRect.top) / 2;
+		SetCursorPos(x, y);
+
+		// update camera
+		m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY);
+		m_camera->UpdateCameraLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
+
+	
+	}
+	m_camera->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
+	
+	// update consatant
+	currentFrameResource.UpdateGlobalConstantBuffer(
+		m_camera->GetActorFrontDir(),
+		m_camera->GetActorLocation(),
+		m_camera->GetViewMatrix(),
+		m_camera->GetProjMatrix()
+	);
 }
 
 void Core::MultiThreadApp::BuildProxy()
 {
+	FrameResource& currentFrameResource = m_frameResources[m_currentResourceIndex];
+	currentFrameResource.proxyBuffer.clear();
+
+	int id = 0;
+	for (auto& actor : m_actors)
+	{
+		SceneComponent* root = actor->GetRootComponent();
+		AddProxy(root);
+	}
 }
 
+void Core::MultiThreadApp::AddProxy(SceneComponent* component)
+{
+	FrameResource& currentFrameResource = m_frameResources[m_currentResourceIndex];
+	if (StaticMeshComponent* staticMeshComp = dynamic_cast<StaticMeshComponent*>(component))
+	{
+		Proxy proxy;
+		proxy.mesh = staticMeshComp->GetMesh();
+		currentFrameResource.proxyBuffer.push_back(proxy);
+	}
+
+	std::vector<std::shared_ptr<SceneComponent>> child;
+	component->GetChildrenComponents(child);
+	for (size_t i = 0; i < child.size(); i++)
+	{
+		AddProxy(child[i].get());
+	}
+}
 void Core::MultiThreadApp::Render(const std::string& psoName)
 {
 	using namespace Renderer;
+
+	// N번을 update했을 때 N-1 번 프레임을 렌더링 
+	// update의 경우 m_frameResourceCount만큼 미리 업데이트 가능
+	r_currentResourceIndex = (r_currentResourceIndex + 1) % m_frameResourceCount;
+	FrameResource& currentFrameResource = m_frameResources[r_currentResourceIndex];
+
 
 	GraphicsPSO pso;
 	if (m_PSOs.find(psoName) != m_PSOs.end())
@@ -411,9 +494,8 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 		pso = m_PSOs["defaultPSO"];
 	}
 
-
-	m_commandAllocator->Reset();
-	m_commandList->Reset(m_commandAllocator.Get(), pso.GetPSO());
+	currentFrameResource.ResetAllocator();
+	ThrowIfFailed(m_commandList->Reset(currentFrameResource.GetAllocator(), pso.GetPSO()));
 
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 	m_commandList->RSSetViewports(1, &m_viewport);
@@ -422,7 +504,6 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 
 	m_commandList->SetPipelineState(pso.GetPSO());
 	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
-
 
 	m_commandList->ResourceBarrier(
 		1,
@@ -444,13 +525,10 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 	m_commandList->SetDescriptorHeaps(1, heaps);
 
 
-	if (psoName == "phongPSO")
+	m_commandList->SetGraphicsRootConstantBufferView(2, currentFrameResource.GetGCBGPUAddress());
+	for (auto& proxy : currentFrameResource.proxyBuffer)
 	{
-		/*m_commandList->SetGraphicsRootConstantBufferView(2, m_phongGCB->GetGPUVirtualAddress());
-		for (auto& mesh : phongMeshes)
-		{
-			mesh->Render(m_commandList.Get(), m_textureLoader.get());
-		}*/
+		proxy.mesh->Render(m_commandList.Get(), m_textureLoader.get());
 	}
 
 	m_commandList->ResourceBarrier(
@@ -466,6 +544,12 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 	ID3D12CommandList* commands[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
 
+	ThrowIfFailed(m_swapChain->Present(1, 0));
+	m_currentBackBufferIndex = (m_currentBackBufferIndex + 1) % m_swapChainBufferCount;
+
+	m_currentFence++;
+	m_commandQueue->Signal(m_fence.Get(), m_currentFence);
+	currentFrameResource.m_currentFence = m_currentFence;
 }
 
 void Core::MultiThreadApp::CreateTextures()

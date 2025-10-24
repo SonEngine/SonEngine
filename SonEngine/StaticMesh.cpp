@@ -1,7 +1,7 @@
 #include "StaticMesh.h"
 #include "TextureLoader.h"
 #include "Vertex.h"
-#include <vector>
+
 
 StaticMesh::StaticMesh()
 {

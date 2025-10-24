@@ -47,6 +47,7 @@ namespace Core {
 		void PostActorChanges();
 		void Update(float deltaTime);
 		void BuildProxy();
+		void AddProxy(SceneComponent* component);
 		void Render(const std::string& psoName);
 		void UpdateGUI(float deltaTime);
 
@@ -77,6 +78,7 @@ namespace Core {
 	private:
 		D3D12_VIEWPORT m_viewport;
 		D3D12_RECT m_scissorRect;
+		RECT windowRect;
 
 	private:
 		int m_currentBackBufferIndex = 0;
@@ -86,15 +88,6 @@ namespace Core {
 		UINT m_rtvDescriptorSize = 0;
 		UINT m_dsvDescriptorSize = 0;
 		std::array<float, 4> rtvClearColor;
-
-	// Projection 
-	private:
-		float m_aspectRatio;
-		float m_fovDegrees = 60.f;
-		float m_fovRadians;
-		float m_fovAngle = 70.f;
-		float m_nearZ = 0.1f;
-		float m_farZ = 100.f;
 
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_swapChainResources[m_swapChainBufferCount];
@@ -111,11 +104,12 @@ namespace Core {
 		
 	private:
 		std::vector<std::shared_ptr<Actor>> m_actors;
+		std::shared_ptr<Camera> m_camera;
 		
 	private:
 		std::atomic<bool> isRunning = true;
 		std::atomic<bool> frameReady = false;
-		std::atomic<std::string> renderPSO = "phongPSO";
+		std::string renderPSO = "phongPSO";
 		std::mutex r_mtx;
 		std::mutex g_mtx;
 		std::condition_variable cv;
@@ -126,6 +120,8 @@ namespace Core {
 		static const int m_frameResourceCount = 3;
 		FrameResource m_frameResources[m_frameResourceCount];
 		int m_currentResourceIndex = 0;
+		int r_currentResourceIndex = 0;
+		bool isFirstFrame = true;
 		UINT64 m_currentFence = 0;
 		Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
 

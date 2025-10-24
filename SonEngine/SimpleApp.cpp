@@ -132,8 +132,6 @@ bool Core::SimpleApp::InitDirectX()
 	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
 	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)m_width, (LONG)m_height);
 
-
-
 	m_currentFence = 0;
 	m_device->CreateFence(m_currentFence, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
 
@@ -227,15 +225,15 @@ void Core::SimpleApp::Update(float deltaTime)
 
 		// update camera
 		m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY);
-		m_camera->UpdateCameraPosition(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
+		m_camera->UpdateCameraLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
 
 		// update consatant
 		globalConstant.view = m_camera->GetViewMatrix();
 
 		phongGC.view = globalConstant.view;
-		phongGC.cameraPos = ToVector4(m_camera->GetActorLocation(), 0.f);
-		phongGC.cameraDir = ToVector4(m_camera->GetActorFrontDir(), 0.f);
-		phongGC.DirectionLightPos = ToVector4(m_directionLight->GetActorLocation(), 0.f);
+		phongGC.viewLoc = ToVector4(m_camera->GetActorLocation(), 0.f);
+		phongGC.viewDir = ToVector4(m_camera->GetActorFrontDir(), 0.f);
+		phongGC.DirectionLightLoc = ToVector4(m_directionLight->GetActorLocation(), 0.f);
 		phongGC.DirectionLightDir = ToVector4(m_directionLight->GetActorFrontDir(), 0.f);
 
 		memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
@@ -591,9 +589,9 @@ void Core::SimpleApp::BuildConstantBuffers()
 		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
 	phongGC.view = m_camera->GetViewMatrix();
 
-	phongGC.cameraPos = ToVector4(m_camera->GetActorLocation(), 0.f);
-	phongGC.cameraDir = ToVector4(m_camera->GetActorFrontDir(), 0.f);
-	phongGC.DirectionLightPos = ToVector4(m_directionLight->GetActorLocation(), 0.f);
+	phongGC.viewLoc = ToVector4(m_camera->GetActorLocation(), 0.f);
+	phongGC.viewDir = ToVector4(m_camera->GetActorFrontDir(), 0.f);
+	phongGC.DirectionLightLoc = ToVector4(m_directionLight->GetActorLocation(), 0.f);
 	phongGC.DirectionLightDir = ToVector4(m_directionLight->GetActorFrontDir(), 0.f);
 
 	memcpy(

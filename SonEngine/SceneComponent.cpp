@@ -14,6 +14,10 @@ SceneComponent::SceneComponent(Actor* owner)
 {
 }
 
+SceneComponent::~SceneComponent()
+{
+}
+
 void SceneComponent::SetSpeed(const float& newSpeed)
 {
 	m_speed = newSpeed;
@@ -51,5 +55,10 @@ void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation
 DirectX::SimpleMath::Matrix SceneComponent::GetViewMatrix() const
 {
 	return XMMatrixLookToLH(m_location, m_frontDirection, m_upDirection);
+}
+
+void SceneComponent::GetChildrenComponents(std::vector<std::shared_ptr<SceneComponent>>& children) const
+{
+	children = m_children;
 }
 

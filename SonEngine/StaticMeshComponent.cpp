@@ -6,7 +6,12 @@ StaticMeshComponent::StaticMeshComponent(Actor* owner)
 {
 }
 
+StaticMeshComponent::~StaticMeshComponent()
+{
+}
+
 void StaticMeshComponent::SetMesh(std::shared_ptr<StaticMesh> newMesh)
 {
 	m_mesh = newMesh;
 }
+

@@ -159,6 +159,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MultiThreadApp.cpp" />
     <ClCompile Include="PipelineState.cpp" />
+    <ClCompile Include="PrimitiveComponent.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="SceneComponent.cpp" />
@@ -185,6 +186,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MultiThreadApp.h" />
     <ClInclude Include="PrimitiveComponent.h" />
+    <ClInclude Include="Proxy.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="PipelineState.h" />
     <ClInclude Include="RootSignature.h" />

@@ -26,6 +26,8 @@ public:
 	void SetRootComponent(std::shared_ptr<SceneComponent> newRootComponent);
 
 public:
+	SceneComponent* GetRootComponent() const { return m_rootComponent.get(); }
+public:
 	DirectX::SimpleMath::Vector3 GetActorLocation() const;
 	DirectX::SimpleMath::Vector3 GetActorFrontDir() const;
 	DirectX::SimpleMath::Vector3 GetActorUpDir() const;

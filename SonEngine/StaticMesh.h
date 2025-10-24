@@ -3,6 +3,8 @@
 #include "d3d12.h"
 #include "directx/d3dx12.h"
 #include "wrl.h"
+#include <vector>
+
 #include "GraphicsCommon.h"
 #include "Mesh.h"
 #include "TextureGPUResource.h"

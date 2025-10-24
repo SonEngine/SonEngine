@@ -6,6 +6,7 @@ class ActorComponent
 {
 public:
 	ActorComponent(Actor* owner);
+	virtual ~ActorComponent();
 
 protected:
 	virtual void Initialize();

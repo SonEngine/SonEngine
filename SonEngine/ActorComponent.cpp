@@ -6,6 +6,10 @@ ActorComponent::ActorComponent(Actor* owner)
 {
 }
 
+ActorComponent::~ActorComponent()
+{
+}
+
 void ActorComponent::Initialize()
 {
 }

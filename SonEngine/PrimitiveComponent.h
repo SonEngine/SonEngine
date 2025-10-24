@@ -8,6 +8,8 @@ public:
     PrimitiveComponent(Actor* owner)
         : SceneComponent(owner), m_visible(true) {}
 
+    virtual ~PrimitiveComponent();
+
     void SetVisible(bool visible) { m_visible = visible; }
     bool IsVisible() const { return m_visible; }
 

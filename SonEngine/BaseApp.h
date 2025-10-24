@@ -23,7 +23,6 @@ namespace Core {
 
     private:
         virtual bool InitDirectX() = 0;
-        virtual bool FinDirectX() = 0;
         virtual bool InitGUI() = 0;
 
         // Called when the window is resized

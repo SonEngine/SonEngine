@@ -7,9 +7,15 @@ public:
 	Camera();
 
 public:
-	void UpdateCameraPosition(const DirectX::SimpleMath::Vector3& delPos);
+	void UpdateCameraLocation(const DirectX::SimpleMath::Vector3& delLoc);
 	void UpdateCameraRotation(const int& mouseDeltaX, const int& mouseDeltaY);
+	void UpdateProjMatrix();
+
 	void Tick(const float& deltaTime) override;
+
+public:
+	DirectX::SimpleMath::Matrix GetProjMatrix() const;
+
 
 protected:
 	float yAngle = 0.f;
@@ -19,4 +25,16 @@ protected:
 	float minYAngle = -89.f;
 
 	float m_rotateSpeed = 0.5f;
+
+	// Projection 
+public:
+	float m_aspectRatio;
+	float m_fovDegrees = 60.f;
+	float m_fovRadians;
+	float m_fovAngle = 70.f;
+	float m_nearZ = 0.1f;
+	float m_farZ = 100.f;
+
+	DirectX::SimpleMath::Matrix projMatrix;
+
 };

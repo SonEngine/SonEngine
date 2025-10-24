@@ -8,9 +8,9 @@ Camera::Camera():
 	m_rootComponent = c;
 }
 
-void Camera::UpdateCameraPosition(const DirectX::SimpleMath::Vector3& delPos)
+void Camera::UpdateCameraLocation(const DirectX::SimpleMath::Vector3& delLoc)
 {
-	Actor::UpdateActorLocation(delPos);
+	Actor::UpdateActorLocation(delLoc);
 }
 
 void Camera::UpdateCameraRotation(const int & mouseDeltaX, const int& mouseDeltaY)
@@ -52,4 +52,15 @@ void Camera::UpdateCameraRotation(const int & mouseDeltaX, const int& mouseDelta
 
 void Camera::Tick(const float& deltaTime)
 {
+}
+
+DirectX::SimpleMath::Matrix Camera::GetProjMatrix() const
+{
+	return projMatrix;
+}
+
+void Camera::UpdateProjMatrix()
+{
+	projMatrix = DirectX::XMMatrixPerspectiveFovLH(
+		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
 }

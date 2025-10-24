@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <memory>
+
 #include "ActorComponent.h"
 #include "directxtk12/SimpleMath.h"
 
@@ -7,6 +10,7 @@
 class SceneComponent : public ActorComponent {
 public:
 	SceneComponent(Actor* owner);
+	virtual ~SceneComponent();
 
 public:
 	void SetSpeed(const float& newSpeed);
@@ -27,7 +31,7 @@ public:
 	DirectX::SimpleMath::Vector3 GetRightDirection()const { return m_rightDirection; }
 	DirectX::SimpleMath::Vector3 GetLocation()const { return m_location; }
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
-
+	void GetChildrenComponents(std::vector<std::shared_ptr<SceneComponent>>& children) const;
 protected:
 	DirectX::SimpleMath::Vector3 m_location;
 	DirectX::SimpleMath::Matrix m_rotation;
@@ -41,4 +45,8 @@ protected:
 protected:
 	float m_speed = 1.f;
 	float m_rotateSpeed = 1.f;
+
+protected:
+	std::shared_ptr<SceneComponent> m_parent;
+	std::vector<std::shared_ptr<SceneComponent>> m_children;
 };
