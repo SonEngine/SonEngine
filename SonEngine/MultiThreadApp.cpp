@@ -480,6 +480,8 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 	// N번을 update했을 때 N-1 번 프레임을 렌더링 
 	// update의 경우 m_frameResourceCount만큼 미리 업데이트 가능
 	FrameResource& currentFrameResource = m_frameResources[r_currentResourceIndex];
+	r_currentResourceIndex = (r_currentResourceIndex + 1) % m_frameResourceCount;
+
 	if (currentFrameResource.m_currentFence != 0 &&
 		m_fence->GetCompletedValue() < currentFrameResource.m_currentFence)
 	{
@@ -489,6 +491,7 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 		WaitForSingleObject(eventHandle, INFINITE);
 		CloseHandle(eventHandle);
 	}
+	currentFrameResource.m_currentFence = ++m_currentFence;
 
 	GraphicsPSO pso;
 	if (m_PSOs.find(psoName) != m_PSOs.end())
@@ -554,11 +557,10 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 
 	ThrowIfFailed(m_swapChain->Present(1, 0));
 	m_currentBackBufferIndex = (m_currentBackBufferIndex + 1) % m_swapChainBufferCount;
-	r_currentResourceIndex = (r_currentResourceIndex + 1) % m_frameResourceCount;
 
-	m_currentFence++;
+	
 	m_commandQueue->Signal(m_fence.Get(), m_currentFence);
-	currentFrameResource.m_currentFence = m_currentFence;
+	
 }
 
 void Core::MultiThreadApp::CreateTextures()
