@@ -186,6 +186,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\earth_Albedo.dds">
