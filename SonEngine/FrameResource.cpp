@@ -19,6 +19,17 @@ void FrameResource::Initialize(Microsoft::WRL::ComPtr<ID3D12Device5>& device) {
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(m_commandAllocator.ReleaseAndGetAddressOf())
 		));
+
+	ThrowIfFailed(
+		device->CreateCommandList(
+			0,
+			D3D12_COMMAND_LIST_TYPE_DIRECT,
+			m_commandAllocator.Get(),
+			nullptr,
+			IID_PPV_ARGS(m_commandList.ReleaseAndGetAddressOf())
+		));
+
+	m_commandList->Close();
 }
 
 void FrameResource::UpdateGlobalConstantBuffer(

@@ -22,6 +22,7 @@ public:
 
 public:
 	ID3D12CommandAllocator* GetAllocator() const { return m_commandAllocator.Get(); }
+	ID3D12GraphicsCommandList* GetCommandList() const { return m_commandList.Get(); }
 
 private:
 	PhongGlobalConstant phongGC;
@@ -30,6 +31,7 @@ private:
 
 private:
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList;
 
 public:
 	UINT64 m_currentFence = 0;

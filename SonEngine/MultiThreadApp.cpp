@@ -8,6 +8,7 @@
 
 #include "StaticMesh.h"
 #include "StaticMeshComponent.h"
+#include <pix3.h>
 
 using Microsoft::WRL::ComPtr;
 using namespace GraphicsUtils;
@@ -76,8 +77,9 @@ int Core::MultiThreadApp::Run()
 
 			PostActorChanges();
 			Update(deltaTime);
+			
 			BuildProxy();
-			std::cout << "Main Thread : " << m_currentResourceIndex << std::endl;
+			//std::cout << "Main Thread : " << m_currentResourceIndex << std::endl;
 			m_currentResourceIndex = (m_currentResourceIndex + 1) % m_frameResourceCount;
 			
 			{
@@ -363,7 +365,6 @@ void Core::MultiThreadApp::UpdateGUI(float deltaTime)
 
 void Core::MultiThreadApp::BuildGeometry()
 {
-
 	std::shared_ptr<Actor> sphereActor = std::make_shared<Actor>("sphere");
 
 	std::shared_ptr<StaticMesh> sphere1 = std::make_shared<StaticMesh>();
@@ -383,9 +384,11 @@ void Core::MultiThreadApp::BuildGeometry()
 
 void Core::MultiThreadApp::BuildFrameResources()
 {
+	m_frameResources.resize(m_frameResourceCount);
 	for (int i = 0; i < m_frameResourceCount; i++)
 	{
-		m_frameResources[i].Initialize(m_device);
+		m_frameResources[i] = std::make_shared<FrameResource>();
+		m_frameResources[i]->Initialize(m_device);
 	}
 }
 
@@ -395,17 +398,16 @@ void Core::MultiThreadApp::PostActorChanges()
 
 void Core::MultiThreadApp::Update(float deltaTime)
 {
-	
-	FrameResource& currentFrameResource = m_frameResources[m_currentResourceIndex];
+	currentFrameResource = m_frameResources[m_currentResourceIndex].get();
 	
 	// currentFrameResource가 초기값이 아니면서,
 	// 현재 사용하려는 리소스의 이전 명령이 아직 이행되지 않았을 경우 
 	// 완료할 때까지 기다린다.
-	if (currentFrameResource.m_currentFence != 0 && 
-		m_fence->GetCompletedValue() < currentFrameResource.m_currentFence)
+	if (currentFrameResource->m_currentFence != 0 && 
+		m_fence->GetCompletedValue() < currentFrameResource->m_currentFence)
 	{
 		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-		m_fence->SetEventOnCompletion(currentFrameResource.m_currentFence, eventHandle);
+		m_fence->SetEventOnCompletion(currentFrameResource->m_currentFence, eventHandle);
 
 		WaitForSingleObject(eventHandle, INFINITE);
 		CloseHandle(eventHandle);
@@ -435,7 +437,7 @@ void Core::MultiThreadApp::Update(float deltaTime)
 	m_camera->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
 	
 	// update consatant
-	currentFrameResource.UpdateGlobalConstantBuffer(
+	currentFrameResource->UpdateGlobalConstantBuffer(
 		m_camera->GetActorFrontDir(),
 		m_camera->GetActorLocation(),
 		m_camera->GetViewMatrix(),
@@ -445,25 +447,28 @@ void Core::MultiThreadApp::Update(float deltaTime)
 
 void Core::MultiThreadApp::BuildProxy()
 {
-	FrameResource& currentFrameResource = m_frameResources[m_currentResourceIndex];
-	currentFrameResource.proxyBuffer.clear();
-	//std::cout << m_currentResourceIndex << "build 중\n";
-	int id = 0;
-	for (auto& actor : m_actors)
+	if (proxyDirty || currentFrameResource->m_currentFence == 0)
 	{
-		SceneComponent* root = actor->GetRootComponent();
-		AddProxy(root);
+		proxyDirty = false;
+		currentFrameResource->proxyBuffer.clear();
+		//std::cout << m_currentResourceIndex << "build 중\n";
+		int id = 0;
+		for (auto& actor : m_actors)
+		{
+			SceneComponent* root = actor->GetRootComponent();
+			AddProxy(root);
+		}
 	}
+	
 }
 
 void Core::MultiThreadApp::AddProxy(SceneComponent* component)
 {
-	FrameResource& currentFrameResource = m_frameResources[m_currentResourceIndex];
 	if (StaticMeshComponent* staticMeshComp = dynamic_cast<StaticMeshComponent*>(component))
 	{
 		Proxy proxy;
 		proxy.mesh = staticMeshComp->GetMesh();
-		currentFrameResource.proxyBuffer.push_back(proxy);
+		currentFrameResource->proxyBuffer.push_back(proxy);
 	}
 
 	std::vector<std::shared_ptr<SceneComponent>> child;
@@ -479,19 +484,19 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 
 	// N번을 update했을 때 N-1 번 프레임을 렌더링 
 	// update의 경우 m_frameResourceCount만큼 미리 업데이트 가능
-	FrameResource& currentFrameResource = m_frameResources[r_currentResourceIndex];
+	r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
 	r_currentResourceIndex = (r_currentResourceIndex + 1) % m_frameResourceCount;
 
-	if (currentFrameResource.m_currentFence != 0 &&
-		m_fence->GetCompletedValue() < currentFrameResource.m_currentFence)
+	if (r_currentFrameResource->m_currentFence != 0 &&
+		m_fence->GetCompletedValue() < r_currentFrameResource->m_currentFence)
 	{
 		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-		m_fence->SetEventOnCompletion(currentFrameResource.m_currentFence, eventHandle);
+		m_fence->SetEventOnCompletion(r_currentFrameResource->m_currentFence, eventHandle);
 
 		WaitForSingleObject(eventHandle, INFINITE);
 		CloseHandle(eventHandle);
 	}
-	currentFrameResource.m_currentFence = ++m_currentFence;
+	r_currentFrameResource->m_currentFence = ++m_currentFence;
 
 	GraphicsPSO pso;
 	if (m_PSOs.find(psoName) != m_PSOs.end())
@@ -502,19 +507,19 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 	{
 		pso = m_PSOs["defaultPSO"];
 	}
+	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetCommandList();
+	r_currentFrameResource->ResetAllocator();
+	ThrowIfFailed(commandList->Reset(r_currentFrameResource->GetAllocator(), pso.GetPSO()));
 
-	currentFrameResource.ResetAllocator();
-	ThrowIfFailed(m_commandList->Reset(currentFrameResource.GetAllocator(), pso.GetPSO()));
+	commandList->RSSetScissorRects(1, &m_scissorRect);
+	commandList->RSSetViewports(1, &m_viewport);
 
-	m_commandList->RSSetScissorRects(1, &m_scissorRect);
-	m_commandList->RSSetViewports(1, &m_viewport);
+	commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	m_commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	commandList->SetPipelineState(pso.GetPSO());
+	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
 
-	m_commandList->SetPipelineState(pso.GetPSO());
-	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
-
-	m_commandList->ResourceBarrier(
+	commandList->ResourceBarrier(
 		1,
 
 
@@ -524,25 +529,25 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 			D3D12_RESOURCE_STATE_RENDER_TARGET
 		));
 
-	m_commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
-	m_commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
-	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
+	commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
+	commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
+	commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
 
 
 	ID3D12DescriptorHeap* heaps[] = {
 		m_textureLoader->GetHeap()
 	};
 
-	m_commandList->SetDescriptorHeaps(1, heaps);
+	commandList->SetDescriptorHeaps(1, heaps);
 
 
-	m_commandList->SetGraphicsRootConstantBufferView(2, currentFrameResource.GetGCBGPUAddress());
-	for (auto& proxy : currentFrameResource.proxyBuffer)
+	commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetGCBGPUAddress());
+	for (auto& proxy : r_currentFrameResource->proxyBuffer)
 	{
-		proxy.mesh->Render(m_commandList.Get(), m_textureLoader.get());
+		proxy.mesh->Render(commandList, m_textureLoader.get());
 	}
 
-	m_commandList->ResourceBarrier(
+	commandList->ResourceBarrier(
 		1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			GetCurrentSwapChainResource(),
@@ -550,9 +555,9 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 			D3D12_RESOURCE_STATE_PRESENT
 		));
 
-	m_commandList->Close();
+	commandList->Close();
 
-	ID3D12CommandList* commands[] = { m_commandList.Get() };
+	ID3D12CommandList* commands[] = { commandList };
 	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
 
 	ThrowIfFailed(m_swapChain->Present(1, 0));

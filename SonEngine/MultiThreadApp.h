@@ -118,13 +118,15 @@ namespace Core {
 	//FrameResource
 	private:
 		static const int m_frameResourceCount = 2;
-		FrameResource m_frameResources[m_frameResourceCount];
+		std::vector<std::shared_ptr<FrameResource>> m_frameResources;
+		FrameResource* currentFrameResource;
+		FrameResource* r_currentFrameResource;
 		int m_currentResourceIndex = 0;
 		int r_currentResourceIndex = 0;
 		bool isFirstFrame = true;
 		UINT64 m_currentFence = 0;
 		Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
 
-	
+		bool proxyDirty = true;
 	};
 }
