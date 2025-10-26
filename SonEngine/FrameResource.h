@@ -35,5 +35,6 @@ private:
 
 public:
 	UINT64 m_currentFence = 0;
+	bool proxyDirty = true;
 	std::vector<Proxy> proxyBuffer;
 };

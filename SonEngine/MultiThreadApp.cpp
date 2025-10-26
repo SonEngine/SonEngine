@@ -1,4 +1,4 @@
-#include "MultiThreadApp.h"
+﻿#include "MultiThreadApp.h"
 #include "RootSignature.h"
 #include "PipelineState.h"
 #include "GeometryGenerater.h"
@@ -57,48 +57,54 @@ int Core::MultiThreadApp::Run()
 			lock.unlock();
 			Render(renderPSO);
 		}});
-		
-		
 
-	while (isRunning) {
-		if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
-			if (msg.message == WM_QUIT)
-			{
-				isRunning = false;
-				break;
+		while (isRunning) {
+			if (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
+				if (msg.message == WM_QUIT)
+				{
+					isRunning = false;
+					break;
+				}
+
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
 			}
+			else {
+				PIXBeginEvent(0, L"Frame Update");
 
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-		else {
-			m_timer.Tick();
-			deltaTime = (float)m_timer.GetDeltaTime();
+				m_timer.Tick();
+				deltaTime = (float)m_timer.GetDeltaTime();
 
-			PostActorChanges();
-			Update(deltaTime);
-			
-			BuildProxy();
-			//std::cout << "Main Thread : " << m_currentResourceIndex << std::endl;
-			m_currentResourceIndex = (m_currentResourceIndex + 1) % m_frameResourceCount;
-			
-			{
-				std::lock_guard<std::mutex> lock(g_mtx);
-				frameReady = true;
+				PostActorChanges();
+
+				Update(deltaTime);
+
+				BuildProxy();
+				//std::cout << "Main Thread : " << m_currentResourceIndex << std::endl;
+				m_currentResourceIndex = (m_currentResourceIndex + 1) % m_frameResourceCount;
+
+				{
+					std::lock_guard<std::mutex> lock(g_mtx);
+					frameReady = true;
+				}
+
+				cv.notify_one();
 			}
-
-			cv.notify_one();
 		}
-	}
-	isRunning = false;
-	{
-		std::lock_guard<std::mutex> lock(g_mtx);
-		frameReady = true;
-	}
-	cv.notify_all();
-	renderThread.join();
+		isRunning = false;
+		{
+			std::lock_guard<std::mutex> lock(g_mtx);
+			frameReady = true;
+		}
+			
+		cv.notify_all();
+		renderThread.join();
 
-	return (int)msg.wParam;
+		
+		FlushCommands();
+
+		std::cout << "Run 함수 종료\n";
+		return (int)msg.wParam;
 }
 
 bool Core::MultiThreadApp::InitDirectX()
@@ -139,7 +145,7 @@ bool Core::MultiThreadApp::InitDirectX()
 
 	ThrowIfFailed(device.As(&m_device));
 
-	
+
 	Graphics::InitializeCommonState(m_device);
 	Renderer::Initialize(m_device);
 
@@ -147,6 +153,7 @@ bool Core::MultiThreadApp::InitDirectX()
 	utility = std::make_shared<GraphicsUtils::Utility>(m_device.Get(), m_commandList.Get());
 
 	m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.GetAddressOf()));
+	m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_createBufferfence.GetAddressOf()));
 
 	// Descriptor Handle offset 구하기
 	m_cbvSrvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -365,21 +372,13 @@ void Core::MultiThreadApp::UpdateGUI(float deltaTime)
 
 void Core::MultiThreadApp::BuildGeometry()
 {
-	std::shared_ptr<Actor> sphereActor = std::make_shared<Actor>("sphere");
-
-	std::shared_ptr<StaticMesh> sphere1 = std::make_shared<StaticMesh>();
-	sphere1->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
-	sphere1->SetAlbedoTexture("8k_earth_albedo");
-	sphere1->SetLocation(0, 0, 3);
-
-	std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(sphereActor.get());
-	cmp->SetMesh(sphere1);
-
-	sphereActor->SetRootComponent(cmp);
-
-	m_actors.push_back(sphereActor);
-
-
+	std::shared_ptr<Actor> a = utility->CreateActor(
+		"sphere",
+		GeometryGenerator::MakeSphere(30, 1.f),
+		"8k_earth_albedo",
+		{ 0.f,0.f,1.f }
+	);
+	m_actors.push_back(a);
 }
 
 void Core::MultiThreadApp::BuildFrameResources()
@@ -394,16 +393,31 @@ void Core::MultiThreadApp::BuildFrameResources()
 
 void Core::MultiThreadApp::PostActorChanges()
 {
+	if (!m_addActors.empty())
+	{
+		for (auto& pFr : m_frameResources)
+		{
+			pFr->proxyDirty = true;
+		}
+		//std::cout << m_addActors.size() << "개 추가\n";
+		for (auto& a : m_addActors)
+		{
+			m_actors.push_back(a);
+		}
+		m_addActors.clear();
+	}
 }
 
 void Core::MultiThreadApp::Update(float deltaTime)
 {
+	PIXBeginEvent(0, L"Game Update");
+
 	currentFrameResource = m_frameResources[m_currentResourceIndex].get();
-	
+
 	// currentFrameResource가 초기값이 아니면서,
 	// 현재 사용하려는 리소스의 이전 명령이 아직 이행되지 않았을 경우 
 	// 완료할 때까지 기다린다.
-	if (currentFrameResource->m_currentFence != 0 && 
+	if (currentFrameResource->m_currentFence != 0 &&
 		m_fence->GetCompletedValue() < currentFrameResource->m_currentFence)
 	{
 		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
@@ -411,6 +425,33 @@ void Core::MultiThreadApp::Update(float deltaTime)
 
 		WaitForSingleObject(eventHandle, INFINITE);
 		CloseHandle(eventHandle);
+	}
+
+	if (addDirty)
+	{
+		m_commandAllocator->Reset();
+		m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+
+		static float x = 1.f;
+
+		addDirty = false;
+		std::shared_ptr<Actor> b = utility->CreateActor(
+			"sphere",
+			GeometryGenerator::MakeSphere(30, 1.f),
+			"8k_earth_albedo",
+			{ x ,0.f,1.f }
+		);
+		m_addActors.push_back(b);
+		x += 1.f;
+
+		m_commandList->Close();
+		++m_currentBufferFence;
+		ID3D12CommandList* commands[] = { m_commandList.Get() };
+		{
+			std::lock_guard<std::mutex> lock(queue_mtx);
+			m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+			ThrowIfFailed(m_commandQueue->Signal(m_createBufferfence.Get(), m_currentBufferFence));
+		}
 	}
 
 	for (auto& actor : m_actors)
@@ -435,7 +476,7 @@ void Core::MultiThreadApp::Update(float deltaTime)
 		mouseDeltaY = 0;
 	}
 	m_camera->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
-	
+
 	// update consatant
 	currentFrameResource->UpdateGlobalConstantBuffer(
 		m_camera->GetActorFrontDir(),
@@ -447,25 +488,28 @@ void Core::MultiThreadApp::Update(float deltaTime)
 
 void Core::MultiThreadApp::BuildProxy()
 {
-	if (proxyDirty || currentFrameResource->m_currentFence == 0)
+	if (currentFrameResource->proxyDirty)
 	{
-		proxyDirty = false;
+		std::cout << "Rebuild Proxy -> Actor count : " << m_actors.size() << '\n';
+		currentFrameResource->proxyDirty = false;
 		currentFrameResource->proxyBuffer.clear();
 		//std::cout << m_currentResourceIndex << "build 중\n";
 		int id = 0;
+
 		for (auto& actor : m_actors)
 		{
 			SceneComponent* root = actor->GetRootComponent();
 			AddProxy(root);
 		}
 	}
-	
+
 }
 
 void Core::MultiThreadApp::AddProxy(SceneComponent* component)
 {
 	if (StaticMeshComponent* staticMeshComp = dynamic_cast<StaticMeshComponent*>(component))
 	{
+		//std::cout << "Mesh exist\n";
 		Proxy proxy;
 		proxy.mesh = staticMeshComp->GetMesh();
 		currentFrameResource->proxyBuffer.push_back(proxy);
@@ -521,8 +565,6 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 
 	commandList->ResourceBarrier(
 		1,
-
-
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			GetCurrentSwapChainResource(),
 			D3D12_RESOURCE_STATE_PRESENT,
@@ -558,14 +600,14 @@ void Core::MultiThreadApp::Render(const std::string& psoName)
 	commandList->Close();
 
 	ID3D12CommandList* commands[] = { commandList };
-	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+	{
+		std::lock_guard<std::mutex> lock(queue_mtx);
+		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+		ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), m_currentFence));
+	}
 
 	ThrowIfFailed(m_swapChain->Present(1, 0));
 	m_currentBackBufferIndex = (m_currentBackBufferIndex + 1) % m_swapChainBufferCount;
-
-	
-	m_commandQueue->Signal(m_fence.Get(), m_currentFence);
-	
 }
 
 void Core::MultiThreadApp::CreateTextures()
@@ -601,14 +643,14 @@ ID3D12Resource* Core::MultiThreadApp::GetCurrentSwapChainResource() const
 
 void Core::MultiThreadApp::FlushCommands()
 {
-	m_currentFence++;
+	m_currentBufferFence++;
 
-	ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), m_currentFence));
+	ThrowIfFailed(m_commandQueue->Signal(m_createBufferfence.Get(), m_currentBufferFence));
 
-	if (m_fence->GetCompletedValue() < m_currentFence)
+	if (m_createBufferfence->GetCompletedValue() < m_currentBufferFence)
 	{
 		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-		m_fence->SetEventOnCompletion(m_currentFence, eventHandle);
+		m_createBufferfence->SetEventOnCompletion(m_currentBufferFence, eventHandle);
 
 		WaitForSingleObject(eventHandle, INFINITE);
 		CloseHandle(eventHandle);

@@ -1,5 +1,6 @@
 #include "StaticMeshComponent.h"
 #include "Actor.h"
+#include "StaticMesh.h"
 
 StaticMeshComponent::StaticMeshComponent(Actor* owner)
 	:PrimitiveComponent(owner)

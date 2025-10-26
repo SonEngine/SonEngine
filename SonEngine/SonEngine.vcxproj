@@ -238,6 +238,7 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="PhongCommon.hlsli" />
+    <None Include="Utility.inl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\bricks_Albedo.dds" />

@@ -1,12 +1,13 @@
-#include "VideoApp.h"
+﻿#include "VideoApp.h"
 #include "SimpleApp.h"
 #include "MultiThreadApp.h"
+
 
 int main()
 {
 	Core::MultiThreadApp app(1280, 720);
 	//Core::VideoApp app(1280, 720);
-
+	
 	if (app.Initialize())
 	{
 		return app.Run();

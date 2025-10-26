@@ -104,6 +104,7 @@ namespace Core {
 		
 	private:
 		std::vector<std::shared_ptr<Actor>> m_actors;
+		std::vector<std::shared_ptr<Actor>> m_addActors;
 		std::shared_ptr<Camera> m_camera;
 		
 	private:
@@ -112,6 +113,8 @@ namespace Core {
 		std::string renderPSO = "phongPSO";
 		std::mutex r_mtx;
 		std::mutex g_mtx;
+		std::mutex queue_mtx;
+
 		std::condition_variable cv;
 		float deltaTime;
 
@@ -124,9 +127,12 @@ namespace Core {
 		int m_currentResourceIndex = 0;
 		int r_currentResourceIndex = 0;
 		bool isFirstFrame = true;
+		
 		UINT64 m_currentFence = 0;
+		UINT64 m_currentBufferFence = 0;
+		
 		Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
+		Microsoft::WRL::ComPtr<ID3D12Fence> m_createBufferfence;
 
-		bool proxyDirty = true;
 	};
 }

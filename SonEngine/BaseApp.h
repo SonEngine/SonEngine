@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <atomic>
 
 #include "imgui.h"
 #include "imgui_impl_win32.h"
@@ -8,6 +9,7 @@
 
 #include "Timer.h"
 #include "InputHelper.h"
+
 
 namespace Core {
     class BaseApp {
@@ -48,5 +50,8 @@ namespace Core {
         bool bMouseFlag = false;
         int mouseDeltaX = 0;
         int mouseDeltaY = 0;
+
+    protected:
+        bool addDirty = false;
     };
 }

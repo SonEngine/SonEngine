@@ -156,12 +156,13 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		mouseDeltaY = raw.data.mouse.lLastY;
 	}
 	break;
-
-
 	case WM_KEYDOWN:
+
 		m_inputHelper.SetInputState((size_t)wParam, true);
 		break;
 	case WM_KEYUP:
+		if (wParam == 'A')
+			addDirty = true;
 		m_inputHelper.SetInputState((size_t)wParam, false);
 		break;
 

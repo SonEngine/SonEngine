@@ -1,7 +1,8 @@
 #pragma once
 
 #include "PrimitiveComponent.h"
-#include "StaticMesh.h"
+
+class StaticMesh;
 
 class StaticMeshComponent : public PrimitiveComponent
 {
