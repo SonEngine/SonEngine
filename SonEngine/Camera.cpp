@@ -1,4 +1,4 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 
 
 Camera::Camera():
@@ -7,6 +7,7 @@ Camera::Camera():
 	std::shared_ptr<SceneComponent> c = std::make_shared<SceneComponent>(this);
 	m_rootComponent = c;
 }
+
 void Camera::Initialize()
 {
 	UpdateProjMatrix();
@@ -68,6 +69,19 @@ DirectX::SimpleMath::Matrix Camera::GetProjMatrix() const
 void Camera::UpdateProjMatrix()
 {
 	m_fovRadians = DirectX::XMConvertToRadians(m_fovDegrees);
-	projMatrix = DirectX::XMMatrixPerspectiveFovLH(
-		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
+	if (cameraMode == CM_Perspective)
+	{
+		projMatrix = DirectX::XMMatrixPerspectiveFovLH(
+			m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
+	}
+	else
+	{
+		projMatrix = DirectX::SimpleMath::Matrix::CreateOrthographic(m_width, m_height, m_nearZ, m_farZ);
+	}
+}
+
+void Camera::SetCameraMode(CameraMode newMode)
+{
+	cameraMode = newMode;
+	UpdateProjMatrix();
 }
