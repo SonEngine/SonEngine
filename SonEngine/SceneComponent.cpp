@@ -1,11 +1,11 @@
-#include "SceneComponent.h"
+﻿#include "SceneComponent.h"
 #include "directxtk12/SimpleMath.h"
 
 using DirectX::SimpleMath::Vector3;
 
 SceneComponent::SceneComponent(Actor* owner)
 	:ActorComponent(owner),
-	m_location(Vector3(0, 0, -3)),
+	m_location(Vector3(0, 0, 0)),
 	m_frontDirection(Vector3(0, 0, 1)),
 	m_baseFrontDirection(Vector3(0, 0, 1)),
 	m_upDirection(Vector3(0, 1, 0)),

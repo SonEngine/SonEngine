@@ -1,4 +1,5 @@
-#include "Actor.h"
+﻿#include "Actor.h"
+#include "StaticMeshComponent.h"
 
 using DirectX::SimpleMath::Vector3;
 
@@ -25,11 +26,26 @@ void Actor::SetActorLocation(const DirectX::SimpleMath::Vector3& newLocation)
 	}
 }
 
+void Actor::SetActorRotation(const DirectX::SimpleMath::Matrix& newMat)
+{
+	if (m_rootComponent)
+	{
+		if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(m_rootComponent.get()))
+		{
+			cmp->SetRotation(newMat);
+		}
+	}
+}
+
 void Actor::UpdateActorLocation(const DirectX::SimpleMath::Vector3& delLocation)
 {
 	if (m_rootComponent)
 	{
 		m_rootComponent->AddLocation(delLocation);
+		if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(m_rootComponent.get()))
+		{
+			cmp->Translate(delLocation);
+		}
 	}
 }
 

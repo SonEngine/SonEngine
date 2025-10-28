@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <vector>
 #include <memory>
@@ -32,6 +32,7 @@ public:
 	DirectX::SimpleMath::Vector3 GetLocation()const { return m_location; }
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
 	void GetChildrenComponents(std::vector<std::shared_ptr<SceneComponent>>& children) const;
+
 protected:
 	DirectX::SimpleMath::Vector3 m_location;
 	DirectX::SimpleMath::Matrix m_rotation;

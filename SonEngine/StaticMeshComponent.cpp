@@ -1,4 +1,4 @@
-#include "StaticMeshComponent.h"
+﻿#include "StaticMeshComponent.h"
 #include "Actor.h"
 #include "StaticMesh.h"
 
@@ -16,3 +16,18 @@ void StaticMeshComponent::SetMesh(std::shared_ptr<StaticMesh> newMesh)
 	m_mesh = newMesh;
 }
 
+void StaticMeshComponent::SetRotation(const DirectX::SimpleMath::Matrix& mat)
+{
+	if (m_mesh)
+	{
+		m_mesh->SetRotation(mat);
+	}
+}
+
+void StaticMeshComponent::Translate(const DirectX::SimpleMath::Vector3& del)
+{
+	if (m_mesh)
+	{
+		m_mesh->Translate(del.x, del.y, del.z);
+	}
+}

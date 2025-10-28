@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <atomic>
 #include <condition_variable>
@@ -105,6 +105,7 @@ namespace Core {
 	private:
 		std::vector<std::shared_ptr<Actor>> m_actors;
 		std::vector<std::shared_ptr<Actor>> m_addActors;
+		std::shared_ptr<Actor> m_player;
 		std::shared_ptr<Camera> m_camera;
 		
 	private:

@@ -21,7 +21,12 @@ Core::MultiThreadApp::MultiThreadApp()
 	m_camera = std::make_shared<Camera>();
 
 	m_camera->m_aspectRatio = 1280.f / 720.f;
+	m_camera->m_width = 1280;
+	m_camera->m_height = 720;
+	m_camera->SetCameraMode(CameraMode::CM_Perspective);
 	m_camera->Initialize();
+	m_camera->SetActorLocation({ -0.32f, 4.4f, -1.9 });
+	m_camera->UpdateCameraRotation(0, 135);
 }
 
 Core::MultiThreadApp::MultiThreadApp(const int width, const int height)
@@ -30,8 +35,13 @@ Core::MultiThreadApp::MultiThreadApp(const int width, const int height)
 	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
 	m_camera = std::make_shared<Camera>();
 
+	m_camera->m_width = width;
+	m_camera->m_height = height;
 	m_camera->m_aspectRatio = width / (float)height;
+	m_camera->SetCameraMode(CameraMode::CM_Perspective);
 	m_camera->Initialize();
+	m_camera->SetActorLocation({ -0.32f, 4.4f, -1.9 });
+	m_camera->UpdateCameraRotation(0, 135);
 }
 
 Core::MultiThreadApp::~MultiThreadApp()
@@ -81,8 +91,8 @@ int Core::MultiThreadApp::Run()
 
 				BuildProxy();
 				//std::cout << "Main Thread : " << m_currentResourceIndex << std::endl;
+				
 				m_currentResourceIndex = (m_currentResourceIndex + 1) % m_frameResourceCount;
-
 				{
 					std::lock_guard<std::mutex> lock(g_mtx);
 					frameReady = true;
@@ -109,6 +119,8 @@ int Core::MultiThreadApp::Run()
 
 bool Core::MultiThreadApp::InitDirectX()
 {
+	
+
 	UINT dxgiFactoryFlags = 0;
 
 	// Enable the debug layer
@@ -194,6 +206,8 @@ bool Core::MultiThreadApp::InitDirectX()
 
 		FlushCommands();
 	}
+
+	
 	return true;
 }
 
@@ -233,6 +247,8 @@ void Core::MultiThreadApp::OnResize()
 {
 	if (m_swapChain == nullptr) return;
 
+	m_camera->m_width = m_width;
+	m_camera->m_height = m_height;
 	m_camera->m_aspectRatio = m_width / (float)m_height;
 	m_camera->UpdateProjMatrix();
 
@@ -372,13 +388,24 @@ void Core::MultiThreadApp::UpdateGUI(float deltaTime)
 
 void Core::MultiThreadApp::BuildGeometry()
 {
-	std::shared_ptr<Actor> a = utility->CreateActor(
-		"sphere",
-		GeometryGenerator::MakeSphere(30, 1.f),
-		"8k_earth_albedo",
-		{ 0.f,0.f,1.f }
+	m_player = utility->CreateActor(
+		"player",
+		GeometryGenerator::MakeCube(1.f,1.f,1.f),
+		"pavement_03_albedo",
+		{ -1.5f, 0.5f, -1.5f }
 	);
-	m_actors.push_back(a);
+	m_player->SetActorSpeed(1.f);
+
+	std::shared_ptr<Actor> plane = utility->CreateActor(
+		"plane",
+		GeometryGenerator::MakePlane(4,4,4),
+		"8k_earth_albedo",
+		{ 0.f,0.f,0.f }
+	);
+	//plane->SetActorRotation(DirectX::XMMatrixRotationX(-3.141592f * 0.5f));
+	//plane->SetActorLocation({ 0,0,3	});
+	//m_actors.push_back(cube);
+	m_actors.push_back(plane);
 }
 
 void Core::MultiThreadApp::BuildFrameResources()
@@ -454,11 +481,7 @@ void Core::MultiThreadApp::Update(float deltaTime)
 		}
 	}
 
-	for (auto& actor : m_actors)
-	{
-		actor->Tick(deltaTime);
-	}
-
+	
 	// view 회전 업데이트
 	if (isFocused && isFPSMode)
 	{
@@ -474,8 +497,13 @@ void Core::MultiThreadApp::Update(float deltaTime)
 
 		mouseDeltaX = 0;
 		mouseDeltaY = 0;
+
+		m_camera->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
 	}
-	m_camera->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
+	else
+	{
+		m_player->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_player.get()));
+	}
 
 	// update consatant
 	currentFrameResource->UpdateGlobalConstantBuffer(
@@ -484,6 +512,22 @@ void Core::MultiThreadApp::Update(float deltaTime)
 		m_camera->GetViewMatrix(),
 		m_camera->GetProjMatrix()
 	);
+
+	if (printDirty)
+	{
+		printDirty = false;
+		auto loc = m_camera->GetActorLocation();
+		float x = m_camera->GetXAngle();
+		float y = m_camera->GetYAngle();
+		std::cout << "Camera Loc : x : " << loc.x << "y : " << loc.y <<
+			"z : " << loc.z << "\nxAngle : " << x << "yAngle : " << y << std::endl;
+	}
+
+	for (auto& actor : m_actors)
+	{
+		actor->Tick(deltaTime);
+	}
+	//m_player->
 }
 
 void Core::MultiThreadApp::BuildProxy()
@@ -501,6 +545,9 @@ void Core::MultiThreadApp::BuildProxy()
 			SceneComponent* root = actor->GetRootComponent();
 			AddProxy(root);
 		}
+
+		SceneComponent* root = m_player->GetRootComponent();
+		AddProxy(root);
 	}
 
 }

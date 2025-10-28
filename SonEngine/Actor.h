@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <memory>
 #include "d3d12.h"
@@ -21,6 +21,7 @@ public:
 
 public:
 	void SetActorLocation(const DirectX::SimpleMath::Vector3& newLocation);
+	void SetActorRotation(const DirectX::SimpleMath::Matrix& newMat);
 	void UpdateActorLocation(const DirectX::SimpleMath::Vector3& delLocation);
 	void SetActorSpeed(const float& newSpeed);
 	void SetRootComponent(std::shared_ptr<SceneComponent> newRootComponent);

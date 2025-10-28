@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "d3d12.h"
 #include "directx/d3dx12.h"
@@ -29,6 +29,8 @@ public:
 	void SetLocation(const float& x, const float& y, const float& z);
 	void Translate(const float& delX, const float& delY, const float& delZ);
 
+	void SetRotation(const DirectX::SimpleMath::Matrix& mat);
+
 	std::string GetAlbedoTextureName() const { return albedoTexture; }
 
 private:
@@ -51,6 +53,9 @@ private:
 	void* pLocalConstant = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_localCB;
 	LocalConstant localConstant;
+
+	DirectX::SimpleMath::Matrix localRot;
+	DirectX::SimpleMath::Vector3 localLocation;
 };
 
 template<typename V, typename I>

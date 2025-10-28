@@ -1,4 +1,4 @@
-#include "StaticMesh.h"
+﻿#include "StaticMesh.h"
 #include "TextureLoader.h"
 #include "Vertex.h"
 
@@ -41,6 +41,19 @@ void StaticMesh::Translate(const float& delX, const float& delY, const float& de
 	localConstant.model.m[3][0] += delX;
 	localConstant.model.m[3][1] += delY;
 	localConstant.model.m[3][2] += delZ;
+
+	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
+}
+
+void StaticMesh::SetRotation(const DirectX::SimpleMath::Matrix& mat)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			localConstant.model.m[i][j] = mat.m[i][j];
+		}
+	}
 
 	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 }
