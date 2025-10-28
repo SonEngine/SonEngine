@@ -1,4 +1,4 @@
-#include "GraphicsCommon.h"
+﻿#include "GraphicsCommon.h"
 #include "PipelineState.h"
 #include "RootSignature.h"
 
@@ -7,7 +7,8 @@ namespace Graphics
   
 	D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
 
-    D3D12_RASTERIZER_DESC rasterizerDefault;
+	D3D12_RASTERIZER_DESC rasterizerDefault;
+	D3D12_RASTERIZER_DESC noneCullRasterizer;
 
     D3D12_BLEND_DESC blendNoColorWrite;		
 
@@ -38,6 +39,9 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	wrapLinearSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
    
 	rasterizerDefault = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	noneCullRasterizer = rasterizerDefault;
+	noneCullRasterizer.CullMode = D3D12_CULL_MODE_NONE;
+	noneCullRasterizer.DepthClipEnable = false;
 
 	blendNoColorWrite = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 

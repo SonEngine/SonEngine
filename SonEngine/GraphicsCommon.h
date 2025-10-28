@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Utility.h"
 
@@ -15,6 +15,7 @@ namespace Graphics
     extern D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
   
     extern D3D12_RASTERIZER_DESC rasterizerDefault;
+    extern D3D12_RASTERIZER_DESC noneCullRasterizer;
 
     extern D3D12_BLEND_DESC blendNoColorWrite;		
 

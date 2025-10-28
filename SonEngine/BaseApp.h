@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <iostream>
 #include <atomic>
@@ -44,7 +44,7 @@ namespace Core {
         int m_height;
         HWND m_mainWnd;
         bool isFocused = true;
-        bool isFPSMode = true;
+        bool isFPSMode = false;
 
     protected:
         bool bMouseFlag = false;
@@ -53,5 +53,6 @@ namespace Core {
 
     protected:
         bool addDirty = false;
+        bool printDirty = false;
     };
 }

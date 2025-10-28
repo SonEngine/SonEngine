@@ -1,4 +1,4 @@
-#include "BaseApp.h"
+﻿#include "BaseApp.h"
 
 using namespace Core;
 
@@ -161,8 +161,8 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		m_inputHelper.SetInputState((size_t)wParam, true);
 		break;
 	case WM_KEYUP:
-		if (wParam == 'A')
-			addDirty = true;
+		if (wParam == 'P')
+			printDirty = true;
 		m_inputHelper.SetInputState((size_t)wParam, false);
 		break;
 

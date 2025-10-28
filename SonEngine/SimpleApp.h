@@ -1,4 +1,8 @@
-#pragma once
+﻿#pragma once
+
+#include "directxtk12/SpriteBatch.h"
+#include "directxtk12/SpriteFont.h"
+#include "directxtk12/GraphicsMemory.h"
 
 #include "BaseApp.h"
 #include "Renderer.h"
@@ -6,7 +10,6 @@
 #include "Camera.h"
 #include "Light.h"
 #include "TextureLoader.h"
-
 #include <array>
 
 class StaticMesh;
@@ -37,7 +40,7 @@ namespace Core {
 		void Render(float deltaTime);
 		void RenderScene(const std::string& psoName);
 		void RenderGUI(float deltaTime);
-
+		void RenderText();
 		// Fin
 
 		virtual bool FinDirectX();
@@ -53,8 +56,12 @@ namespace Core {
 		void BuildConstantBuffers();
 
 		void CreateTextures();
+		void CreateTexts();
 
 	private:
+
+
+
 
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRtvCpuHandle() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCpuHandle() const;
@@ -81,6 +88,8 @@ namespace Core {
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_swapChainRTVHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_textRtvHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_fontSrvHeap;
 
 	private:
 
@@ -103,6 +112,7 @@ namespace Core {
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_swapChainResources[m_swapChainBufferCount];
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_depthStencilBuffer;
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_textRT;
 
 	private:
 
@@ -144,6 +154,7 @@ namespace Core {
 
 	private:
 		std::array<float, 4> rtvClearColor;
+		std::array<FLOAT, 4> fontClearColor;
 
 		// character
 	private:
@@ -155,7 +166,7 @@ namespace Core {
 
 	private:
 		int selectedPSOIdx = 1;
-		std::string renderPSO = "phongPSO";
+		std::string renderPSO = "defaultPSO";
 
 
 	private:
@@ -169,5 +180,12 @@ namespace Core {
 		// gui에서 사용
 	private:
 		StaticMesh* selectedMesh = nullptr;
+
+	// text render 용
+	private:
+		std::shared_ptr<DirectX::SpriteBatch> spriteBatch;
+		std::shared_ptr<DirectX::SpriteFont> font;
+		D3D12_VIEWPORT vp;
+		std::unique_ptr < DirectX::GraphicsMemory > m_graphicsMemory;
 	};
 }

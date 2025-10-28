@@ -1,4 +1,4 @@
-#include "SimpleApp.h"
+﻿#include "SimpleApp.h"
 #include "RootSignature.h"
 #include "PipelineState.h"
 #include "Vertex.h"
@@ -7,6 +7,8 @@
 
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
+
+
 
 using Microsoft::WRL::ComPtr;
 using namespace GraphicsUtils;
@@ -21,6 +23,7 @@ Core::SimpleApp::SimpleApp()
 {
 	m_aspectRatio = 1280.f / 720.f;
 	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
+	fontClearColor = { 0.F, 0.F, 0.F, 1.0F };
 }
 
 Core::SimpleApp::SimpleApp(const int width, const int height)
@@ -28,6 +31,7 @@ Core::SimpleApp::SimpleApp(const int width, const int height)
 {
 	m_aspectRatio = width / (float)height;
 	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
+	fontClearColor = { 0.F, 0.F, 0.F, 1.0F };
 }
 
 Core::SimpleApp::~SimpleApp()
@@ -115,6 +119,8 @@ bool Core::SimpleApp::InitDirectX()
 
 	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRTVHeap);
 	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
+	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_textRtvHeap);
+	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_fontSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	CreateSwapChain();
 	CreateDepthBuffer();
@@ -134,6 +140,8 @@ bool Core::SimpleApp::InitDirectX()
 
 	m_currentFence = 0;
 	m_device->CreateFence(m_currentFence, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
+
+	CreateTexts();
 
 	BuildGeometry();
 	BuildConstantBuffers();
@@ -155,6 +163,7 @@ bool Core::SimpleApp::InitGUI()
 	const char* fontPath = "Fonts/Hack-Regular.ttf";
 	float fontSize = 15.0f;
 	// 폰트 로드 
+
 	io.Fonts->AddFontFromFileTTF(fontPath, fontSize);
 
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
@@ -335,27 +344,34 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
 
 
-	ID3D12DescriptorHeap* heaps[] = {
-		m_textureLoader->GetHeap()
-	};
 
-	m_commandList->SetDescriptorHeaps(1, heaps);
 
 
 	if (renderPSO == "defaultPSO")
 	{
+
+		ID3D12DescriptorHeap* heaps[] = {
+		m_textureLoader->GetHeap()
+		};
+
+		m_commandList->SetDescriptorHeaps(1, heaps);
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_globalCB->GetGPUVirtualAddress());
-		mesh->Render(m_commandList.Get(), m_textureLoader.get());
+		mesh->Render(m_commandList.Get());
 	}
 	else if (renderPSO == "phongPSO")
 	{
+		ID3D12DescriptorHeap* heaps[] = {
+		m_textureLoader->GetHeap()
+		};
+
+		m_commandList->SetDescriptorHeaps(1, heaps);
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_phongGCB->GetGPUVirtualAddress());
 		for (auto& mesh : phongMeshes)
 		{
 			mesh->Render(m_commandList.Get(), m_textureLoader.get());
 		}
 	}
-
+	RenderText();
 	m_commandList->ResourceBarrier(
 		1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -616,6 +632,78 @@ void Core::SimpleApp::CreateTextures()
 	m_textureLoader->LoadIdx(m_device);
 	m_fallbackLoader->LoadIdx(m_device);
 	m_textureLoader->LoadTextures(m_device, m_commandQueue);
+}
+
+void Core::SimpleApp::CreateTexts()
+{
+	/*D3D12_RESOURCE_DESC texDesc = {};
+	texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	texDesc.Width = 512;
+	texDesc.Height = 512;
+	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	texDesc.MipLevels = 1;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.DepthOrArraySize = 1;
+	D3D12_CLEAR_VALUE clearValue = {};
+	clearValue.Format = texDesc.Format;
+	clearValue.Color[0] = 0.0f;
+	clearValue.Color[1] = 0.0f;
+	clearValue.Color[2] = 0.0f;
+	clearValue.Color[3] = 0.0f;
+	ThrowIfFailed(m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE, &texDesc,
+		D3D12_RESOURCE_STATE_RENDER_TARGET,
+		&clearValue, IID_PPV_ARGS(&m_textRT)));
+
+	auto rtvHandle = m_textRtvHeap->GetCPUDescriptorHandleForHeapStart();
+	m_device->CreateRenderTargetView(m_textRT.Get(), nullptr, rtvHandle);*/
+
+	m_graphicsMemory.reset();
+
+	m_graphicsMemory = std::make_unique<DirectX::GraphicsMemory>(m_device.Get());
+
+	DirectX::ResourceUploadBatch upload(m_device.Get());
+	upload.Begin();
+
+	RenderTargetState rtStateForTextRT(backBufferFormat, dsBufferFormat);
+
+	font = std::make_shared<SpriteFont>(
+		m_device.Get(), upload,
+		L"Fonts/cyberpunk.spritefont",
+		m_fontSrvHeap->GetCPUDescriptorHandleForHeapStart(),
+		m_fontSrvHeap->GetGPUDescriptorHandleForHeapStart());
+
+	DirectX::SpriteBatchPipelineStateDescription pd(rtStateForTextRT);
+	spriteBatch = std::make_shared<SpriteBatch>(m_device.Get(), upload, pd);
+
+	
+	auto fut = upload.End(m_commandQueue.Get());
+	fut.wait();
+
+	
+
+}
+
+void Core::SimpleApp::RenderText()
+{
+	
+
+	ID3D12DescriptorHeap* heaps[] = { m_fontSrvHeap.Get() };
+	m_commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
+	spriteBatch->Begin(m_commandList.Get());
+
+	spriteBatch->SetViewport(m_viewport);
+	float margin = 5.f;
+
+	DirectX::SimpleMath::Vector2 m_fontPos = DirectX::SimpleMath::Vector2(0.f, 0.f);
+
+	DirectX::XMVECTORF32 color = DirectX::Colors::White;
+	font->DrawString(spriteBatch.get(), "test",
+		m_fontPos, color);
+
+	spriteBatch->End();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE Core::SimpleApp::GetCurrentRtvCpuHandle() const
