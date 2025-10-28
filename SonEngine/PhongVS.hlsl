@@ -1,4 +1,4 @@
-#include "PhongCommon.hlsli"
+﻿#include "PhongCommon.hlsli"
 
 ConstantBuffer<LocalConstant> gLocalCB : register(b0);
 ConstantBuffer<PhongGlobalConstant> gPhongGCB : register(b1);
@@ -12,8 +12,9 @@ psInput main(vsInput input)
     position = mul(position, gLocalCB.model);
     position = mul(position, gPhongGCB.view);
     position = mul(position, gPhongGCB.proj);
-       
+    
     output.svPosition = position;
+    
     output.uv = input.uv;
     
     output.normal = input.normal;
