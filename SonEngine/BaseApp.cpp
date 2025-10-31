@@ -177,7 +177,7 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			// 포커스 얻음 
 			isFocused = true;
-			ShowCursor(false);
+			//ShowCursor(false);
 		}
 		break;
 	case WM_MBUTTONDOWN:

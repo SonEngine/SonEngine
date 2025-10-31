@@ -110,12 +110,13 @@ namespace GraphicsUtils {
 		{
 			mesh->Initialize(m_device, m_commandList, meshData);
 			mesh->SetAlbedoTexture(texture);
-			mesh->SetLocation(location.x, location.y, location.z);
+			//mesh->SetLocation(location.x, location.y, location.z);
 
 			std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
 			cmp->SetMesh(mesh);
 			actor->SetRootComponent(cmp);
 		}
+		actor->SetActorLocation(location);
 		return actor;
 	}
 }

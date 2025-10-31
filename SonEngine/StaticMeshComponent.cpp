@@ -31,3 +31,11 @@ void StaticMeshComponent::Translate(const DirectX::SimpleMath::Vector3& del)
 		m_mesh->Translate(del.x, del.y, del.z);
 	}
 }
+
+void StaticMeshComponent::UpdateLocation()
+{
+	if (m_mesh)
+	{
+		m_mesh->SetLocation(m_location.x, m_location.y, m_location.z);
+	}
+}

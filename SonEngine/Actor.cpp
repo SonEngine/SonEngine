@@ -42,10 +42,6 @@ void Actor::UpdateActorLocation(const DirectX::SimpleMath::Vector3& delLocation)
 	if (m_rootComponent)
 	{
 		m_rootComponent->AddLocation(delLocation);
-		if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(m_rootComponent.get()))
-		{
-			cmp->Translate(delLocation);
-		}
 	}
 }
 

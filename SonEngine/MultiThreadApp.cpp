@@ -29,8 +29,11 @@ Core::MultiThreadApp::MultiThreadApp()
 	m_camera->m_height = 720;
 	m_camera->SetCameraMode(CameraMode::CM_Perspective);
 	m_camera->Initialize();
-	m_camera->SetActorLocation({ -0.32f, 4.4f, -1.9f });
-	m_camera->UpdateCameraRotation(0, 135);
+	m_camera->SetActorLocation({ 0.f, 5.2f, 0.f });
+	m_camera->UpdateCameraRotation(0, 178);
+
+	textCount = 9;
+	cpuTexts.resize(textCount);
 }
 
 Core::MultiThreadApp::MultiThreadApp(const int width, const int height)
@@ -47,8 +50,11 @@ Core::MultiThreadApp::MultiThreadApp(const int width, const int height)
 	m_camera->m_aspectRatio = width / (float)height;
 	m_camera->SetCameraMode(CameraMode::CM_Perspective);
 	m_camera->Initialize();
-	m_camera->SetActorLocation({ -0.32f, 4.4f, -1.9f });
-	m_camera->UpdateCameraRotation(0, 135);
+	m_camera->SetActorLocation({ 0.f, 5.2f, 0.f });
+	m_camera->UpdateCameraRotation(0, 178);
+
+	textCount = 9;
+	cpuTexts.resize(textCount);
 }
 
 Core::MultiThreadApp::~MultiThreadApp()
@@ -200,8 +206,6 @@ bool Core::MultiThreadApp::InitDirectX()
 		handle.Offset(1, m_rtvDescriptorSize);
 	}
 
-
-
 	CreateTextures();
 	{
 		m_commandAllocator->Reset();
@@ -216,7 +220,6 @@ bool Core::MultiThreadApp::InitDirectX()
 
 		FlushCommands();
 	}
-
 	
 	return true;
 }
@@ -292,7 +295,6 @@ void Core::MultiThreadApp::OnResize()
 
 	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
 	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)m_width, (LONG)m_height);
-
 }
 
 void Core::MultiThreadApp::CreateCommandObjects()
@@ -398,6 +400,7 @@ void Core::MultiThreadApp::UpdateGUI(float deltaTime)
 
 void Core::MultiThreadApp::BuildGeometry()
 {
+	int planeSize = 6;
 	m_player = utility->CreateActor(
 		"player",
 		GeometryGenerator::MakeCube(1.f,1.f,1.f),
@@ -408,28 +411,58 @@ void Core::MultiThreadApp::BuildGeometry()
 
 	std::shared_ptr<Actor> plane = utility->CreateActor(
 		"plane",
-		GeometryGenerator::MakePlane(4,4,4),
+		GeometryGenerator::MakePlane((float)planeSize, (float)planeSize,1),
 		"8k_earth_albedo",
 		{ 0.f,0.f,0.f }
 	);
 	m_actors.push_back(plane);
+	int x = 3;
+	int z = 3;
+	float delX = (float)planeSize / x;
+	float delZ = -(float)planeSize / z;
+	
+	Vector3 basePos = Vector3(-delX * (0.5f * (x - 1)), 0.1f, -delZ * (0.5f * (z - 1)));
+	bool breakFlag = false;
+	
+	float margin = 0.2f;
+	float xSize = planeSize / (float)x - margin;
+	float zSize = planeSize / (float)z - margin;
 
-	std::shared_ptr<Actor> plane2 = utility->CreateActor(
-		"plane",
-		GeometryGenerator::MakePlane(4/3.f, 4/3.f, 1),
-		"8k_earth_albedo",
-		{ 0.f,0.1f,0.f }
-	);
-	m_textActors.push_back(plane2);
+
+	for (int i = 0; i < z; i++)
+	{
+		if (breakFlag)
+			break;
+		for (int j = 0; j < x; j++)
+		{
+			int idx = x * i + j;
+			if (idx == textCount)
+			{
+				breakFlag = true;
+				break;
+			}
+			Vector3 pos = basePos + Vector3(j * delX, 0.f, i * delZ);
+			std::string name = "plane" + std::to_string(idx);
+			std::shared_ptr<Actor> textPlane = utility->CreateActor(
+				name,
+				GeometryGenerator::MakePlane(xSize, zSize, 1),
+				"8k_earth_albedo",
+				pos
+			);
+
+			m_textActors.push_back(textPlane);
+		}
+	}
 }
 
 void Core::MultiThreadApp::BuildFrameResources()
 {
+
 	m_frameResources.resize(m_frameResourceCount);
 	for (int i = 0; i < m_frameResourceCount; i++)
 	{
 		m_frameResources[i] = std::make_shared<FrameResource>();
-		m_frameResources[i]->Initialize(m_device);
+		m_frameResources[i]->Initialize(m_device,512, 512, 9);
 	}
 }
 
@@ -528,14 +561,15 @@ void Core::MultiThreadApp::Update(float deltaTime)
 		m_camera->GetProjMatrix()
 	);
 
+	// 'P' pressed
 	if (printDirty)
 	{
 		printDirty = false;
 		auto loc = m_camera->GetActorLocation();
 		float x = m_camera->GetXAngle();
 		float y = m_camera->GetYAngle();
-		std::cout << "Camera Loc : x : " << loc.x << "y : " << loc.y <<
-			"z : " << loc.z << "\nxAngle : " << x << "yAngle : " << y << std::endl;
+		std::cout << "\nCamera Location : x : " << loc.x << " y : " << loc.y <<
+			" z : " << loc.z << "\nxAngle : " << x << ", yAngle : " << y << std::endl;
 	}
 
 	for (auto& actor : m_actors)
@@ -550,6 +584,7 @@ void Core::MultiThreadApp::BuildProxy()
 	if (currentFrameResource->proxyDirty)
 	{
 		std::cout << "Rebuild Proxy -> Actor count : " << m_actors.size() << '\n';
+		std::cout << "Rebuild Proxy -> Text count : " << m_textActors.size() << '\n';
 		currentFrameResource->proxyDirty = false;
 		currentFrameResource->proxyBuffer.clear();
 		currentFrameResource->textProxyBuffer.clear();
@@ -571,10 +606,16 @@ void Core::MultiThreadApp::BuildProxy()
 		AddProxy(root);
 	}
 
-	//TODO textActor 만들고
-	if (currentFrameResource->textProxyBuffer.size() > 0)
+	//Update cpuTexts
+	cpuTexts[0] = std::to_wstring((int)m_timer.GetElapsedTime());
+	cpuTexts[1] = std::to_wstring((float)m_player->GetActorLocation().x);
+
+	// Update textProxyBuffers
+	for (size_t i = 0; i < cpuTexts.size(); i++)
 	{
-		currentFrameResource->textProxyBuffer[0].str = std::to_wstring((int)m_timer.GetElapsedTime());
+		if(currentFrameResource->textProxyBuffer.size()>i)
+			currentFrameResource->textProxyBuffer[i].str = cpuTexts[i];
+
 	}
 }
 
@@ -696,10 +737,12 @@ void Core::MultiThreadApp::Render(const std::string& psoName, int idx, bool isTe
 		};
 
 		commandList->SetDescriptorHeaps(1, heaps);
+		UINT i = 0;
 		for (auto& proxy : r_currentFrameResource->textProxyBuffer)
 		{
-			commandList->SetGraphicsRootDescriptorTable(0, r_currentFrameResource->GetTextSrvHeap()->GetGPUDescriptorHandleForHeapStart());
+			commandList->SetGraphicsRootDescriptorTable(0, r_currentFrameResource->GetTextSrvGPUHandle(i));
 			proxy.mesh->Render(commandList);
+			i++;
 		}
 	}
 
@@ -728,6 +771,7 @@ void Core::MultiThreadApp::Render(const std::string& psoName, int idx, bool isTe
 	}
 }
 
+// FrameResource의 텍스트 렌더용 텍스쳐 업데이트
 void Core::MultiThreadApp::UpdateTexts()
 {
 	r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
@@ -737,47 +781,50 @@ void Core::MultiThreadApp::UpdateTexts()
 	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetTextCommandList();
 	ID3D12DescriptorHeap* m_textRtvHeap = r_currentFrameResource->GetTextRtvHeap();
 
-	UINT64 width = r_currentFrameResource->m_text->GetDesc().Width;
-	UINT64 height = r_currentFrameResource->m_text->GetDesc().Height;
-
-	D3D12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)width, (FLOAT)height);
-	D3D12_RECT scissorRect = CD3DX12_RECT(0, 0, (LONG)width, (LONG)height);
-
 	commandAllocator->Reset();
 	commandList->Reset(commandAllocator, pso.GetPSO());
 
-	commandList->RSSetScissorRects(1, &scissorRect);
-	commandList->RSSetViewports(1, &viewport);
-
 	commandList->SetPipelineState(pso.GetPSO());
 	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
-	commandList->ClearRenderTargetView(m_textRtvHeap->GetCPUDescriptorHandleForHeapStart(), DirectX::Colors::White, 0, nullptr);
 
-	commandList->OMSetRenderTargets(
-		1,
-		&m_textRtvHeap->GetCPUDescriptorHandleForHeapStart(),
-		FALSE,
-		nullptr);
+	UINT i = 0;
+	for (auto&tr : r_currentFrameResource->textResources)
+	{
+		UINT64 width = tr.textureWidth;
+		UINT64 height = tr.textureHeight;
 
+		D3D12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)width, (FLOAT)height);
+		D3D12_RECT scissorRect = CD3DX12_RECT(0, 0, (LONG)width, (LONG)height);
+		commandList->RSSetScissorRects(1, &scissorRect);
+		commandList->RSSetViewports(1, &viewport);
 
-	ID3D12DescriptorHeap* heaps[] = { m_fontSrvHeap.Get() };
-	commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
-	spriteBatch->Begin(commandList);
+		commandList->ClearRenderTargetView(r_currentFrameResource->GetTextRrvCPUHandle(i), DirectX::Colors::White, 0, nullptr);
+		commandList->OMSetRenderTargets(
+			1,
+			&r_currentFrameResource->GetTextRrvCPUHandle(i),
+			FALSE,
+			nullptr);
 
-	spriteBatch->SetViewport(viewport);
-	std::wstring output = r_currentFrameResource->textProxyBuffer[0].str;
-	DirectX::SimpleMath::Vector2 textSize = font->MeasureString(output.c_str());
+		ID3D12DescriptorHeap* heaps[] = { m_fontSrvHeap.Get() };
+		commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
+		spriteBatch->Begin(commandList);
 
-	// 중앙 정렬을 위해 origin을 텍스트의 중앙으로 설정
-	DirectX::SimpleMath::Vector2 origin = textSize / 2.f;
-	DirectX::SimpleMath::Vector2 m_fontPos = DirectX::SimpleMath::Vector2(width / 2.f, height / 2.f);
+		spriteBatch->SetViewport(viewport);
+		std::wstring output = r_currentFrameResource->textProxyBuffer[i].str;
+		DirectX::SimpleMath::Vector2 textSize = font->MeasureString(output.c_str());
 
-	DirectX::XMVECTORF32 color = DirectX::Colors::Black;
+		// 중앙 정렬을 위해 origin을 텍스트의 중앙으로 설정
+		DirectX::SimpleMath::Vector2 origin = textSize / 2.f;
+		DirectX::SimpleMath::Vector2 m_fontPos = DirectX::SimpleMath::Vector2(width / 2.f, height / 2.f);
 
-	font->DrawString(spriteBatch.get(), output.c_str(),
-		m_fontPos, color, 0.f, origin, 1);
+		DirectX::XMVECTORF32 color = DirectX::Colors::Black;
 
-	spriteBatch->End();
+		font->DrawString(spriteBatch.get(), output.c_str(),
+			m_fontPos, color, 0.f, origin, 1);
+
+		spriteBatch->End();
+		i++;
+	}
 	
 	commandList->Close();
 	ID3D12CommandList* commands[] = { commandList };

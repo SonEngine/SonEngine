@@ -33,7 +33,6 @@ void TextureLoader::InitHeap(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	heapDesc.NumDescriptors = count;
 
 	device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(heap.GetAddressOf()));
-	
 }
 
 void TextureLoader::LoadIdx(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -72,7 +71,7 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart());
 	srvOffset = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	
+
 	DirectX::ResourceUploadBatch resourceUpload(device.Get());
 	resourceUpload.Begin();
 

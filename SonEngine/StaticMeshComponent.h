@@ -14,6 +14,8 @@ public:
 	void SetMesh(std::shared_ptr<StaticMesh> newMesh);
 	void SetRotation(const DirectX::SimpleMath::Matrix& mat);
 	void Translate(const DirectX::SimpleMath::Vector3& del);
+	void UpdateLocation();
+
 public:
 	StaticMesh* GetMesh() const { return m_mesh.get(); }
 private:

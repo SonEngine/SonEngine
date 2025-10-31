@@ -1,5 +1,6 @@
 ﻿#include "SceneComponent.h"
 #include "directxtk12/SimpleMath.h"
+#include "StaticMeshComponent.h"
 
 using DirectX::SimpleMath::Vector3;
 
@@ -30,6 +31,10 @@ void SceneComponent::SetRotateSpeed(const float& newSpeed)
 void SceneComponent::SetLocation(const DirectX::SimpleMath::Vector3& newLocation)
 {
 	m_location = newLocation;
+	if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(this))
+	{
+		cmp->UpdateLocation();
+	}
 }
 
 void SceneComponent::SetFrontDirection(const DirectX::SimpleMath::Vector3& newDir)
@@ -50,6 +55,10 @@ void SceneComponent::SetRightDirection(const DirectX::SimpleMath::Vector3& newDi
 void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation)
 {
 	m_location += delLocation;
+	if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(this))
+	{
+		cmp->UpdateLocation();
+	}
 }
 
 DirectX::SimpleMath::Matrix SceneComponent::GetViewMatrix() const

@@ -131,7 +131,7 @@ namespace Core {
 
 		//FrameResource
 	private:
-		static const int m_frameResourceCount = 2;
+		static const int m_frameResourceCount = 3;
 		std::vector<std::shared_ptr<FrameResource>> m_frameResources;
 		FrameResource* currentFrameResource = nullptr;
 		FrameResource* r_currentFrameResource = nullptr;
@@ -151,6 +151,7 @@ namespace Core {
 		std::shared_ptr<DirectX::SpriteFont> font;
 		std::unique_ptr < DirectX::GraphicsMemory > m_graphicsMemory;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_fontSrvHeap;
-
+		UINT textCount = 0;
+		std::vector<std::wstring> cpuTexts;
 	};
 }
