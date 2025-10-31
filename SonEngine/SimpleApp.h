@@ -40,7 +40,9 @@ namespace Core {
 		void Render(float deltaTime);
 		void RenderScene(const std::string& psoName);
 		void RenderGUI(float deltaTime);
-		void RenderText();
+		void RenderText(const std::string& str);
+		void DrawString(const std::string & str);
+
 		// Fin
 
 		virtual bool FinDirectX();
@@ -89,6 +91,7 @@ namespace Core {
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_textRtvHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_textSrvHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_fontSrvHeap;
 
 	private:
@@ -113,6 +116,7 @@ namespace Core {
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_swapChainResources[m_swapChainBufferCount];
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_depthStencilBuffer;
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_textRT;
+		
 
 	private:
 
@@ -166,7 +170,7 @@ namespace Core {
 
 	private:
 		int selectedPSOIdx = 1;
-		std::string renderPSO = "defaultPSO";
+		std::string renderPSO = "phongPSO";
 
 
 	private:
@@ -185,7 +189,6 @@ namespace Core {
 	private:
 		std::shared_ptr<DirectX::SpriteBatch> spriteBatch;
 		std::shared_ptr<DirectX::SpriteFont> font;
-		D3D12_VIEWPORT vp;
 		std::unique_ptr < DirectX::GraphicsMemory > m_graphicsMemory;
 	};
 }

@@ -17,7 +17,7 @@ class StaticMesh {
 public:
 
 	StaticMesh();
-	 
+	virtual ~StaticMesh();
 	template<typename V, typename I>
 	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, Mesh<V,I>& mesh);
 
@@ -33,7 +33,7 @@ public:
 
 	std::string GetAlbedoTextureName() const { return albedoTexture; }
 
-private:
+protected:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexGpu;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexUpload;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexGpu;
@@ -49,7 +49,7 @@ private:
 
 	std::string albedoTexture;
 
-private:
+protected:
 	void* pLocalConstant = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_localCB;
 	LocalConstant localConstant;

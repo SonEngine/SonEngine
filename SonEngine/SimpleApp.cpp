@@ -121,6 +121,7 @@ bool Core::SimpleApp::InitDirectX()
 	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
 	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_textRtvHeap);
 	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_fontSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_textSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	CreateSwapChain();
 	CreateDepthBuffer();
@@ -146,6 +147,8 @@ bool Core::SimpleApp::InitDirectX()
 	BuildGeometry();
 	BuildConstantBuffers();
 	CreateTextures();
+
+	RenderText("1");
 
 	return true;
 }
@@ -260,49 +263,12 @@ void Core::SimpleApp::UpdateGUI(float deltaTime)
 	str += std::to_string(int(1 / deltaTime));
 	ImGui::Text(str.c_str());
 
-	ImGui::Separator();
-	ImGui::Text("PSO Mode");
-	ImGui::SameLine();
-	if (ImGui::BeginCombo("##pso combo", psoNames[selectedPSOIdx].c_str()))
-	{
-		for (int i = 0; i < psoNames.size(); i++)
-		{
-			bool isSelected = (selectedPSOIdx == i);
-			if (ImGui::Selectable(psoNames[i].c_str(), isSelected)) {
-				selectedPSOIdx = i;
-				renderPSO = psoNames[i];
-			}
-			if (isSelected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
-	}
-
-	//TODO 선택 기능 추가
-	if (selectedMesh != nullptr)
-	{
-		ImGui::Separator();
-		ImGui::Text("current mesh texture");
-		ImGui::SameLine();
-		if (ImGui::BeginCombo("##texture", selectedMesh->GetAlbedoTextureName().c_str()))
-		{
-			for (int i = 0; i < m_textureLoader->filenames.size(); i++)
-			{
-				bool isSelected = (selectedMesh->GetAlbedoTextureName() == m_textureLoader->filenames[i]);
-				if (ImGui::Selectable(m_textureLoader->filenames[i].c_str(), isSelected)) {
-					selectedMesh->SetAlbedoTexture(m_textureLoader->filenames[i]);
-				}
-				if (isSelected)
-					ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
-	}
-
 }
 
 void Core::SimpleApp::Render(float deltaTime)
 {
+	int time = (int)m_timer.GetElapsedTime();
+	DrawString(std::to_string(time));
 	RenderScene(renderPSO);
 }
 
@@ -343,35 +309,41 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 	m_commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
 	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
 
-
-
-
-
 	if (renderPSO == "defaultPSO")
 	{
 
 		ID3D12DescriptorHeap* heaps[] = {
-		m_textureLoader->GetHeap()
+		m_textSrvHeap.Get()
 		};
 
 		m_commandList->SetDescriptorHeaps(1, heaps);
+		m_commandList->SetGraphicsRootDescriptorTable(0, m_textSrvHeap->GetGPUDescriptorHandleForHeapStart());
+
 		m_commandList->SetGraphicsRootConstantBufferView(2, m_globalCB->GetGPUVirtualAddress());
 		mesh->Render(m_commandList.Get());
 	}
 	else if (renderPSO == "phongPSO")
 	{
-		ID3D12DescriptorHeap* heaps[] = {
+		/*ID3D12DescriptorHeap* heaps[] = {
 		m_textureLoader->GetHeap()
 		};
 
+		m_commandList->SetDescriptorHeaps(1, heaps);*/
+		ID3D12DescriptorHeap* heaps[] = {
+			m_textSrvHeap.Get()
+		};
+
 		m_commandList->SetDescriptorHeaps(1, heaps);
-		m_commandList->SetGraphicsRootConstantBufferView(2, m_phongGCB->GetGPUVirtualAddress());
+		m_commandList->SetGraphicsRootDescriptorTable(0, m_textSrvHeap->GetGPUDescriptorHandleForHeapStart());
+		m_commandList->SetGraphicsRootConstantBufferView(2, m_globalCB->GetGPUVirtualAddress());
+
 		for (auto& mesh : phongMeshes)
 		{
-			mesh->Render(m_commandList.Get(), m_textureLoader.get());
+			//mesh->Render(m_commandList.Get(), m_textureLoader.get());
+			mesh->Render(m_commandList.Get());
 		}
 	}
-	RenderText();
+	
 	m_commandList->ResourceBarrier(
 		1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -543,25 +515,13 @@ void Core::SimpleApp::BuildGeometry()
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
 	mesh = std::make_shared<StaticMesh>();
-	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleCube(2, 2, 2));
-	mesh->SetAlbedoTexture("8k_earth_albedo");
+	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleRect(2, 2));
+	mesh->SetAlbedoTexture("test_albedo");
 
-	std::shared_ptr<StaticMesh> sphere1 = std::make_shared<StaticMesh>();
-	sphere1->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
-	sphere1->SetAlbedoTexture("8k_earth_albedo");
-	sphere1->SetLocation(0, 0, 3);
-	phongMeshes.push_back(sphere1);
-
-	std::shared_ptr<StaticMesh> sphere2 = std::make_shared<StaticMesh>();
-	sphere2->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
-	sphere2->SetAlbedoTexture("8k_earth_albedo");
-	sphere2->SetLocation(-3, 0, 3);
-	phongMeshes.push_back(sphere2);
-
-	std::shared_ptr<StaticMesh> sphere3 = std::make_shared<StaticMesh>();
-	sphere3->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSphere(100, 1));
+		std::shared_ptr<StaticMesh> sphere3 = std::make_shared<StaticMesh>();
+	sphere3->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakePlane(1, 1,1));
 	sphere3->SetAlbedoTexture("8k_earth_albedo");
-	sphere3->SetLocation(3, 0, 3);
+	sphere3->SetLocation(0, 0, 0);
 	phongMeshes.push_back(sphere3);
 
 
@@ -636,30 +596,6 @@ void Core::SimpleApp::CreateTextures()
 
 void Core::SimpleApp::CreateTexts()
 {
-	/*D3D12_RESOURCE_DESC texDesc = {};
-	texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	texDesc.Width = 512;
-	texDesc.Height = 512;
-	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-	texDesc.MipLevels = 1;
-	texDesc.SampleDesc.Count = 1;
-	texDesc.DepthOrArraySize = 1;
-	D3D12_CLEAR_VALUE clearValue = {};
-	clearValue.Format = texDesc.Format;
-	clearValue.Color[0] = 0.0f;
-	clearValue.Color[1] = 0.0f;
-	clearValue.Color[2] = 0.0f;
-	clearValue.Color[3] = 0.0f;
-	ThrowIfFailed(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE, &texDesc,
-		D3D12_RESOURCE_STATE_RENDER_TARGET,
-		&clearValue, IID_PPV_ARGS(&m_textRT)));
-
-	auto rtvHandle = m_textRtvHeap->GetCPUDescriptorHandleForHeapStart();
-	m_device->CreateRenderTargetView(m_textRT.Get(), nullptr, rtvHandle);*/
-
 	m_graphicsMemory.reset();
 
 	m_graphicsMemory = std::make_unique<DirectX::GraphicsMemory>(m_device.Get());
@@ -671,7 +607,7 @@ void Core::SimpleApp::CreateTexts()
 
 	font = std::make_shared<SpriteFont>(
 		m_device.Get(), upload,
-		L"Fonts/cyberpunk.spritefont",
+		L"Fonts/default.spritefont",
 		m_fontSrvHeap->GetCPUDescriptorHandleForHeapStart(),
 		m_fontSrvHeap->GetGPUDescriptorHandleForHeapStart());
 
@@ -681,29 +617,98 @@ void Core::SimpleApp::CreateTexts()
 	
 	auto fut = upload.End(m_commandQueue.Get());
 	fut.wait();
-
-	
-
 }
 
-void Core::SimpleApp::RenderText()
+void Core::SimpleApp::RenderText(const std::string& str)
 {
+	D3D12_RESOURCE_DESC texDesc = {};
+	texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	texDesc.Width = 512;
+	texDesc.Height = 512;
+	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	texDesc.MipLevels = 1;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.DepthOrArraySize = 1;
+	D3D12_CLEAR_VALUE clearValue = {};
+	clearValue.Format = texDesc.Format;
+
+	clearValue.Color[0] = 1.0f;
+	clearValue.Color[1] = 1.0f;
+	clearValue.Color[2] = 1.0f;
+	clearValue.Color[3] = 1.0f;
+
+	ThrowIfFailed(m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&texDesc,
+		D3D12_RESOURCE_STATE_RENDER_TARGET,
+		&clearValue, 
+		IID_PPV_ARGS(&m_textRT)));
+
+	auto rtvHandle = m_textRtvHeap->GetCPUDescriptorHandleForHeapStart();
+	m_device->CreateRenderTargetView(m_textRT.Get(), nullptr, rtvHandle);
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = m_textRT->GetDesc().Format;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Texture2D.MipLevels = m_textRT->GetDesc().MipLevels;
+	srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+	m_device->CreateShaderResourceView(m_textRT.Get(), &srvDesc, m_textSrvHeap->GetCPUDescriptorHandleForHeapStart());
+
+	//DrawString(str);
 	
+}
+
+void Core::SimpleApp::DrawString(const std::string& str)
+{
+	UINT64 width = m_textRT->GetDesc().Width;
+	UINT64 height = m_textRT->GetDesc().Height;
+
+	D3D12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)width, (FLOAT)height);
+	D3D12_RECT scissorRect = CD3DX12_RECT(0, 0, (LONG)width, (LONG)height);
+
+	GraphicsPSO pso = m_PSOs["defaultPSO"];
+
+	m_commandAllocator->Reset();
+	m_commandList->Reset(m_commandAllocator.Get(), pso.GetPSO());
+
+	m_commandList->RSSetScissorRects(1, &scissorRect);
+	m_commandList->RSSetViewports(1, &viewport);
+
+	m_commandList->SetPipelineState(pso.GetPSO());
+	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
+	m_commandList->ClearRenderTargetView(m_textRtvHeap->GetCPUDescriptorHandleForHeapStart(), DirectX::Colors::White, 0, nullptr);
+
+	m_commandList->OMSetRenderTargets(
+		1,
+		&m_textRtvHeap->GetCPUDescriptorHandleForHeapStart(),
+		FALSE,
+		nullptr);
+
 
 	ID3D12DescriptorHeap* heaps[] = { m_fontSrvHeap.Get() };
 	m_commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
 	spriteBatch->Begin(m_commandList.Get());
 
-	spriteBatch->SetViewport(m_viewport);
-	float margin = 5.f;
+	spriteBatch->SetViewport(viewport);
 
-	DirectX::SimpleMath::Vector2 m_fontPos = DirectX::SimpleMath::Vector2(0.f, 0.f);
+	DirectX::SimpleMath::Vector2 m_fontPos = DirectX::SimpleMath::Vector2(width/2.f, height/2.f);
 
-	DirectX::XMVECTORF32 color = DirectX::Colors::White;
-	font->DrawString(spriteBatch.get(), "test",
+	DirectX::XMVECTORF32 color = DirectX::Colors::Black;
+	font->DrawString(spriteBatch.get(), str.c_str(),
 		m_fontPos, color);
 
 	spriteBatch->End();
+
+	m_commandList->Close();
+	ID3D12CommandList* lists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+
+
+	FlushCommands();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE Core::SimpleApp::GetCurrentRtvCpuHandle() const

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "StaticMeshComponent.h"
 #include "StaticMesh.h"
@@ -100,21 +100,22 @@ namespace GraphicsUtils {
 
 	}
 
-	template<typename V, typename I>
+	template<typename V, typename I, typename MeshType>
 	inline std::shared_ptr<Actor> Utility::CreateActor(const std::string& actorname, Mesh<V, I>& meshData, const std::string& texture, const DirectX::SimpleMath::Vector3& location)
 	{
 		std::shared_ptr<Actor> actor = std::make_shared<Actor>(actorname);
 
-		std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>();
-		mesh->Initialize(m_device, m_commandList, meshData);
-		mesh->SetAlbedoTexture(texture);
-		mesh->SetLocation(location.x, location.y, location.z);
+		std::shared_ptr<MeshType> mesh = std::make_shared<MeshType>();
+		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
+		{
+			mesh->Initialize(m_device, m_commandList, meshData);
+			mesh->SetAlbedoTexture(texture);
+			mesh->SetLocation(location.x, location.y, location.z);
 
-		std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
-		cmp->SetMesh(mesh);
-
-		actor->SetRootComponent(cmp);
-
+			std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
+			cmp->SetMesh(mesh);
+			actor->SetRootComponent(cmp);
+		}
 		return actor;
 	}
 }

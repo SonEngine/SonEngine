@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <vector>
@@ -12,7 +12,7 @@
 
 #include "Actor.h"
 //#include "StaticMesh.h"
-
+class StaticMesh;
 #define D3D12_GPU_VIRTUAL_ADDRESS_NULL      ((D3D12_GPU_VIRTUAL_ADDRESS)0)
 #define D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN   ((D3D12_GPU_VIRTUAL_ADDRESS)-1)
 template<typename V, typename I> class Mesh;
@@ -103,12 +103,12 @@ namespace GraphicsUtils {
 			Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer
 		);
 
-		template<typename V, typename I>
+		template<typename V, typename I, typename MeshType = class StaticMesh>
 		std::shared_ptr<Actor> CreateActor(
 			const std::string& actorname,
 			Mesh<V, I>& mesh,
 			const std::string& texture,
-			const DirectX::SimpleMath::Vector3& location);
+			const DirectX::SimpleMath::Vector3& location); 
 	};
 
 }

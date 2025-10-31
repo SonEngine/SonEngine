@@ -27,7 +27,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     GraphicsPSO defaultPSO(L"default PSO");
     GraphicsPSO videoPSO(L"video PSO");
     GraphicsPSO phongPSO(L"phong PSO");
-    backBufferFormat  = DXGI_FORMAT_B8G8R8A8_UNORM;
+    backBufferFormat  = DXGI_FORMAT_R8G8B8A8_UNORM;
     dsBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
     D3D12_INPUT_ELEMENT_DESC posOnlyIL[] =

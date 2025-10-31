@@ -1,4 +1,4 @@
-#include "TextureLoader.h"
+﻿#include "TextureLoader.h"
 
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
@@ -33,6 +33,7 @@ void TextureLoader::InitHeap(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	heapDesc.NumDescriptors = count;
 
 	device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(heap.GetAddressOf()));
+	
 }
 
 void TextureLoader::LoadIdx(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -65,7 +66,6 @@ void TextureLoader::LoadIdx(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	InitHeap(device);
 }
 
-
 void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue)
 {
 	std::ifstream bin(binPath, std::ios::binary);
@@ -88,7 +88,6 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 		// 1. texture2d를 만든다
 		// 2. heap에 view를 만든다
 		
-
 		Microsoft::WRL::ComPtr<ID3D12Resource> t;
 		ThrowIfFailed(DirectX::CreateDDSTextureFromMemoryEx(
 			device.Get(),
@@ -106,7 +105,7 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 		srvDesc.Texture2D.MipLevels = t->GetDesc().MipLevels;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-
+		
 		device->CreateShaderResourceView(t.Get(), &srvDesc, handle);
 		textures.push_back(t);
 
@@ -124,7 +123,6 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureLoader::GetGPUHandle(const int & idx) const
 
 D3D12_GPU_DESCRIPTOR_HANDLE TextureLoader::GetGPUHandle(const std::string & filename) const
 {
-	const std::string test;
 	uint32_t idx = 0;
 	auto it = idxMap.find(filename);
 	if (it != idxMap.end())
@@ -133,4 +131,16 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureLoader::GetGPUHandle(const std::string & file
 	}
 	CD3DX12_GPU_DESCRIPTOR_HANDLE handle(heap->GetGPUDescriptorHandleForHeapStart(), idx, srvOffset);
 	return handle;
+}
+
+ID3D12Resource* TextureLoader::GetTexture(const std::string& filename) const
+{
+	const std::string test;
+	uint32_t idx = 0;
+	auto it = idxMap.find(filename);
+	if (it != idxMap.end())
+	{
+		idx = it->second;
+	}
+	return textures[idx].Get();
 }

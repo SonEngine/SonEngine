@@ -8,6 +8,10 @@ StaticMesh::StaticMesh()
 
 }
 
+StaticMesh::~StaticMesh()
+{
+}
+
 void StaticMesh::Render(ID3D12GraphicsCommandList* commandList, const TextureLoader * textureLoader)
 {
 	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
