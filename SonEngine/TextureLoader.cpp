@@ -25,12 +25,13 @@ TextureLoader::TextureLoader(std::string path)
 	idxPath = folder + "textures.idx";
 }
 
-void TextureLoader::InitHeap(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
+void TextureLoader::InitHeap(Microsoft::WRL::ComPtr<ID3D12Device5>& device, UINT heapSize )
 {
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	heapDesc.NumDescriptors = count;
+	heapDesc.NumDescriptors = heapSize;
+	m_heapSize = heapSize;
 
 	device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(heap.GetAddressOf()));
 }
@@ -61,8 +62,7 @@ void TextureLoader::LoadIdx(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 		idxMap[filename] = i;
 		filenames.push_back(filename);
 	}
-	
-	InitHeap(device);
+
 }
 
 void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue)
@@ -112,6 +112,30 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 	}
 	auto uploadResourcesFinished = resourceUpload.End(commandQueue.Get());
 	uploadResourcesFinished.wait();
+}
+
+void TextureLoader::AddTexture(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12Resource> & texture, std::string & filename)
+{
+	if (count <= m_heapSize)
+	{
+		
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = texture->GetDesc().Format;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Texture2D.MipLevels = texture->GetDesc().MipLevels;
+		srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart(), count, srvOffset);
+		device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
+		idxMap[filename] = count;
+		count++;
+	}
+	else
+	{
+		std::cout << "Failed to AddTexture : 힙이 가득 찾습니다\n";
+		return;
+	}
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE TextureLoader::GetGPUHandle(const int & idx) const

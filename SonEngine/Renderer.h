@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "TextureManager.h"
 #include <vector>
@@ -6,12 +6,18 @@
 #include <string>
 
 class GraphicsPSO;
+class ComputePSO;
 class RootSignature;
 
 namespace Renderer
 {
+    
     extern std::map<std::string, GraphicsPSO> m_PSOs;
+    extern std::map<std::string, ComputePSO> m_CPSOs;
+
     extern std::vector<std::string> psoNames;
+    extern std::vector<std::string> cpsoNames;
+
     extern DXGI_FORMAT backBufferFormat;
     extern DXGI_FORMAT dsBufferFormat;
 

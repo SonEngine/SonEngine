@@ -1,4 +1,4 @@
-#include "PipelineState.h"
+﻿#include "PipelineState.h"
 #include "RootSignature.h"
 
 GraphicsPSO::GraphicsPSO(const wchar_t* name)
@@ -36,7 +36,6 @@ void GraphicsPSO::SetDepthTargetFormat(DXGI_FORMAT DSVFormat, UINT MsaaCount, UI
 	m_psoDesc.DSVFormat = DSVFormat;
 	m_psoDesc.SampleDesc.Count = MsaaCount;
 	m_psoDesc.SampleDesc.Quality = MsaaQuality;
-
 }
 
 void GraphicsPSO::SetRenderTargetFormat(DXGI_FORMAT RTVFormat, DXGI_FORMAT DSVFormat, UINT MsaaCount, UINT MsaaQuality)
@@ -93,6 +92,14 @@ ComputePSO::ComputePSO(const wchar_t* name)
 {
 }
 
-void ComputePSO::Finalize()
+
+void ComputePSO::Finalize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 {
+	m_psoDesc.pRootSignature = m_rootSignature->GetSignature();
+	
+	ThrowIfFailed(
+		device->CreateComputePipelineState(
+			&m_psoDesc,
+			IID_PPV_ARGS(&m_pso)
+		));
 }

@@ -1,4 +1,4 @@
-#include "Utility.h"
+﻿#include "Utility.h"
 #include <comdef.h>
 #include <fstream>
 
@@ -81,9 +81,7 @@ namespace GraphicsUtils {
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 
 		return srvDesc;
-
 	}
-
 
 	ByteArray ReadFileHelper(const wstring& fileName)
 	{

@@ -4,11 +4,15 @@
 
 #include "CompiledShaders/DefaultPS.h"
 #include "CompiledShaders/DefaultVS.h"
+#include "CompiledShaders/DefaultCS.h"
 
 #include "CompiledShaders/VideoPS.h"
 
 #include "CompiledShaders/PhongVS.h"
 #include "CompiledShaders/PhongPS.h"
+
+#include "CompiledShaders/TextVS.h"
+#include "CompiledShaders/TextPS.h"
 
 using namespace Graphics;
 using namespace Renderer;
@@ -17,7 +21,11 @@ using namespace Renderer;
 namespace Renderer
 {
     std::map<std::string, GraphicsPSO> m_PSOs;
+    std::map<std::string, ComputePSO> m_CPSOs;
+
     std::vector<std::string> psoNames;
+    std::vector<std::string> cpsoNames;
+ 
     DXGI_FORMAT backBufferFormat;
     DXGI_FORMAT dsBufferFormat;
 }
@@ -27,6 +35,10 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     GraphicsPSO defaultPSO(L"default PSO");
     GraphicsPSO videoPSO(L"video PSO");
     GraphicsPSO phongPSO(L"phong PSO");
+    GraphicsPSO textPSO(L"text PSO");
+
+    ComputePSO defaultCPSO(L"default CPSO");
+
     backBufferFormat  = DXGI_FORMAT_R8G8B8A8_UNORM;
     dsBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
@@ -41,12 +53,18 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 
     };
+    D3D12_INPUT_ELEMENT_DESC textIL[] =
+    {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+    };
+
     D3D12_INPUT_ELEMENT_DESC phongIL[] =
     {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
         { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
-
     };
     defaultPSO.SetInputLayout(_countof(simpleIL), simpleIL);
     defaultPSO.SetRootSignature(g_commonRS);
@@ -87,6 +105,29 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     phongPSO.Finalize(device);
     m_PSOs["phongPSO"] = phongPSO;
     psoNames.push_back("phongPSO");
+
+    textPSO.SetInputLayout(_countof(textIL), textIL);
+    textPSO.SetRootSignature(g_commonRS);
+    textPSO.SetRasterizerState(rasterizerDefault);
+    textPSO.SetBlendState(blendNoColorWrite);
+    textPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+    textPSO.SetVertexShader(g_pTextVS, sizeof(g_pTextVS));
+    textPSO.SetPixelShader(g_pTextPS, sizeof(g_pTextPS));
+    textPSO.SetSampleMask(UINT_MAX);
+    textPSO.SetRenderTargetFormat(backBufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
+    textPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
+    textPSO.SetDepthStencilState(depthStateDefault);
+    textPSO.Finalize(device);
+    m_PSOs["textPSO"] = textPSO;
+    psoNames.push_back("textPSO");
+
+    defaultCPSO.SetComputeShader(g_pDefaultCS, sizeof(g_pDefaultCS));
+    defaultCPSO.SetRootSignature(g_U1_RS);
+    defaultCPSO.Finalize(device);
+    m_CPSOs["defaultCPSO"] = defaultCPSO;
+    cpsoNames.push_back("defaultCPSO");
+
+
 }
 
 ID3D12PipelineState* Renderer::GetPSO(std::string psoName)

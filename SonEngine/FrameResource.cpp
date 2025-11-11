@@ -10,14 +10,59 @@ void FrameResource::Initialize(Microsoft::WRL::ComPtr<ID3D12Device5>& device, co
 		std::cout << "Failed FrameResource::Initialize -> Graphics::utility == nullptr\n";
 		return;
 	}
+	srvIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	rtvIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	Graphics::utility->CreateConstantBuffer(
+		sizeof(GlobalConstant),
+		m_phongGCBuffer,
+		reinterpret_cast<void**>(&pPhongGCB)
+	);
+	for (size_t i = 0; i < commandCount; i++)
+	{
+		ThrowIfFailed(
+			device->CreateCommandAllocator(
+				D3D12_COMMAND_LIST_TYPE_DIRECT,
+				IID_PPV_ARGS(m_commandAllocator[i].ReleaseAndGetAddressOf())
+			));
+
+		ThrowIfFailed(
+			device->CreateCommandList(
+				0,
+				D3D12_COMMAND_LIST_TYPE_DIRECT,
+				m_commandAllocator[i].Get(),
+				nullptr,
+				IID_PPV_ARGS(m_commandList[i].ReleaseAndGetAddressOf())
+			));
+		m_commandList[i]->Close();
+	}
+
+	ThrowIfFailed(
+		device->CreateCommandAllocator(
+			D3D12_COMMAND_LIST_TYPE_DIRECT,
+			IID_PPV_ARGS(m_textCommandAllocator.ReleaseAndGetAddressOf())
+		));
+
+	ThrowIfFailed(
+		device->CreateCommandList(
+			0,
+			D3D12_COMMAND_LIST_TYPE_DIRECT,
+			m_textCommandAllocator.Get(),
+			nullptr,
+			IID_PPV_ARGS(m_textCommandList.ReleaseAndGetAddressOf())
+		));
+	m_textCommandList->Close();
+
+
+	if (textCount == 0)
+	{
+		return;
+	}		
 
 	Graphics::utility->CreateDescriptorHeap(textCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_textRtvHeap, 0);
 	Graphics::utility->CreateDescriptorHeap(textCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_textSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_textSrvHeap->GetCPUDescriptorHandleForHeapStart());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_textRtvHeap->GetCPUDescriptorHandleForHeapStart());
-
-	srvIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	rtvIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	
 	for (UINT i = 0; i < textCount; i++)
 	{
@@ -72,46 +117,6 @@ void FrameResource::Initialize(Microsoft::WRL::ComPtr<ID3D12Device5>& device, co
 		rtvHandle.Offset(1, rtvIncrementSize);
 	}
 		
-	Graphics::utility->CreateConstantBuffer(
-		sizeof(GlobalConstant),
-		m_phongGCBuffer,
-		reinterpret_cast<void**>(&pPhongGCB)
-	);
-	for (size_t i = 0; i < commandCount; i++)
-	{
-		ThrowIfFailed(
-			device->CreateCommandAllocator(
-				D3D12_COMMAND_LIST_TYPE_DIRECT,
-				IID_PPV_ARGS(m_commandAllocator[i].ReleaseAndGetAddressOf())
-			));
-
-		ThrowIfFailed(
-			device->CreateCommandList(
-				0,
-				D3D12_COMMAND_LIST_TYPE_DIRECT,
-				m_commandAllocator[i].Get(),
-				nullptr,
-				IID_PPV_ARGS(m_commandList[i].ReleaseAndGetAddressOf())
-			));
-		m_commandList[i]->Close();
-	}
-
-	ThrowIfFailed(
-		device->CreateCommandAllocator(
-			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			IID_PPV_ARGS(m_textCommandAllocator.ReleaseAndGetAddressOf())
-		));
-
-	ThrowIfFailed(
-		device->CreateCommandList(
-			0,
-			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			m_textCommandAllocator.Get(),
-			nullptr,
-			IID_PPV_ARGS(m_textCommandList.ReleaseAndGetAddressOf())
-		));
-	m_textCommandList->Close();
-	
 
 }
 

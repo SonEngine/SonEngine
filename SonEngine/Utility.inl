@@ -2,11 +2,13 @@
 
 #include "StaticMeshComponent.h"
 #include "StaticMesh.h"
+#include "d3d12.h"
+#include "Utility.h"
 
 namespace GraphicsUtils {
 
 	template<typename Data>
-	inline void Utility::CreateTextureBuffer(Data* data, UINT bytesPerData, UINT width, UINT height, Microsoft::WRL::ComPtr<ID3D12Resource>& gpuBuffer, Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer)
+	inline void Utility::CreateTextureBuffer(Data* data, UINT bytesPerData, UINT width, UINT height, D3D12_RESOURCE_FLAGS Flag, Microsoft::WRL::ComPtr<ID3D12Resource>& gpuBuffer, Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer)
 	{
 		D3D12_RESOURCE_DESC texDesc = {};
 		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -17,8 +19,8 @@ namespace GraphicsUtils {
 		texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		texDesc.SampleDesc.Count = 1;
 		texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
+		texDesc.Flags = Flag;
+		
 		ThrowIfFailed(m_device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -56,6 +58,79 @@ namespace GraphicsUtils {
 		//	D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 		//m_commandList->ResourceBarrier(1, &barrier);
+	}
+	inline void Utility::CreateTextureBuffer(
+		Microsoft::WRL::ComPtr<ID3D12Resource>& gpuBuffer,
+		UINT width,
+		UINT height,
+		DXGI_FORMAT format,
+		D3D12_RESOURCE_FLAGS Flag,
+		D3D12_RESOURCE_STATES state
+	)
+	{
+		D3D12_RESOURCE_DESC texDesc = {};
+		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		texDesc.Width = width;
+		texDesc.Height = height;
+		texDesc.DepthOrArraySize = 1;
+		texDesc.MipLevels = 1;
+		texDesc.Format = format;
+		texDesc.SampleDesc.Count = 1;
+		texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		texDesc.Flags = Flag;
+
+		ThrowIfFailed(m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&texDesc,
+			state,
+			nullptr,
+			IID_PPV_ARGS(gpuBuffer.ReleaseAndGetAddressOf())
+		));
+
+	}
+	inline void Utility::CreateResourceView(Microsoft::WRL::ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle, const DescriptorType& type)
+	{
+		if (type == DescriptorType::RTV) {
+			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
+			ZeroMemory(&rtvDesc, sizeof(rtvDesc));
+			if (bUseMsaa) {
+				rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+			}
+			else {
+				rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+			}
+			rtvDesc.Format = format;
+			rtvDesc.Texture2D.MipSlice = 0;
+
+			m_device->CreateRenderTargetView(buffer.Get(), &rtvDesc, handle);
+		}
+		else if (type == DescriptorType::UAV) {
+			if (bUseMsaa) {
+				std::cout << "UAV는 MSAA로 만들 수 없습니다" << std::endl;
+				return;
+			}
+			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc;
+			ZeroMemory(&uavDesc, sizeof(uavDesc));
+			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+			uavDesc.Format = format;
+			uavDesc.Texture2D.MipSlice = 0;
+			m_device->CreateUnorderedAccessView(buffer.Get(), nullptr, &uavDesc, handle);
+		}
+		else if (type == DescriptorType::SRV) {
+
+			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			if (bUseMsaa) {
+				srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
+			}
+			else {
+				srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			}
+			srvDesc.Format = format;
+			srvDesc.Texture2D.MipLevels = 1;
+			m_device->CreateShaderResourceView(buffer.Get(), &srvDesc, handle);
+		}
 	}
 
 	template<typename Data>

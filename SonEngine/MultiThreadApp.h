@@ -46,6 +46,8 @@ namespace Core {
 		void CreateTextures();
 		void CreateFonts();
 
+		void RenderWithText();
+
 		void BuildGeometry();
 		void BuildFrameResources();
 
@@ -54,12 +56,15 @@ namespace Core {
 		void BuildProxy();
 		void AddProxy(SceneComponent* component);
 		void AddTextProxy(SceneComponent* component);
-		void Render(const std::string& psoName, int idx, bool isText, bool isFinal);
+		void Render(const std::string& psoName, int idx, bool isText, bool isFinal, bool clear);
+
+		void Compute(const std::string& cpsoName, int idx, bool isFinal, D3D12_RESOURCE_STATES prevState);
 
 		void UpdateTexts();
 		void UpdateGUI(float deltaTime);
 
 	protected:
+		void RenderWithCompute();
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRtvCpuHandle() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCpuHandle() const;
 		ID3D12Resource* GetCurrentSwapChainResource() const;
@@ -80,6 +85,8 @@ namespace Core {
 
 	private:
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_swapChainRTVHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_UAVHeap;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_SRVHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
 
@@ -101,7 +108,13 @@ namespace Core {
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_swapChainResources[m_swapChainBufferCount];
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_depthStencilBuffer;
 
-		// Texture
+	// Compute Shader 용
+	private:
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_computeBuffer;
+		DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		std::string m_coputeTextureName = "ComTex";
+
+	// TextureLoader
 	private:
 		std::shared_ptr<TextureLoader> m_textureLoader;
 		std::shared_ptr<TextureLoader> m_fallbackLoader;
@@ -121,7 +134,8 @@ namespace Core {
 		std::atomic<bool> isRunning = true;
 		std::atomic<bool> frameReady = false;
 		std::string renderPSO = "phongPSO";
-		std::string textPSO = "defaultPSO";
+		std::string textPSO = "textPSO";
+		std::string computePSO = "defaultCPSO";
 		std::mutex r_mtx;
 		std::mutex g_mtx;
 		std::mutex queue_mtx;

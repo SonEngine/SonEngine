@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "wrl.h"
 #include "d3d12.h"
@@ -17,7 +17,7 @@ public:
     {
         m_rootSignature = &RootSignature;
     }
-    const RootSignature* GetRootSignature(void) const {return  m_rootSignature;}
+    const RootSignature* GetRootSignature(void) const {return m_rootSignature;}
     ID3D12PipelineState* GetPSO() { return m_pso.Get(); }
 
 protected:
@@ -77,8 +77,9 @@ class ComputePSO : public PSO
 public:
     ComputePSO(const wchar_t* Name = L"Unnamed Compute PSO");
 
-
-    void Finalize();
+    void SetComputeShader(const void* Binary, size_t Size) { m_psoDesc.CS = CD3DX12_SHADER_BYTECODE(const_cast<void*>(Binary), Size); }
+    void SetComputeShader(const D3D12_SHADER_BYTECODE& Binary) { m_psoDesc.CS = Binary; }
+    void Finalize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device);
 
 private:
 

@@ -17,6 +17,12 @@ class StaticMesh;
 #define D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN   ((D3D12_GPU_VIRTUAL_ADDRESS)-1)
 template<typename V, typename I> class Mesh;
 
+enum DescriptorType
+{
+	RTV,
+	UAV,
+	SRV
+};
 inline std::wstring AnsiToWString(const std::string& str)
 {
 	WCHAR buffer[512];
@@ -86,14 +92,25 @@ namespace GraphicsUtils {
 
 		void CreateConstantBuffer(UINT bufferSize, Microsoft::WRL::ComPtr<ID3D12Resource>& buffer, void** pConstant);
 		D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRVDesc(ID3D12Resource* resource);
+		
 		template<typename Data>
 		void CreateTextureBuffer(
 			Data* data,
 			UINT bytesPerData,
 			UINT width,
 			UINT height,
+			D3D12_RESOURCE_FLAGS Flag,
 			Microsoft::WRL::ComPtr<ID3D12Resource>& gpuBuffer,
 			Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer
+		);
+
+		void CreateTextureBuffer(
+			Microsoft::WRL::ComPtr<ID3D12Resource>& gpuBuffer,
+			UINT width,
+			UINT height,
+			DXGI_FORMAT format,
+			D3D12_RESOURCE_FLAGS Flag,
+			D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_RENDER_TARGET
 		);
 
 		template<typename Data>
@@ -109,6 +126,14 @@ namespace GraphicsUtils {
 			Mesh<V, I>& mesh,
 			const std::string& texture,
 			const DirectX::SimpleMath::Vector3& location); 
+
+		void CreateResourceView(
+			Microsoft::WRL::ComPtr<ID3D12Resource> & buffer,
+			DXGI_FORMAT format,
+			bool bUseMsaa,
+			D3D12_CPU_DESCRIPTOR_HANDLE& handle,
+			const DescriptorType& type);
+		
 	};
 
 }

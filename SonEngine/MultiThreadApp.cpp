@@ -78,10 +78,9 @@ int Core::MultiThreadApp::Run()
 
 			frameReady = false;
 			lock.unlock();
-					
-			Render(renderPSO, 0,false, false);
-			UpdateTexts();
-			Render(renderPSO, 1, true, true);
+
+			//RenderWithText();
+			RenderWithCompute();
 		}});
 
 		while (isRunning) {
@@ -107,7 +106,7 @@ int Core::MultiThreadApp::Run()
 
 				BuildProxy();
 				//std::cout << "Main Thread : " << m_currentResourceIndex << std::endl;
-				
+
 				m_currentResourceIndex = (m_currentResourceIndex + 1) % m_frameResourceCount;
 				{
 					std::lock_guard<std::mutex> lock(g_mtx);
@@ -122,11 +121,11 @@ int Core::MultiThreadApp::Run()
 			std::lock_guard<std::mutex> lock(g_mtx);
 			frameReady = true;
 		}
-			
+
 		cv.notify_all();
 		renderThread.join();
 
-		
+
 		FlushCommands();
 
 		std::cout << "Run 함수 종료\n";
@@ -135,7 +134,7 @@ int Core::MultiThreadApp::Run()
 
 bool Core::MultiThreadApp::InitDirectX()
 {
-	
+
 
 	UINT dxgiFactoryFlags = 0;
 
@@ -191,11 +190,20 @@ bool Core::MultiThreadApp::InitDirectX()
 	// DescriptorHeap 생성
 	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRTVHeap);
 	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
-	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_fontSrvHeap,0,D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_fontSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
+	D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	utility->CreateTextureBuffer(m_computeBuffer, m_width, m_height, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	
+	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_SRVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	
+	utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
+	
 	CreateSwapChain();
 	CreateDepthBuffer();
 	CreateFonts();
+
 	// Create SwapChain RTVs
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart());
 	for (int i = 0; i < m_swapChainBufferCount; i++)
@@ -207,6 +215,8 @@ bool Core::MultiThreadApp::InitDirectX()
 	}
 
 	CreateTextures();
+	m_textureLoader->AddTexture(m_device, m_computeBuffer, m_coputeTextureName);
+
 	{
 		m_commandAllocator->Reset();
 		m_commandList->Reset(m_commandAllocator.Get(), nullptr);
@@ -220,7 +230,7 @@ bool Core::MultiThreadApp::InitDirectX()
 
 		FlushCommands();
 	}
-	
+
 	return true;
 }
 
@@ -403,7 +413,7 @@ void Core::MultiThreadApp::BuildGeometry()
 	int planeSize = 6;
 	m_player = utility->CreateActor(
 		"player",
-		GeometryGenerator::MakeCube(1.f,1.f,1.f),
+		GeometryGenerator::MakeCube(1.f, 1.f, 1.f),
 		"pavement_03_albedo",
 		{ -1.5f, 0.5f, -1.5f }
 	);
@@ -411,48 +421,49 @@ void Core::MultiThreadApp::BuildGeometry()
 
 	std::shared_ptr<Actor> plane = utility->CreateActor(
 		"plane",
-		GeometryGenerator::MakePlane((float)planeSize, (float)planeSize,1),
-		"8k_earth_albedo",
+		GeometryGenerator::MakePlane((float)planeSize, (float)planeSize, 1),
+		m_coputeTextureName,
 		{ 0.f,0.f,0.f }
 	);
 	m_actors.push_back(plane);
-	int x = 3;
-	int z = 3;
-	float delX = (float)planeSize / x;
-	float delZ = -(float)planeSize / z;
-	
-	Vector3 basePos = Vector3(-delX * (0.5f * (x - 1)), 0.1f, -delZ * (0.5f * (z - 1)));
-	bool breakFlag = false;
-	
-	float margin = 0.2f;
-	float xSize = planeSize / (float)x - margin;
-	float zSize = planeSize / (float)z - margin;
+
+	//int x = 3;
+	//int z = 3;
+	//float delX = (float)planeSize / x;
+	//float delZ = -(float)planeSize / z;
+
+	//Vector3 basePos = Vector3(-delX * (0.5f * (x - 1)), 0.1f, -delZ * (0.5f * (z - 1)));
+	//bool breakFlag = false;
+
+	//float margin = 0.2f;
+	//float xSize = planeSize / (float)x - margin;
+	//float zSize = planeSize / (float)z - margin;
 
 
-	for (int i = 0; i < z; i++)
-	{
-		if (breakFlag)
-			break;
-		for (int j = 0; j < x; j++)
-		{
-			int idx = x * i + j;
-			if (idx == textCount)
-			{
-				breakFlag = true;
-				break;
-			}
-			Vector3 pos = basePos + Vector3(j * delX, 0.f, i * delZ);
-			std::string name = "plane" + std::to_string(idx);
-			std::shared_ptr<Actor> textPlane = utility->CreateActor(
-				name,
-				GeometryGenerator::MakePlane(xSize, zSize, 1),
-				"8k_earth_albedo",
-				pos
-			);
+	//for (int i = 0; i < z; i++)
+	//{
+	//	if (breakFlag)
+	//		break;
+	//	for (int j = 0; j < x; j++)
+	//	{
+	//		int idx = x * i + j;
+	//		if (idx == textCount)
+	//		{
+	//			breakFlag = true;
+	//			break;
+	//		}
+	//		Vector3 pos = basePos + Vector3(j * delX, 0.f, i * delZ);
+	//		std::string name = "plane" + std::to_string(idx);
+	//		std::shared_ptr<Actor> textPlane = utility->CreateActor(
+	//			name,
+	//			GeometryGenerator::MakePlane(xSize, zSize, 1),
+	//			"8k_earth_albedo",
+	//			pos
+	//		);
 
-			m_textActors.push_back(textPlane);
-		}
-	}
+	//		m_textActors.push_back(textPlane);
+	//	}
+	//}
 }
 
 void Core::MultiThreadApp::BuildFrameResources()
@@ -462,7 +473,7 @@ void Core::MultiThreadApp::BuildFrameResources()
 	for (int i = 0; i < m_frameResourceCount; i++)
 	{
 		m_frameResources[i] = std::make_shared<FrameResource>();
-		m_frameResources[i]->Initialize(m_device,512, 512, 9);
+		m_frameResources[i]->Initialize(m_device, 512, 512, m_textActors.size());
 	}
 }
 
@@ -529,7 +540,7 @@ void Core::MultiThreadApp::Update(float deltaTime)
 		}
 	}
 
-	
+
 	// view 회전 업데이트
 	if (isFocused && isFPSMode)
 	{
@@ -613,7 +624,7 @@ void Core::MultiThreadApp::BuildProxy()
 	// Update textProxyBuffers
 	for (size_t i = 0; i < cpuTexts.size(); i++)
 	{
-		if(currentFrameResource->textProxyBuffer.size()>i)
+		if (currentFrameResource->textProxyBuffer.size() > i)
 			currentFrameResource->textProxyBuffer[i].str = cpuTexts[i];
 
 	}
@@ -654,7 +665,8 @@ void Core::MultiThreadApp::AddTextProxy(SceneComponent* component)
 		AddTextProxy(child[i].get());
 	}
 }
-void Core::MultiThreadApp::Render(const std::string& psoName, int idx, bool isText, bool isFinal)
+
+void Core::MultiThreadApp::Render(const std::string& psoName, int idx, bool isText, bool isFinal, bool clear)
 {
 	using namespace Renderer;
 
@@ -709,7 +721,7 @@ void Core::MultiThreadApp::Render(const std::string& psoName, int idx, bool isTe
 			D3D12_RESOURCE_STATE_RENDER_TARGET
 		));
 
-	if (idx == 0)
+	if (clear)
 	{
 		commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
 		commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
@@ -732,18 +744,22 @@ void Core::MultiThreadApp::Render(const std::string& psoName, int idx, bool isTe
 	}
 	else
 	{
-		ID3D12DescriptorHeap* heaps[] = {
-			r_currentFrameResource->GetTextSrvHeap()
-		};
-
-		commandList->SetDescriptorHeaps(1, heaps);
-		UINT i = 0;
-		for (auto& proxy : r_currentFrameResource->textProxyBuffer)
+		if (r_currentFrameResource->textProxyBuffer.size() > 0)
 		{
-			commandList->SetGraphicsRootDescriptorTable(0, r_currentFrameResource->GetTextSrvGPUHandle(i));
-			proxy.mesh->Render(commandList);
-			i++;
+			ID3D12DescriptorHeap* heaps[] = {
+			r_currentFrameResource->GetTextSrvHeap()
+			};
+
+			commandList->SetDescriptorHeaps(1, heaps);
+			UINT i = 0;
+			for (auto& proxy : r_currentFrameResource->textProxyBuffer)
+			{
+				commandList->SetGraphicsRootDescriptorTable(0, r_currentFrameResource->GetTextSrvGPUHandle(i));
+				proxy.mesh->Render(commandList);
+				i++;
+			}
 		}
+		
 	}
 
 	commandList->ResourceBarrier(
@@ -752,6 +768,90 @@ void Core::MultiThreadApp::Render(const std::string& psoName, int idx, bool isTe
 			GetCurrentSwapChainResource(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
 			D3D12_RESOURCE_STATE_PRESENT
+		));
+
+	commandList->Close();
+
+	ID3D12CommandList* commands[] = { commandList };
+	{
+		std::lock_guard<std::mutex> lock(queue_mtx);
+		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+
+		if (isFinal)
+		{
+			ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), m_currentFence));
+			// text 업데이트를 위해 graphcics memory 사용 시 commit 해줘야 Graphics 메모리를 재사용한다
+			m_graphicsMemory->Commit(m_commandQueue.Get());
+			ThrowIfFailed(m_swapChain->Present(1, 0));
+			m_currentBackBufferIndex = (m_currentBackBufferIndex + 1) % m_swapChainBufferCount;
+		}
+	}
+}
+
+// TODO : 사용할 리소스 지정하기
+void Core::MultiThreadApp::Compute(const std::string& cpsoName, int idx, bool isFinal, D3D12_RESOURCE_STATES prevState)
+{
+	using namespace Renderer;
+
+	// N번을 update했을 때 N-1 번 프레임을 렌더링 
+	// update의 경우 m_frameResourceCount만큼 미리 업데이트 가능
+	r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
+
+	if (idx == 0)
+	{
+		if (r_currentFrameResource->m_currentFence != 0 &&
+			m_fence->GetCompletedValue() < r_currentFrameResource->m_currentFence)
+		{
+			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			m_fence->SetEventOnCompletion(r_currentFrameResource->m_currentFence, eventHandle);
+
+			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
+		}
+		r_currentFrameResource->m_currentFence = ++m_currentFence;
+	}
+	if (isFinal)
+	{
+		r_currentResourceIndex = (r_currentResourceIndex + 1) % m_frameResourceCount;
+	}
+	ComputePSO pso;
+	if (m_CPSOs.find(cpsoName) != m_CPSOs.end())
+	{
+		pso = m_CPSOs[cpsoName];
+	}
+	else
+	{
+		pso = m_CPSOs["defaultCPSO"];
+	}
+	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetCommandList(idx);
+	r_currentFrameResource->ResetAllocator(idx);
+	ThrowIfFailed(commandList->Reset(r_currentFrameResource->GetAllocator(idx), pso.GetPSO()));
+
+	commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_computeBuffer.Get(),
+			prevState,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+			));
+
+	commandList->SetComputeRootSignature(pso.GetRootSignature()->GetSignature());
+
+	ID3D12DescriptorHeap* heaps[] = {
+		m_UAVHeap.Get()
+	};
+	commandList->SetDescriptorHeaps(1, heaps);
+
+	commandList->SetComputeRootDescriptorTable(0, m_UAVHeap->GetGPUDescriptorHandleForHeapStart());
+
+	commandList->Dispatch((UINT)ceil(m_width / 32.f), (UINT)ceil(m_height / 32.f), 1);
+
+	commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_computeBuffer.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			prevState
 		));
 
 	commandList->Close();
@@ -788,7 +888,7 @@ void Core::MultiThreadApp::UpdateTexts()
 	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
 
 	UINT i = 0;
-	for (auto&tr : r_currentFrameResource->textResources)
+	for (auto& tr : r_currentFrameResource->textResources)
 	{
 		UINT64 width = tr.textureWidth;
 		UINT64 height = tr.textureHeight;
@@ -825,7 +925,7 @@ void Core::MultiThreadApp::UpdateTexts()
 		spriteBatch->End();
 		i++;
 	}
-	
+
 	commandList->Close();
 	ID3D12CommandList* commands[] = { commandList };
 	{
@@ -845,7 +945,9 @@ void Core::MultiThreadApp::CreateTextures()
 	m_textureLoader = std::make_shared<TextureLoader>(texturePath);
 	m_fallbackLoader = std::make_shared<TextureLoader>(fallbackPath);
 
+	m_textureLoader->InitHeap(m_device, 20);
 	m_textureLoader->LoadIdx(m_device);
+	m_fallbackLoader->InitHeap(m_device, 20);
 	m_fallbackLoader->LoadIdx(m_device);
 	m_textureLoader->LoadTextures(m_device, m_commandQueue);
 }
@@ -874,7 +976,19 @@ void Core::MultiThreadApp::CreateFonts()
 	fut.wait();
 }
 
+void Core::MultiThreadApp::RenderWithText()
+{
+	Render(renderPSO, 0, false, false, true);
+	UpdateTexts();
+	Render(textPSO, 1, true, true, false);
+}
 
+void Core::MultiThreadApp::RenderWithCompute()
+{
+	Compute(computePSO, 0, false, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	
+	Render(renderPSO, 1, false, true, true);
+}
 D3D12_CPU_DESCRIPTOR_HANDLE Core::MultiThreadApp::GetCurrentRtvCpuHandle() const
 {
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart(), m_currentBackBufferIndex, m_rtvDescriptorSize);

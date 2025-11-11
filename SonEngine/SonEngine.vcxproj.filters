@@ -183,6 +183,9 @@
     <FxCompile Include="VideoPS.hlsl" />
     <FxCompile Include="PhongVS.hlsl" />
     <FxCompile Include="PhongPS.hlsl" />
+    <FxCompile Include="TextVS.hlsl" />
+    <FxCompile Include="TextPS.hlsl" />
+    <FxCompile Include="DefaultCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />
@@ -190,6 +193,7 @@
     <None Include="Utility.inl">
       <Filter>헤더 파일</Filter>
     </None>
+    <None Include="TextCommon.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\earth_Albedo.dds">

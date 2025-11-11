@@ -1,4 +1,4 @@
-#include "PhongCommon.hlsli"
+﻿#include "PhongCommon.hlsli"
 
 Texture2D gAlbedo : register(t0);
 SamplerState gSampler : register(s0);
