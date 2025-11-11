@@ -1,4 +1,4 @@
-struct psInput
+﻿struct psInput
 {
     float4 svPosition : SV_Position;
     float2 uv : TEXCOORD;
@@ -22,5 +22,4 @@ float4 main(psInput input) : SV_TARGET
     float b = y + 1.772 * u;
 
     return float4(r, g, b, 1.0);
-
 }

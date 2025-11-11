@@ -1,4 +1,4 @@
-#include "VideoApp.h"
+﻿#include "VideoApp.h"
 #include "RootSignature.h"
 #include "PipelineState.h"
 #include "Vertex.h"
@@ -9,6 +9,8 @@
 
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
+
+
 
 using Microsoft::WRL::ComPtr;
 using namespace GraphicsUtils;
@@ -70,7 +72,7 @@ int Core::VideoApp::Run()
 			m_timer.Tick();
 			float deltaTime = (float)m_timer.GetDeltaTime();
 
-			Update(deltaTime);
+			//Update(deltaTime);
 			Render(deltaTime);
 			RenderGUI(deltaTime);
 			Finalize(deltaTime);
@@ -120,14 +122,14 @@ bool Core::VideoApp::InitDirectX()
 	CreateCommandObjects();
 	CreateSwapChain();
 
-	m_utility = new Utility(m_device.Get(), m_commandList.Get());
+	utility = std::make_shared<GraphicsUtils::Utility>(m_device.Get(), m_commandList.Get());
 
 	m_cbvSrvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	m_dsvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-	m_utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRtvHeap);
-	m_utility->CreateDescriptorHeap(3, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_texturesHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRtvHeap);
+	utility->CreateDescriptorHeap(3, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_texturesHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	// Create SwapChain RTVs
 
@@ -235,42 +237,42 @@ void Core::VideoApp::Update(float deltaTime)
 {
 	time += deltaTime;
 
-	//if (time > 1 / 30.f)
-	//{
-	//	
-	//	time = 0;
-	//	while (av_read_frame(fmtCtx, &pkt) >= 0) {
-	//	
-	//		if (pkt.stream_index == videoStreamIdx) {
-	//			avcodec_send_packet(codecCtx, &pkt);
-	//			if (avcodec_receive_frame(codecCtx, frame) == 0) {
+	if (time > 1 / 30.f)
+	{
+		
+		time = 0;
+		while (av_read_frame(fmtCtx, &pkt) >= 0) {
+		
+			if (pkt.stream_index == videoStreamIdx) {
+				avcodec_send_packet(codecCtx, &pkt);
+				if (avcodec_receive_frame(codecCtx, frame) == 0) {
 
-	//				m_commandAllocator->Reset();
-	//				m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+					m_commandAllocator->Reset();
+					m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
-	//				currentFrameIndex++;
-	//				sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, rgbFrame->data, rgbFrame->linesize);
-	//				rgbFrame->format = AV_PIX_FMT_BGRA;
+					currentFrameIndex++;
+					sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, rgbFrame->data, rgbFrame->linesize);
+					rgbFrame->format = AV_PIX_FMT_BGRA;
 
-	//				avSubresource.pData = rgbBuffer.data();
-	//				avSubresource.RowPitch = codecCtx->width * 4;
-	//				avSubresource.SlicePitch = avSubresource.RowPitch * codecCtx->height;
+					avSubresource.pData = rgbBuffer.data();
+					avSubresource.RowPitch = codecCtx->width * 4;
+					avSubresource.SlicePitch = avSubresource.RowPitch * codecCtx->height;
 
-	//				UpdateSubresources(m_commandList.Get(), m_gpuTexture.Get(), m_uploadBuffer.Get(), 0, 0, 1, &avSubresource);
+					UpdateSubresources(m_commandList.Get(), m_gpuTexture.Get(), m_uploadBuffer.Get(), 0, 0, 1, &avSubresource);
 
-	//				m_commandList->Close();
+					m_commandList->Close();
 
-	//				ID3D12CommandList* cmds[] = { m_commandList.Get() };
-	//				m_commandQueue->ExecuteCommandLists(_countof(cmds), cmds);
+					ID3D12CommandList* cmds[] = { m_commandList.Get() };
+					m_commandQueue->ExecuteCommandLists(_countof(cmds), cmds);
 
-	//				FlushCommands();
+					FlushCommands();
 
-	//				//std::cout << currentFrameIndex << '\n';
-	//				break;
-	//			}
-	//		}
-	//	}
-	//}
+					std::cout << currentFrameIndex << '\n';
+					break;
+				}
+			}
+		}
+	}
 
 	
 }
@@ -429,8 +431,8 @@ void Core::VideoApp::BuildGeometry()
 void Core::VideoApp::BuildConstantBuffers()
 {
 
-	m_utility->CreateConstantBuffer(sizeof(LocalConstant), m_localCB, reinterpret_cast<void**>(&pLocalConstant));
-	m_utility->CreateConstantBuffer(sizeof(GlobalConstant), m_globalCB, reinterpret_cast<void**>(&pGlobalConstant));
+	utility->CreateConstantBuffer(sizeof(LocalConstant), m_localCB, reinterpret_cast<void**>(&pLocalConstant));
+	utility->CreateConstantBuffer(sizeof(GlobalConstant), m_globalCB, reinterpret_cast<void**>(&pGlobalConstant));
 
 	//localConstant.model.m[3][0] = 1 / 60.f;
 	//localConstant.model = localConstant.model.Transpose();
@@ -441,97 +443,95 @@ void Core::VideoApp::BuildConstantBuffers()
 
 void Core::VideoApp::CreateTextures()
 {
-	/*avformat_network_init();
+	avformat_network_init();
 
 	avformat_open_input(&fmtCtx, "videos/test.mp4", nullptr, nullptr);
 	avformat_find_stream_info(fmtCtx, nullptr);
 
-	videoStreamIdx = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);*/
+	videoStreamIdx = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
 
-	//AVCodecParameters* codecPar = fmtCtx->streams[videoStreamIdx]->codecpar;
-	//const AVCodec* codec = avcodec_find_decoder(codecPar->codec_id);
-	//codecCtx = avcodec_alloc_context3(codec);
-	//avcodec_parameters_to_context(codecCtx, codecPar);
-	//avcodec_open2(codecCtx, codec, nullptr);
+	AVCodecParameters* codecPar = fmtCtx->streams[videoStreamIdx]->codecpar;
+	const AVCodec* codec = avcodec_find_decoder(codecPar->codec_id);
+	codecCtx = avcodec_alloc_context3(codec);
+	avcodec_parameters_to_context(codecCtx, codecPar);
+	avcodec_open2(codecCtx, codec, nullptr);
 
-	//// BGRA 변환용 SWS 컨텍스트
-	//swsCtx = sws_getContext(
-	//	codecCtx->width, codecCtx->height, codecCtx->pix_fmt,
-	//	codecCtx->width, codecCtx->height, AV_PIX_FMT_BGRA,
-	//	SWS_BILINEAR, nullptr, nullptr, nullptr);
+	// BGRA 변환용 SWS 컨텍스트
+	swsCtx = sws_getContext(
+		codecCtx->width, codecCtx->height, codecCtx->pix_fmt,
+		codecCtx->width, codecCtx->height, AV_PIX_FMT_BGRA,
+		SWS_BILINEAR, nullptr, nullptr, nullptr);
 
-	//frame = av_frame_alloc();
-	//rgbFrame = av_frame_alloc();
-	//int numBytes = av_image_get_buffer_size(AV_PIX_FMT_BGRA, codecCtx->width, codecCtx->height, 1);
-	//rgbBuffer.resize(numBytes);
-	//av_image_fill_arrays(rgbFrame->data, rgbFrame->linesize, rgbBuffer.data(), AV_PIX_FMT_BGRA, codecCtx->width, codecCtx->height, 1);
+	frame = av_frame_alloc();
+	rgbFrame = av_frame_alloc();
+	int numBytes = av_image_get_buffer_size(AV_PIX_FMT_BGRA, codecCtx->width, codecCtx->height, 1);
+	rgbBuffer.resize(numBytes);
+	av_image_fill_arrays(rgbFrame->data, rgbFrame->linesize, rgbBuffer.data(), AV_PIX_FMT_BGRA, codecCtx->width, codecCtx->height, 1);
 
-	//while (av_read_frame(fmtCtx, &pkt) >= 0) {
-	//	if (pkt.stream_index == videoStreamIdx) {
-	//		avcodec_send_packet(codecCtx, &pkt);
-	//		if (avcodec_receive_frame(codecCtx, frame) == 0) {
-	//			
-	//			sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, rgbFrame->data, rgbFrame->linesize);
-	//			rgbFrame->format = AV_PIX_FMT_BGRA;  				
-	//			//SaveFrameAsBMP("debug_frame0.bmp", rgbBuffer.data(), codecCtx->width, codecCtx->height, rgbFrame->linesize[0]);
+	while (av_read_frame(fmtCtx, &pkt) >= 0) {
+		if (pkt.stream_index == videoStreamIdx) {
+			avcodec_send_packet(codecCtx, &pkt);
+			if (avcodec_receive_frame(codecCtx, frame) == 0) {
+				
+				sws_scale(swsCtx, frame->data, frame->linesize, 0, codecCtx->height, rgbFrame->data, rgbFrame->linesize);
+				rgbFrame->format = AV_PIX_FMT_BGRA;  				
+				//SaveFrameAsBMP("debug_frame0.bmp", rgbBuffer.data(), codecCtx->width, codecCtx->height, rgbFrame->linesize[0]);
 
+				D3D12_RESOURCE_DESC texDesc = {};
+				texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+				texDesc.Width = codecCtx->width;
+				texDesc.Height = codecCtx->height;
+				texDesc.DepthOrArraySize = 1;
+				texDesc.MipLevels = 1;
+				texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+				texDesc.SampleDesc.Count = 1;
+				texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+				texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-	//			D3D12_RESOURCE_DESC texDesc = {};
-	//			texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	//			texDesc.Width = codecCtx->width;
-	//			texDesc.Height = codecCtx->height;
-	//			texDesc.DepthOrArraySize = 1;
-	//			texDesc.MipLevels = 1;
-	//			texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	//			texDesc.SampleDesc.Count = 1;
-	//			texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	//			texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+				m_device->CreateCommittedResource(
+					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+					D3D12_HEAP_FLAG_NONE,
+					&texDesc,
+					D3D12_RESOURCE_STATE_COPY_DEST,
+					nullptr,
+					IID_PPV_ARGS(&m_gpuTexture));
 
-	//			m_device->CreateCommittedResource(
-	//				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-	//				D3D12_HEAP_FLAG_NONE,
-	//				&texDesc,
-	//				D3D12_RESOURCE_STATE_COPY_DEST,
-	//				nullptr,
-	//				IID_PPV_ARGS(&m_gpuTexture));
+				UINT64 uploadSize = 0;
+				D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+				UINT numRows;
+				UINT64 rowSize, totalSize;
+				m_device->GetCopyableFootprints(&texDesc, 0, 1, 0, &footprint, &numRows, &rowSize, &totalSize);
 
-	//			UINT64 uploadSize = 0;
-	//			D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
-	//			UINT numRows;
-	//			UINT64 rowSize, totalSize;
-	//			m_device->GetCopyableFootprints(&texDesc, 0, 1, 0, &footprint, &numRows, &rowSize, &totalSize);
+				m_device->CreateCommittedResource(
+					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+					D3D12_HEAP_FLAG_NONE,
+					&CD3DX12_RESOURCE_DESC::Buffer(totalSize),
+					D3D12_RESOURCE_STATE_GENERIC_READ,
+					nullptr,
+					IID_PPV_ARGS(&m_uploadBuffer));
 
-	//			m_device->CreateCommittedResource(
-	//				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-	//				D3D12_HEAP_FLAG_NONE,
-	//				&CD3DX12_RESOURCE_DESC::Buffer(totalSize),
-	//				D3D12_RESOURCE_STATE_GENERIC_READ,
-	//				nullptr,
-	//				IID_PPV_ARGS(&m_uploadBuffer));
+				avSubresource.pData = rgbBuffer.data();
+				avSubresource.RowPitch = codecCtx->width * 4;
+				avSubresource.SlicePitch = avSubresource.RowPitch * codecCtx->height;
 
-	//			
-	//			avSubresource.pData = rgbBuffer.data();
-	//			avSubresource.RowPitch = codecCtx->width * 4;
-	//			avSubresource.SlicePitch = avSubresource.RowPitch * codecCtx->height;
+				UpdateSubresources(m_commandList.Get(), m_gpuTexture.Get(), m_uploadBuffer.Get(), 0, 0, 1, &avSubresource);
 
-	//			UpdateSubresources(m_commandList.Get(), m_gpuTexture.Get(), m_uploadBuffer.Get(), 0, 0, 1, &avSubresource);
+				// SRV 생성
+				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+				srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+				srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+				srvDesc.Texture2D.MipLevels = 1;
 
-	//			// SRV 생성
-	//			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	//			srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	//			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	//			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	//			srvDesc.Texture2D.MipLevels = 1;
+				CD3DX12_CPU_DESCRIPTOR_HANDLE heapHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());
+				m_device->CreateShaderResourceView(m_gpuTexture.Get(), &srvDesc, heapHandle);
+				
 
-	//			CD3DX12_CPU_DESCRIPTOR_HANDLE heapHandle(m_texturesHeap->GetCPUDescriptorHandleForHeapStart());
-	//			m_device->CreateShaderResourceView(m_gpuTexture.Get(), &srvDesc, heapHandle);
-	//			
-
-	//			break;
-	//			
-	//		}
-	//	}
-	//}
+				break;
+				
+			}
+		}
+	}
 
 	ComPtr<ID3D12VideoDevice> videoDevice;
     if (FAILED(m_device->QueryInterface(IID_PPV_ARGS(&videoDevice))))
