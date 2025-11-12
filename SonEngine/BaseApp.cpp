@@ -138,7 +138,7 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		m_width = LOWORD(lParam);
 		m_height = HIWORD(lParam);
-		OnResize();
+		resizeDirty = true;
 
 		return 0;
 	}
@@ -163,6 +163,10 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_KEYUP:
 		if (wParam == 'P')
 			printDirty = true;
+
+		if (wParam == 'C')
+			captureDirty = true;
+
 		m_inputHelper.SetInputState((size_t)wParam, false);
 		break;
 

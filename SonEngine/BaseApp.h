@@ -45,6 +45,8 @@ namespace Core {
         HWND m_mainWnd;
         bool isFocused = true;
         bool isFPSMode = false;
+        bool resizeDirty = false;
+        bool captureDirty = false;
 
     protected:
         bool bMouseFlag = false;

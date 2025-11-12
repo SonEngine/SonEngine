@@ -71,6 +71,9 @@ namespace Core {
 
 	private:
 		void FlushCommands();
+		void FlushResourceCommands();
+
+		void SaveTexture(std::string& name);
 
 	private:
 		Microsoft::WRL::ComPtr<IDXGIFactory7> m_dxgiFactory;
@@ -112,7 +115,7 @@ namespace Core {
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_computeBuffer;
 		DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-		std::string m_coputeTextureName = "ComTex";
+		std::string m_computeTextureName = "ComTex";
 
 	// TextureLoader
 	private:
@@ -143,7 +146,7 @@ namespace Core {
 		std::condition_variable cv;
 		float deltaTime = 0.f;
 
-		//FrameResource
+	//FrameResource
 	private:
 		static const int m_frameResourceCount = 3;
 		std::vector<std::shared_ptr<FrameResource>> m_frameResources;
@@ -167,5 +170,11 @@ namespace Core {
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_fontSrvHeap;
 		UINT textCount = 0;
 		std::vector<std::wstring> cpuTexts;
+
+	private:
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_saveBuffer;
+		void* pSaveBuffer;
+		std::string imageFilePath = "images/";
+
 	};
 }

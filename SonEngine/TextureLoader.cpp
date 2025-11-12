@@ -129,6 +129,7 @@ void TextureLoader::AddTexture(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart(), count, srvOffset);
 		device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
 		idxMap[filename] = count;
+		textures.push_back(texture);
 		count++;
 	}
 	else

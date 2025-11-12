@@ -1,4 +1,11 @@
-﻿#include "MultiThreadApp.h"
+﻿#pragma warning(disable : 4996)
+
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image.h"
+#include "stb_image_write.h"
+
+#include "MultiThreadApp.h"
 #include "RootSignature.h"
 #include "PipelineState.h"
 #include "GeometryGenerater.h"
@@ -9,6 +16,7 @@
 #include "StaticMesh.h"
 #include "StaticMeshComponent.h"
 #include <pix3.h>
+
 
 using Microsoft::WRL::ComPtr;
 using namespace GraphicsUtils;
@@ -75,7 +83,18 @@ int Core::MultiThreadApp::Run()
 			{
 				break;
 			}
-
+			if (resizeDirty)
+			{
+				resizeDirty = false;
+				FlushResourceCommands();
+				OnResize();
+			}
+			if (captureDirty)
+			{
+				captureDirty = false;
+				FlushResourceCommands();
+				SaveTexture(m_computeTextureName);
+			}
 			frameReady = false;
 			lock.unlock();
 
@@ -134,8 +153,6 @@ int Core::MultiThreadApp::Run()
 
 bool Core::MultiThreadApp::InitDirectX()
 {
-
-
 	UINT dxgiFactoryFlags = 0;
 
 	// Enable the debug layer
@@ -192,14 +209,17 @@ bool Core::MultiThreadApp::InitDirectX()
 	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
 	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_fontSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
-	D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-	utility->CreateTextureBuffer(m_computeBuffer, m_width, m_height, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	
-	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_SRVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	
-	utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
-	
+	// Compute Shader에서 사용할 버퍼 생성
+	{
+		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		utility->CreateTextureBuffer(m_computeBuffer, 128, 128, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_SRVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
+		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
+	}
+
 	CreateSwapChain();
 	CreateDepthBuffer();
 	CreateFonts();
@@ -215,7 +235,7 @@ bool Core::MultiThreadApp::InitDirectX()
 	}
 
 	CreateTextures();
-	m_textureLoader->AddTexture(m_device, m_computeBuffer, m_coputeTextureName);
+	m_textureLoader->AddTexture(m_device, m_computeBuffer, m_computeTextureName);
 
 	{
 		m_commandAllocator->Reset();
@@ -398,7 +418,6 @@ void Core::MultiThreadApp::CreateDepthBuffer()
 
 	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_DSVHeap->GetCPUDescriptorHandleForHeapStart();
 	m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &dsvDesc, handle);
-
 }
 
 void Core::MultiThreadApp::UpdateGUI(float deltaTime)
@@ -422,7 +441,7 @@ void Core::MultiThreadApp::BuildGeometry()
 	std::shared_ptr<Actor> plane = utility->CreateActor(
 		"plane",
 		GeometryGenerator::MakePlane((float)planeSize, (float)planeSize, 1),
-		m_coputeTextureName,
+		m_computeTextureName,
 		{ 0.f,0.f,0.f }
 	);
 	m_actors.push_back(plane);
@@ -473,7 +492,7 @@ void Core::MultiThreadApp::BuildFrameResources()
 	for (int i = 0; i < m_frameResourceCount; i++)
 	{
 		m_frameResources[i] = std::make_shared<FrameResource>();
-		m_frameResources[i]->Initialize(m_device, 512, 512, m_textActors.size());
+		m_frameResources[i]->Initialize(m_device, 512, 512, (UINT)m_textActors.size());
 	}
 }
 
@@ -1018,4 +1037,78 @@ void Core::MultiThreadApp::FlushCommands()
 		WaitForSingleObject(eventHandle, INFINITE);
 		CloseHandle(eventHandle);
 	}
+}
+
+void Core::MultiThreadApp::FlushResourceCommands()
+{
+	m_currentFence++;
+
+	ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), m_currentFence));
+	if (m_fence->GetCompletedValue() < m_currentFence)
+	{
+		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+		m_fence->SetEventOnCompletion(m_currentFence, eventHandle);
+
+		WaitForSingleObject(eventHandle, INFINITE);
+		CloseHandle(eventHandle);
+	}
+}
+
+void Core::MultiThreadApp::SaveTexture(std::string& name)
+{
+	ID3D12Resource* t = m_textureLoader->GetTexture(name);
+	D3D12_RESOURCE_DESC desc = t->GetDesc();
+	UINT64 w = desc.Width;
+	UINT64 h = desc.Height;
+		
+	UINT64 copyBufferSize = 0;
+	if (desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM)
+		copyBufferSize = w * h * 4;
+
+	m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(copyBufferSize),
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(m_saveBuffer.ReleaseAndGetAddressOf()));
+
+	m_commandAllocator->Reset();
+	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+
+	UINT64 requiredSize = 0;
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+	m_device->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &requiredSize);
+
+	m_commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			t,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+	CD3DX12_TEXTURE_COPY_LOCATION dst(m_saveBuffer.Get(), footprint);
+	CD3DX12_TEXTURE_COPY_LOCATION src(t, 0);
+	m_commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+	m_commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			t,
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+		));
+
+	m_commandList->Close();
+	ID3D12CommandList* commands[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+
+	CD3DX12_RANGE range(0, 0);
+	std::vector<uint8_t> image(copyBufferSize);
+	m_saveBuffer->Map(0, &range, reinterpret_cast<void**>(&pSaveBuffer));
+	memcpy(image.data(), pSaveBuffer, copyBufferSize);
+	m_saveBuffer->Unmap(0, nullptr);
+
+	std::string filename = name + ".png";
+	std::string fileFullPath = imageFilePath + filename;
+	stbi_write_png(fileFullPath.c_str(), (int)w, (int)h, 4, image.data(), int(w * 4));
+	std::cout << name << " 가 성공적으로 저장되었습니다.\n";
 }
