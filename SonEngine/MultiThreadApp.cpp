@@ -74,6 +74,22 @@ int Core::MultiThreadApp::Run()
 	MSG msg = { };
 	m_timer.Reset();
 
+	std::thread saveThread([&] {
+		while (isRunning) {
+			std::unique_lock<std::mutex> lock(capture_mtx);
+			captureCv.wait(lock, [&] {return !isRunning || saveReady; });
+
+			if (!isRunning)
+			{
+				break;
+			}
+			saveReady = false;
+			lock.unlock();
+
+			SaveTextureCPU();
+		}
+		});
+
 	std::thread renderThread([&] {
 		while (isRunning) {
 			std::unique_lock<std::mutex> lock(g_mtx);
@@ -83,18 +99,14 @@ int Core::MultiThreadApp::Run()
 			{
 				break;
 			}
-			if (resizeDirty)
-			{
-				resizeDirty = false;
-				FlushResourceCommands();
-				OnResize();
-			}
+			
 			if (captureDirty)
 			{
 				captureDirty = false;
 				FlushResourceCommands();
-				SaveTexture(m_computeTextureName);
+				SaveTextureGPU(m_computeTextureName);
 			}
+
 			frameReady = false;
 			lock.unlock();
 
@@ -119,6 +131,13 @@ int Core::MultiThreadApp::Run()
 				m_timer.Tick();
 				deltaTime = (float)m_timer.GetDeltaTime();
 
+				if (resizeDirty)
+				{
+					resizeDirty = false;
+					FlushResourceCommands();
+					OnResize();
+				}
+
 				PostActorChanges();
 
 				Update(deltaTime);
@@ -140,12 +159,18 @@ int Core::MultiThreadApp::Run()
 			std::lock_guard<std::mutex> lock(g_mtx);
 			frameReady = true;
 		}
+		{
+			std::lock_guard<std::mutex> lock(capture_mtx);
+			saveReady = true;
+		}
 
 		cv.notify_all();
+		captureCv.notify_all();
+
 		renderThread.join();
+		saveThread.join();
 
-
-		FlushCommands();
+		FlushResourceCommands();
 
 		std::cout << "Run 함수 종료\n";
 		return (int)msg.wParam;
@@ -212,7 +237,7 @@ bool Core::MultiThreadApp::InitDirectX()
 	// Compute Shader에서 사용할 버퍼 생성
 	{
 		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		utility->CreateTextureBuffer(m_computeBuffer, 128, 128, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIM, computeTextureDIM, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_SRVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
@@ -450,15 +475,11 @@ void Core::MultiThreadApp::BuildGeometry()
 	//int z = 3;
 	//float delX = (float)planeSize / x;
 	//float delZ = -(float)planeSize / z;
-
 	//Vector3 basePos = Vector3(-delX * (0.5f * (x - 1)), 0.1f, -delZ * (0.5f * (z - 1)));
 	//bool breakFlag = false;
-
 	//float margin = 0.2f;
 	//float xSize = planeSize / (float)x - margin;
 	//float zSize = planeSize / (float)z - margin;
-
-
 	//for (int i = 0; i < z; i++)
 	//{
 	//	if (breakFlag)
@@ -479,7 +500,6 @@ void Core::MultiThreadApp::BuildGeometry()
 	//			"8k_earth_albedo",
 	//			pos
 	//		);
-
 	//		m_textActors.push_back(textPlane);
 	//	}
 	//}
@@ -496,6 +516,7 @@ void Core::MultiThreadApp::BuildFrameResources()
 	}
 }
 
+// main thread
 void Core::MultiThreadApp::PostActorChanges()
 {
 	if (!m_addActors.empty())
@@ -513,6 +534,7 @@ void Core::MultiThreadApp::PostActorChanges()
 	}
 }
 
+// main thread
 void Core::MultiThreadApp::Update(float deltaTime)
 {
 	PIXBeginEvent(0, L"Game Update");
@@ -863,7 +885,7 @@ void Core::MultiThreadApp::Compute(const std::string& cpsoName, int idx, bool is
 
 	commandList->SetComputeRootDescriptorTable(0, m_UAVHeap->GetGPUDescriptorHandleForHeapStart());
 
-	commandList->Dispatch((UINT)ceil(m_width / 32.f), (UINT)ceil(m_height / 32.f), 1);
+	commandList->Dispatch((UINT)ceil(computeTextureDIM / 32.f), (UINT)ceil(computeTextureDIM / 32.f), 1);
 
 	commandList->ResourceBarrier(
 		1,
@@ -1054,31 +1076,39 @@ void Core::MultiThreadApp::FlushResourceCommands()
 	}
 }
 
-void Core::MultiThreadApp::SaveTexture(std::string& name)
+void Core::MultiThreadApp::SaveTextureGPU(std::string& name)
 {
+	std::cout << "SaveTextureGPU\n";
+
 	ID3D12Resource* t = m_textureLoader->GetTexture(name);
 	D3D12_RESOURCE_DESC desc = t->GetDesc();
 	UINT64 w = desc.Width;
 	UINT64 h = desc.Height;
-		
-	UINT64 copyBufferSize = 0;
-	if (desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM)
-		copyBufferSize = w * h * 4;
+	
+	imageInfo.bufferPixelCount = w * h * 4;
+	UINT64 copyBufferSize = imageInfo.bufferPixelCount;
+
+	UINT64 requiredSize = 0;
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+	m_device->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &requiredSize);
 
 	m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(copyBufferSize),
+		&CD3DX12_RESOURCE_DESC::Buffer(requiredSize),
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(m_saveBuffer.ReleaseAndGetAddressOf()));
 
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
-
-	UINT64 requiredSize = 0;
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
-	m_device->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &requiredSize);
+		
+	imageInfo.rowPitch = footprint.Footprint.RowPitch;
+	imageInfo.rowSize = w * 4;
+	imageInfo.numRows = h;
+	imageInfo.name = name;
+	imageInfo.width = w;
+	imageInfo.height = h;
 
 	m_commandList->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -1101,14 +1131,35 @@ void Core::MultiThreadApp::SaveTexture(std::string& name)
 	ID3D12CommandList* commands[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
 
+	{
+		std::lock_guard<std::mutex> lock(capture_mtx);
+		saveReady = true;
+	}
+	captureCv.notify_one();
+}
+
+void Core::MultiThreadApp::SaveTextureCPU()
+{
+	std::cout << "SaveTextureCPU\n";
+
 	CD3DX12_RANGE range(0, 0);
-	std::vector<uint8_t> image(copyBufferSize);
-	m_saveBuffer->Map(0, &range, reinterpret_cast<void**>(&pSaveBuffer));
-	memcpy(image.data(), pSaveBuffer, copyBufferSize);
+	std::vector<uint8_t> image(imageInfo.bufferPixelCount);
+	uint8_t* mapped = nullptr;
+	m_saveBuffer->Map(0, &range, reinterpret_cast<void**>(&mapped));
+	//memcpy(image.data(), pSaveBuffer, copyBufferSize);
+
+	for (UINT y = 0; y < imageInfo.numRows; y++) {
+		memcpy(image.data() + y * imageInfo.rowSize,
+			mapped + y * imageInfo.rowPitch,
+			imageInfo.rowSize);
+	}
 	m_saveBuffer->Unmap(0, nullptr);
 
-	std::string filename = name + ".png";
+	std::string filename = imageInfo.name + ".png";
 	std::string fileFullPath = imageFilePath + filename;
-	stbi_write_png(fileFullPath.c_str(), (int)w, (int)h, 4, image.data(), int(w * 4));
-	std::cout << name << " 가 성공적으로 저장되었습니다.\n";
+	stbi_write_png(fileFullPath.c_str(), (int)imageInfo.width, (int)imageInfo.height, 4, image.data(), imageInfo.rowSize);
+	std::cout << imageInfo.name << " 가 성공적으로 저장되었습니다.\n";
+
+	std::string cmd = "start \"\" \"" + imageFilePath + "\"";
+	system(cmd.c_str());
 }

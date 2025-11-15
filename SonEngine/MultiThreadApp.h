@@ -18,8 +18,7 @@
 #include "TextureLoader.h"
 #include "FrameResource.h"
 #include "Actor.h"
-
-
+#include "ImageInfo.h"
 
 namespace Core {
 	class MultiThreadApp : public BaseApp
@@ -73,7 +72,8 @@ namespace Core {
 		void FlushCommands();
 		void FlushResourceCommands();
 
-		void SaveTexture(std::string& name);
+		void SaveTextureGPU(std::string& name);
+		void SaveTextureCPU();
 
 	private:
 		Microsoft::WRL::ComPtr<IDXGIFactory7> m_dxgiFactory;
@@ -114,8 +114,10 @@ namespace Core {
 	// Compute Shader 용
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_computeBuffer;
+		//DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 		std::string m_computeTextureName = "ComTex";
+		UINT computeTextureDIM = 1024*4;
 
 	// TextureLoader
 	private:
@@ -136,14 +138,18 @@ namespace Core {
 	private:
 		std::atomic<bool> isRunning = true;
 		std::atomic<bool> frameReady = false;
+		std::atomic<bool> saveReady = false;
+
 		std::string renderPSO = "phongPSO";
 		std::string textPSO = "textPSO";
 		std::string computePSO = "defaultCPSO";
 		std::mutex r_mtx;
 		std::mutex g_mtx;
 		std::mutex queue_mtx;
+		std::mutex capture_mtx;
 
 		std::condition_variable cv;
+		std::condition_variable captureCv;
 		float deltaTime = 0.f;
 
 	//FrameResource
@@ -174,7 +180,8 @@ namespace Core {
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_saveBuffer;
 		void* pSaveBuffer;
-		std::string imageFilePath = "images/";
+		std::string imageFilePath = "images\\";
+		ImageInfo imageInfo;
 
 	};
 }
