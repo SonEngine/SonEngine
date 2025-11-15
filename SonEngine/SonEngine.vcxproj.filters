@@ -176,6 +176,9 @@
     <ClInclude Include="Proxy.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="ImageInfo.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultVS.hlsl" />
