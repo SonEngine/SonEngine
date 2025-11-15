@@ -179,6 +179,15 @@
     <ClInclude Include="ImageInfo.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Delegate.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ShapeComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SphereComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultVS.hlsl" />
@@ -197,6 +206,9 @@
       <Filter>헤더 파일</Filter>
     </None>
     <None Include="TextCommon.hlsli" />
+    <None Include="Delegate.inl">
+      <Filter>헤더 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\earth_Albedo.dds">
