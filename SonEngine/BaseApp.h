@@ -8,7 +8,7 @@
 #include "imgui_impl_dx12.h"
 
 #include "Timer.h"
-#include "InputHelper.h"
+#include "GraphicsCommon.h"
 
 
 namespace Core {
@@ -37,24 +37,21 @@ namespace Core {
     public:
         static BaseApp* m_appPtr;
         Core::Timer m_timer;
-        Input::InputHelper m_inputHelper;
 
     protected:
         int m_width;
         int m_height;
         HWND m_mainWnd;
-        bool isFocused = true;
         bool isFPSMode = false;
         bool resizeDirty = false;
         bool captureDirty = false;
 
     protected:
         bool bMouseFlag = false;
-        int mouseDeltaX = 0;
-        int mouseDeltaY = 0;
 
     protected:
         bool addDirty = false;
         bool printDirty = false;
+
     };
 }

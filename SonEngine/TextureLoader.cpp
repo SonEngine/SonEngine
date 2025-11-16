@@ -17,15 +17,21 @@ std::ostream& operator<<(std::ostream& out, const TextureInfo& info)
 	return out;
 }
 
-TextureLoader::TextureLoader(std::string path)
-	:folder(path)
+TextureLoader::TextureLoader()
+	:m_device(nullptr)
+{
+}
+
+TextureLoader::TextureLoader(std::string path, ID3D12Device5* device)
+	:folder(path),
+	m_device(device)
 {
 	count = 0;
 	binPath = folder + "textures.bin";
 	idxPath = folder + "textures.idx";
 }
 
-void TextureLoader::InitHeap(Microsoft::WRL::ComPtr<ID3D12Device5>& device, UINT heapSize )
+void TextureLoader::InitHeap(UINT heapSize)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -33,10 +39,10 @@ void TextureLoader::InitHeap(Microsoft::WRL::ComPtr<ID3D12Device5>& device, UINT
 	heapDesc.NumDescriptors = heapSize;
 	m_heapSize = heapSize;
 
-	device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(heap.GetAddressOf()));
+	m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(heap.GetAddressOf()));
 }
 
-void TextureLoader::LoadIdx(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
+void TextureLoader::LoadIdx()
 {
 	std::ifstream idx(idxPath.c_str(), std::ios::binary);
 
@@ -62,17 +68,16 @@ void TextureLoader::LoadIdx(Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 		idxMap[filename] = i;
 		filenames.push_back(filename);
 	}
-
 }
 
-void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue)
+void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue)
 {
 	std::ifstream bin(binPath, std::ios::binary);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart());
-	srvOffset = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	srvOffset = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	DirectX::ResourceUploadBatch resourceUpload(device.Get());
+	DirectX::ResourceUploadBatch resourceUpload(m_device);
 	resourceUpload.Begin();
 
 	for (uint32_t i = 0; i < count; i++)
@@ -89,7 +94,7 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 		
 		Microsoft::WRL::ComPtr<ID3D12Resource> t;
 		ThrowIfFailed(DirectX::CreateDDSTextureFromMemoryEx(
-			device.Get(),
+			m_device,
 			resourceUpload,
 			reinterpret_cast<const uint8_t*>(texture.data()),
 			size,
@@ -105,7 +110,7 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		
-		device->CreateShaderResourceView(t.Get(), &srvDesc, handle);
+		m_device->CreateShaderResourceView(t.Get(), &srvDesc, handle);
 		textures.push_back(t);
 
 		handle.Offset(1, srvOffset);
@@ -114,7 +119,7 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 	uploadResourcesFinished.wait();
 }
 
-void TextureLoader::AddTexture(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Microsoft::WRL::ComPtr<ID3D12Resource> & texture, std::string & filename)
+void TextureLoader::AddTexture(Microsoft::WRL::ComPtr<ID3D12Resource> & texture, std::string & filename)
 {
 	if (count <= m_heapSize)
 	{
@@ -127,7 +132,7 @@ void TextureLoader::AddTexture(Microsoft::WRL::ComPtr<ID3D12Device5>& device, Mi
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart(), count, srvOffset);
-		device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
+		m_device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
 		idxMap[filename] = count;
 		textures.push_back(texture);
 		count++;

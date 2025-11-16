@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(OutDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir);$(VcpkgRoot)\installed\x64-windows\include\physx</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4819</DisableSpecificWarnings>
     </ClCompile>
@@ -129,7 +129,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(OutDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir);$(VcpkgRoot)\installed\x64-windows\include\physx</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4819</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -158,8 +158,10 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MultiThreadApp.cpp" />
+    <ClCompile Include="PhysXEngine.cpp" />
     <ClCompile Include="PipelineState.cpp" />
     <ClCompile Include="PrimitiveComponent.cpp" />
+    <ClCompile Include="RenderEngine.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="SceneComponent.cpp" />
@@ -170,6 +172,7 @@
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="VideoApp.cpp" />
+    <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActorComponent.h" />
@@ -187,8 +190,10 @@
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MultiThreadApp.h" />
+    <ClInclude Include="PhysXEngine.h" />
     <ClInclude Include="PrimitiveComponent.h" />
     <ClInclude Include="Proxy.h" />
+    <ClInclude Include="RenderEngine.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="PipelineState.h" />
     <ClInclude Include="RootSignature.h" />
@@ -206,6 +211,8 @@
     <ClInclude Include="VideoApp.h" />
     <ClInclude Include="Actor.h" />
     <ClInclude Include="FrameResource.h" />
+    <ClInclude Include="ViewProjInfo.h" />
+    <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultCS.hlsl">

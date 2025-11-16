@@ -3,7 +3,7 @@
 #include "DirectXColors.h"
 #include <iostream>
 
-void FrameResource::Initialize(Microsoft::WRL::ComPtr<ID3D12Device5>& device, const UINT& width, const UINT& height, const UINT& textCount)
+void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount)
 {
 	if (Graphics::utility == nullptr)
 	{
@@ -120,17 +120,12 @@ void FrameResource::Initialize(Microsoft::WRL::ComPtr<ID3D12Device5>& device, co
 
 }
 
-void FrameResource::UpdateGlobalConstantBuffer(
-	const DirectX::SimpleMath::Vector3& viewDirection,
-	const DirectX::SimpleMath::Vector3& viewLocation,
-	const DirectX::SimpleMath::Matrix& view,
-	const DirectX::SimpleMath::Matrix& proj
-	)
+void FrameResource::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo)
 {
-	phongGC.viewDir = ToVector4(viewDirection, 0.f);
-	phongGC.viewLoc = ToVector4(viewLocation, 0.f);
-	phongGC.view = view;
-	phongGC.proj = proj;
+	phongGC.viewDir = ToVector4(viewProjInfo.viewDirection, 0.f);
+	phongGC.viewLoc = ToVector4(viewProjInfo.viewLocation, 0.f);
+	phongGC.view = viewProjInfo.view;
+	phongGC.proj = viewProjInfo.proj;
 
 	memcpy(pPhongGCB, &phongGC, sizeof(PhongGlobalConstant));
 }

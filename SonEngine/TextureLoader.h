@@ -17,16 +17,25 @@ struct TextureInfo {
 
 class TextureLoader {
 public:
-	TextureLoader(std::string path);
+	//TextureLoader(std::string path);
+	TextureLoader();
+	TextureLoader(std::string path, ID3D12Device5* device);
 
-	void InitHeap(Microsoft::WRL::ComPtr<ID3D12Device5>& device, UINT heapSize);
-	void LoadIdx(Microsoft::WRL::ComPtr<ID3D12Device5>& device);
-	void LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
+	void InitHeap(UINT heapSize);
+	void LoadIdx();
+
+	void LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue);
+
+	void AddTexture(Microsoft::WRL::ComPtr<ID3D12Resource>& texture, std::string& filename);
+
+	//void InitHeap(Microsoft::WRL::ComPtr<ID3D12Device5>& device, UINT heapSize);
+	//void LoadIdx(Microsoft::WRL::ComPtr<ID3D12Device5>& device);
+	/*void LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device,
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue);
 
 	void AddTexture(Microsoft::WRL::ComPtr<ID3D12Device5>& device, 
 		Microsoft::WRL::ComPtr<ID3D12Resource>& texture, 
-		std::string& filename);
+		std::string& filename);*/
 
 public:
 	ID3D12DescriptorHeap* GetHeap()const { return heap.Get(); }
@@ -51,4 +60,7 @@ private:
 	
 	UINT m_heapSize = 0;
 	UINT srvOffset = 0;
+
+private:
+	ID3D12Device5* m_device;
 };

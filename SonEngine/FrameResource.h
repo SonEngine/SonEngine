@@ -7,6 +7,7 @@
 
 #include "Proxy.h"
 #include "Constants.h"
+#include "ViewProjInfo.h"
 
 struct TextResource {
 	UINT64 textureWidth;
@@ -20,8 +21,8 @@ public:
 	FrameResource() {};
 
 public:
-	void Initialize(Microsoft::WRL::ComPtr<ID3D12Device5>& device, const UINT& width = 2048, const UINT& height = 2048, const UINT& textCount = 0);
-	void UpdateGlobalConstantBuffer(const DirectX::SimpleMath::Vector3& viewDirection, const DirectX::SimpleMath::Vector3& viewLocation, const DirectX::SimpleMath::Matrix& view, const DirectX::SimpleMath::Matrix& proj);
+	void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount);
+	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo);
 	void ResetAllocator(int idx);
 
 public:

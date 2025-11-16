@@ -19,6 +19,7 @@ namespace Graphics
 	RootSignature g_U1_RS;
 
 	std::shared_ptr<GraphicsUtils::Utility> utility;
+	std::unique_ptr<World> world;
 }
 
 

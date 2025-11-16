@@ -227,34 +227,34 @@ void Core::SimpleApp::OnResize()
 
 void Core::SimpleApp::Update(float deltaTime)
 {
-	if (isFocused && isFPSMode)
-	{
-		// set cursor pos center
-		GetWindowRect(m_mainWnd, &windowRect);
-		int x = (windowRect.right + windowRect.left) / 2;
-		int y = (windowRect.bottom + windowRect.top) / 2;
-		SetCursorPos(x, y);
+	//if (isFocused && isFPSMode)
+	//{
+	//	// set cursor pos center
+	//	GetWindowRect(m_mainWnd, &windowRect);
+	//	int x = (windowRect.right + windowRect.left) / 2;
+	//	int y = (windowRect.bottom + windowRect.top) / 2;
+	//	SetCursorPos(x, y);
 
-		// update camera
-		m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY);
-		m_camera->UpdateCameraLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
+	//	// update camera
+	//	m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY);
+	//	m_camera->UpdateCameraLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
 
-		// update consatant
-		globalConstant.view = m_camera->GetViewMatrix();
+	//	// update consatant
+	//	globalConstant.view = m_camera->GetViewMatrix();
 
-		phongGC.view = globalConstant.view;
-		phongGC.viewLoc = ToVector4(m_camera->GetActorLocation(), 0.f);
-		phongGC.viewDir = ToVector4(m_camera->GetActorFrontDir(), 0.f);
-		phongGC.DirectionLightLoc = ToVector4(m_directionLight->GetActorLocation(), 0.f);
-		phongGC.DirectionLightDir = ToVector4(m_directionLight->GetActorFrontDir(), 0.f);
+	//	phongGC.view = globalConstant.view;
+	//	phongGC.viewLoc = ToVector4(m_camera->GetActorLocation(), 0.f);
+	//	phongGC.viewDir = ToVector4(m_camera->GetActorFrontDir(), 0.f);
+	//	phongGC.DirectionLightLoc = ToVector4(m_directionLight->GetActorLocation(), 0.f);
+	//	phongGC.DirectionLightDir = ToVector4(m_directionLight->GetActorFrontDir(), 0.f);
 
-		memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
-		memcpy(pPhongCB, &phongGC, sizeof(PhongGlobalConstant));
+	//	memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
+	//	memcpy(pPhongCB, &phongGC, sizeof(PhongGlobalConstant));
 
-		// reset mouse
-		mouseDeltaX = 0;
-		mouseDeltaY = 0;
-	}
+	//	// reset mouse
+	//	mouseDeltaX = 0;
+	//	mouseDeltaY = 0;
+	//}
 }
 
 void Core::SimpleApp::UpdateGUI(float deltaTime)
@@ -586,12 +586,12 @@ void Core::SimpleApp::CreateTextures()
 	DDSPath = "Textures/DDS/";
 	fallbackDDSPath = "Textures/Falback/";
 
-	m_textureLoader = std::make_shared<TextureLoader>(texturePath);
-	m_fallbackLoader = std::make_shared<TextureLoader>(fallbackPath);
+	m_textureLoader = std::make_shared<TextureLoader>(texturePath, m_device.Get());
+	m_fallbackLoader = std::make_shared<TextureLoader>(fallbackPath, m_device.Get());
 
-	m_textureLoader->LoadIdx(m_device);
-	m_fallbackLoader->LoadIdx(m_device);
-	m_textureLoader->LoadTextures(m_device, m_commandQueue);
+	m_textureLoader->LoadIdx();
+	m_fallbackLoader->LoadIdx();
+	m_textureLoader->LoadTextures(m_commandQueue);
 }
 
 void Core::SimpleApp::CreateTexts()

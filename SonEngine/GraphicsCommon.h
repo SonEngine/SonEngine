@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Utility.h"
+#include "World.h"
 
 class SamplerDesc;
 class RootSignature;
@@ -26,5 +27,6 @@ namespace Graphics
     extern RootSignature g_U1_RS;
 
     extern std::shared_ptr<GraphicsUtils::Utility> utility;
+    extern std::unique_ptr<World> world;
 
 }

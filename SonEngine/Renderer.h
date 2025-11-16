@@ -10,8 +10,7 @@ class ComputePSO;
 class RootSignature;
 
 namespace Renderer
-{
-    
+{    
     extern std::map<std::string, GraphicsPSO> m_PSOs;
     extern std::map<std::string, ComputePSO> m_CPSOs;
 
@@ -21,6 +20,7 @@ namespace Renderer
     extern DXGI_FORMAT backBufferFormat;
     extern DXGI_FORMAT dsBufferFormat;
 
+    // PSO 초기화
     void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device);
     void Shutdown(void);
 

@@ -56,5 +56,5 @@ public:
 	void Bind(Object* object, RetType(Object::* function)(Params...));
 
 private:
-	std::unique_ptr<DelegateInstance> m_instance;
+	std::unique_ptr<DelegateInstance<RetType, Params...>> m_instance;
 };

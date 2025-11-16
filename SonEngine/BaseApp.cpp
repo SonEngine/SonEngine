@@ -17,6 +17,7 @@ BaseApp::BaseApp()
 		delete m_appPtr;
 	}
 
+	Graphics::world = std::make_unique<World>();
 	m_appPtr = this;
 	m_timer = Timer();
 }
@@ -29,14 +30,17 @@ BaseApp::BaseApp(int width, int height)
 	if (m_appPtr != nullptr) {
 		delete m_appPtr;
 	}
+	Graphics::world = std::make_unique<World>();
 	m_appPtr = this;
+	m_timer = Timer();
+
 }
 
 BaseApp::~BaseApp()
 {
-	ImGui_ImplDX12_Shutdown();
+	/*ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
+	ImGui::DestroyContext();*/
 
 	m_mainWnd = NULL;
 	m_appPtr = nullptr;
@@ -138,7 +142,7 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		m_width = LOWORD(lParam);
 		m_height = HIWORD(lParam);
-		resizeDirty = true;
+		OnResize();
 
 		return 0;
 	}
@@ -152,13 +156,14 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT,
 				&raw, &rawSize, sizeof(RAWINPUTHEADER));
 
-		mouseDeltaX = raw.data.mouse.lLastX;
-		mouseDeltaY = raw.data.mouse.lLastY;
+		if (Graphics::world)
+		{
+			Graphics::world->UpdateMouse(raw.data.mouse.lLastX, raw.data.mouse.lLastY);
+		}
 	}
 	break;
 	case WM_KEYDOWN:
-
-		m_inputHelper.SetInputState((size_t)wParam, true);
+		if(Graphics::world)	Graphics::world->SetInputState((size_t)wParam, true);
 		break;
 	case WM_KEYUP:
 		if (wParam == 'P')
@@ -167,20 +172,24 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		if (wParam == 'C')
 			captureDirty = true;
 
-		m_inputHelper.SetInputState((size_t)wParam, false);
+		if (Graphics::world) Graphics::world->SetInputState((size_t)wParam, false);
+
 		break;
 
 	case WM_ACTIVATE:
 		if (LOWORD(wParam) == WA_INACTIVE)
 		{
 			// 포커스 잃음
-			isFocused = false;
+			if (Graphics::world)
+				Graphics::world->SetFoucusMode(false);
+			
 			ShowCursor(true);
 		}
 		else
 		{
 			// 포커스 얻음 
-			isFocused = true;
+			if (Graphics::world)
+				Graphics::world->SetFoucusMode(true);
 			//ShowCursor(false);
 		}
 		break;
@@ -188,6 +197,9 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		isFPSMode = !isFPSMode;
 		ShowCursor(!isFPSMode);
+		if (Graphics::world)
+			Graphics::world->SetFPSMode(isFPSMode);
+
 	}
 	break;
 	case WM_MBUTTONUP: 	

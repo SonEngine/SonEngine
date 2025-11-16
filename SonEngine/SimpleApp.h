@@ -32,7 +32,7 @@ namespace Core {
 		virtual bool InitGUI() override;
 
 		// Called when the window is resized
-		virtual void OnResize() override;
+		void OnResize() override;
 
 		void Update(float deltaTime);
 		void UpdateGUI(float deltaTime);
