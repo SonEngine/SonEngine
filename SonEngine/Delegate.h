@@ -34,7 +34,7 @@ public:
 	virtual ~MemberFunctionInvoker() {};
 
 public:
-	RetType Execute(Params...) override;
+	RetType Execute(Params... params) override;
 
 private:
 	Object* m_object;
@@ -55,6 +55,14 @@ public:
 	template<typename Object>
 	void Bind(Object* object, RetType(Object::* function)(Params...));
 
+	RetType Execute(Params... params) {
+		if (m_instance == nullptr)
+			return RetType();
+		return m_instance->Execute(params...);
+	}
+
 private:
 	std::unique_ptr<DelegateInstance<RetType, Params...>> m_instance;
 };
+
+#include "Delegate.inl"

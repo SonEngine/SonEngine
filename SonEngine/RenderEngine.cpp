@@ -10,7 +10,8 @@
 
 #include "RootSignature.h"
 #include "PipelineState.h"
-#include "GeometryGenerater.h"
+#include "GeometryGenerator.h"
+#include "PrimitiveComponent.h"
 
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
@@ -93,6 +94,7 @@ bool RenderEngine::Initialize(int width,int height, IDXGIFactory7* factory, HWND
 
 	CreateTextures();
 	m_textureLoader->AddTexture(m_computeBuffer, m_computeTextureName);
+	BuildFrameResources();
 
 	{
 		m_commandAllocator->Reset();
@@ -100,11 +102,9 @@ bool RenderEngine::Initialize(int width,int height, IDXGIFactory7* factory, HWND
 
 		if (world)
 		{
-			world->Initialize(m_width, m_height);
+			world->Initialize(m_width, m_height, this, m_device, m_commandList.Get());
 		}
-
-		BuildFrameResources();
-
+		
 		m_commandList->Close();
 		ID3D12CommandList* commands[] = { m_commandList.Get() };
 		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
@@ -211,7 +211,6 @@ void RenderEngine::RequestResize(int newWidth, int newHeight)
 		std::lock_guard<std::mutex> lock(g_mtx);
 		resize = true;
 	}
-
 }
 
 void RenderEngine::OnResize()
@@ -248,6 +247,13 @@ void RenderEngine::OnResize()
 
 	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
 	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)m_width, (LONG)m_height);
+}
+
+void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
+{
+	m_primitives.push_back(primitive);
+	for (auto& fr : m_frameResources)
+		fr->proxyDirty = true;
 }
 
 void RenderEngine::CreateCommandObjects()
@@ -376,7 +382,7 @@ void RenderEngine::PostActorChanges()
 //	m_addActors.clear();
 }
 
-void RenderEngine::BuildProxy(const std::vector<std::shared_ptr<Actor>>& actors, Actor* player)
+void RenderEngine::BuildRenderProxy()
 {
 	if (currentFrameResource->proxyDirty)
 	{
@@ -386,31 +392,10 @@ void RenderEngine::BuildProxy(const std::vector<std::shared_ptr<Actor>>& actors,
 
 		//std::cout << m_currentResourceIndex << "build 중\n";
 		int id = 0;
-
-		for (auto& actor : actors)
+		for (auto primitive : m_primitives)
 		{
-			SceneComponent* root = actor->GetRootComponent();
-			AddProxy(root);
+			AddProxy(primitive);
 		}
-		/*for (auto& actor : m_textActors)
-		{
-			SceneComponent* root = actor->GetRootComponent();
-			AddTextProxy(root);
-		}*/
-		SceneComponent* root = player->GetRootComponent();
-		AddProxy(root);
-	}
-
-	//Update cpuTexts
-	//cpuTexts[0] = std::to_wstring((int)m_timer.GetElapsedTime());
-	//cpuTexts[1] = std::to_wstring((float)player->GetActorLocation().x);
-
-	// Update textProxyBuffers
-	for (size_t i = 0; i < cpuTexts.size(); i++)
-	{
-		if (currentFrameResource->textProxyBuffer.size() > i)
-			currentFrameResource->textProxyBuffer[i].str = cpuTexts[i];
-
 	}
 }
 
@@ -424,12 +409,12 @@ void RenderEngine::AddProxy(SceneComponent* component)
 		currentFrameResource->proxyBuffer.push_back(proxy);
 	}
 
-	std::vector<std::shared_ptr<SceneComponent>> child;
+	/*std::vector<std::shared_ptr<SceneComponent>> child;
 	component->GetChildrenComponents(child);
 	for (size_t i = 0; i < child.size(); i++)
 	{
 		AddProxy(child[i].get());
-	}
+	}*/
 }
 
 void RenderEngine::AddTextProxy(SceneComponent* component)
@@ -470,7 +455,7 @@ void RenderEngine::Tick(float deltaTime)
 	if (world)
 	{
 		currentFrameResource->UpdateGlobalConstantBuffer(world->GetViewProjInfo());
-		BuildProxy(world->GetActors(), world->Getplayer());
+		BuildRenderProxy();
 	}
 	//std::cout << "Main Thread : " << m_currentResourceIndex << std::endl;
 

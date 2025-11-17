@@ -10,7 +10,9 @@
 #include "dxgi1_6.h"
 #include <directxtk12/SimpleMath.h>
 
+#include "PhysXMode.h"
 #include "Actor.h"
+
 //#include "StaticMesh.h"
 class StaticMesh;
 #define D3D12_GPU_VIRTUAL_ADDRESS_NULL      ((D3D12_GPU_VIRTUAL_ADDRESS)0)
@@ -125,7 +127,10 @@ namespace GraphicsUtils {
 			const std::string& actorname,
 			Mesh<V, I>& mesh,
 			const std::string& texture,
-			const DirectX::SimpleMath::Vector3& location); 
+			const DirectX::SimpleMath::Vector3& location,
+			class World* world,
+			bool simulate = false,
+			PhysXMode mode = PhysXMode::PM_Default);
 
 		void CreateResourceView(
 			Microsoft::WRL::ComPtr<ID3D12Resource> & buffer,

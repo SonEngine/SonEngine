@@ -1,4 +1,4 @@
-﻿#include "GeometryGenerater.h"
+﻿#include "GeometryGenerator.h"
 
 Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakeSimpleRect(float x, float y)
 {
@@ -59,14 +59,14 @@ Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakeSimpleCube(float x, float y,
 		vertices.push_back({ v[v3], Vector2(1,1) });
 
 		size_t base = i * 4;
-		indices.push_back(base + 0);
-		indices.push_back(base + 1);
-		indices.push_back(base + 2);
+		indices.push_back(uint16_t(base + 0));
+		indices.push_back(uint16_t(base + 1));
+		indices.push_back(uint16_t(base + 2));
 
-		indices.push_back(base + 0);
-		indices.push_back(base + 2);
-		indices.push_back(base + 3);
-	}
+		indices.push_back(uint16_t(base + 0));
+		indices.push_back(uint16_t(base + 2));
+		indices.push_back(uint16_t(base + 3));
+	}										
 
 	Mesh<SimpleVertex, uint16_t> mesh;
 

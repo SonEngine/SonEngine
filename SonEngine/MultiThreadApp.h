@@ -9,6 +9,7 @@
 #include "Constants.h"
 #include "Light.h"
 #include "RenderEngine.h"
+#include "PhysXEngine.h"
 
 namespace Core {
 	class MultiThreadApp : public BaseApp
@@ -40,6 +41,7 @@ namespace Core {
 		float deltaTime = 0.f;
 
 	private:
-		std::unique_ptr<RenderEngine> m_renderEngine;
+		std::shared_ptr<RenderEngine> m_renderEngine;
+		std::shared_ptr<PhysXEngine> m_physXEngine;
 	};
 }

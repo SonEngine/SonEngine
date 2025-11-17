@@ -1,6 +1,10 @@
 ﻿#include "PhysXEngine.h"
 #include <string>
 #include <vector>
+#include <iostream>
+
+#include "PrimitiveComponent.h"
+
 
 using namespace physx;
 
@@ -24,7 +28,7 @@ static physx::PxFilterFlags contactReportFilterShader(physx::PxFilterObjectAttri
 		PxPairFlag::eSOLVE_CONTACT |
 		PxPairFlag::eDETECT_DISCRETE_CONTACT |
 		PxPairFlag::eNOTIFY_TOUCH_FOUND |
-		PxPairFlag::eNOTIFY_TOUCH_PERSISTS |
+		PxPairFlag::eNOTIFY_TOUCH_LOST |
 		PxPairFlag::eNOTIFY_CONTACT_POINTS;
 
 	return PxFilterFlag::eDEFAULT;
@@ -40,6 +44,7 @@ PhysXEngine::~PhysXEngine()
 
 bool PhysXEngine::Initialize()
 {
+
 	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
 	gPvd = PxCreatePvd(*gFoundation);
 	PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
@@ -65,25 +70,8 @@ bool PhysXEngine::Initialize()
 	PxRigidStatic* groundPlane =
 		PxCreatePlane(*gPhysics, PxPlane(0, 1, 0, 0), *gMaterial);
 	groundPlane->setName("Ground");
+
 	gScene->addActor(*groundPlane);
-
-	PxTransform t = PxTransform(PxVec3(0.f, 2.f, 0.f));
-	PxReal halfExtent = 0.3f;
-	PxFilterData filterData;
-	filterData.word0 = 1;
-	PxShape* shape =
-		gPhysics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
-
-
-	shape->setSimulationFilterData(filterData);
-	PxRigidDynamic* body = gPhysics->createRigidDynamic(t);
-	body->setName("box");
-	body->attachShape(*shape);
-
-	PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
-
-	gScene->addActor(*body);	
-	shape->release();
 
 	return true;
 }
@@ -94,71 +82,144 @@ void PhysXEngine::Tick(float deltaTime)
 	gScene->simulate(simulationTick);
 	gScene->fetchResults(true);
 
-	PxU32 nbActors = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC |
-		PxActorTypeFlag::eRIGID_STATIC);
+	for (auto& proxy : proxyArr)
+	{
+		if (proxy.simulate)
+		{
+			proxy.primitive->SyncFromPhysX(proxy.body->getGlobalPose());
+		}
+	}
+}
 
-	std::vector<PxRigidActor*> actors(nbActors);
-	gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC |
-		PxActorTypeFlag::eRIGID_STATIC,
-		reinterpret_cast<PxActor**>(&actors[0]), nbActors);
+void PhysXEngine::AddRigidDynamic(physx::PxRigidDynamic* rigidBody)
+{
+	//gScene->addActor(*rigidBody);
+}
 
-	PxShape* shapes[MAX_NUM_ACTOR_SHAPES];
+void PhysXEngine::RegisterPrimitive(class PrimitiveComponent* primitive, bool usePhysx)
+{
+	if (primitive == nullptr)
+		return;
 
-	for (PxU32 i = 0; i < nbActors; i++) {
+	std::string name = primitive->GetName();
 
-		const PxU32 nbShapes = actors[i]->getNbShapes();
-		PX_ASSERT(nbShapes <= MAX_NUM_ACTOR_SHAPES);
-		actors[i]->getShapes(shapes, nbShapes);
+	DirectX::SimpleMath::Vector3 loc = primitive->GetLocation();
+	PxTransform t = PxTransform(PxVec3(loc.x, loc.y, loc.z));
+	PxReal halfExtent = 0.5f;
+	PxFilterData filterData;
+	filterData.word0 = 1;
 
-		for (PxU32 j = 0; j < nbShapes; j++) {
-			const PxMat44 shapePose(
-				PxShapeExt::getGlobalPose(*shapes[j], *actors[i]));
+	PxShape* shape = gPhysics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
+	shape->userData = primitive;
+	shape->setSimulationFilterData(filterData);
 
-			if (actors[i]->is<PxRigidDynamic>()) {
+	PxRigidDynamic* body = gPhysics->createRigidDynamic(t);
+	PhysXMode mode = primitive->GetPhysXMode();
 
-				shapePose.front();
+	if (mode == PM_Dynamic)
+	{
+		// dynamic 전용
+		body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
+	}
+	else if (mode == PM_Kinematic)
+	{
+		body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+		body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+	}
+	else if (mode == PM_Trigger)
+	{
+		shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+		shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
+		body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+	}
+	body->setName(name.c_str());
+	body->attachShape(*shape);
+
+	PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+
+	if (usePhysx && body)
+	{
+		gScene->addActor(*body);
+	}
+
+	shape->release();
+
+	PhysXProxy proxy;
+	proxy.body = body;
+	proxy.primitive = primitive;
+	proxy.name = name;
+	proxy.simulate = usePhysx;
+
+	proxyArr.push_back(proxy);
+}
+
+void PhysXEngine::SyncKinematics()
+{
+	for (auto& proxy : proxyArr)
+	{
+		if (proxy.primitive->IsKinematic())
+		{
+			if (proxy.body)
+			{
+				PxTransform t = proxy.primitive->GetPxTransform();
+				//std::cout << "SyncKinematic - " << t.p.x << t.p.y << t.p.z << '\n';
+				proxy.body->setKinematicTarget(t);
 			}
 		}
 	}
 }
-void PhysXEngine::CreateStack(const PxTransform& t, PxU32 size, PxReal halfExtent)
-{
-	PxFilterData filterData;
-	filterData.word0 = 1;
-	PxShape* shape =
-		gPhysics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
-
-
-	shape->setSimulationFilterData(filterData);
-	static int index = 0;
-
-	for (PxU32 i = 0; i < size; i++)
-	{
-		for (PxU32 j = 0; j < size - i; j++)
-		{
-			PxVec3 di = PxVec3(4.f / 3.f, 2.f, 0.f) * halfExtent * PxReal(i);
-			PxVec3 dj = PxVec3(8.f / 3.f, 0.f, 0.f) * halfExtent * PxReal(j);
-
-
-			PxTransform localTm(di + dj + PxVec3(0, halfExtent, 0.f));
-			PxRigidDynamic* body = gPhysics->createRigidDynamic(t.transform(localTm));
-			body->setName("box");
-			body->attachShape(*shape);
-
-			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
-
-			gScene->addActor(*body);
-		}
-	}
-	shape->release();
-}
 
 void PhysXEngine::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 {
-	PxActor* actor1 = pairHeader.actors[0];
-	PxActor* actor2 = pairHeader.actors[1];
+	for (PxU32 i = 0; i < nbPairs; i++)
+	{
+		PxShape* shape0 = pairs[i].shapes[0];
+		PxShape* shape1 = pairs[i].shapes[1];
 
-	// 충돌된 액터들에 대한 로그 출력
-	std::string name1 = actor1->getName();
-	std::string name2 = actor2->getName();
+		PrimitiveComponent* prim0 = static_cast<PrimitiveComponent*>(shape0->userData);
+		PrimitiveComponent* prim1 = static_cast<PrimitiveComponent*>(shape1->userData);
+		if (prim0)
+		{
+			std::cout << "prim0 : " << prim0->GetName() << std::endl;
+		}
+		if (prim1)
+		{
+			std::cout << "prim1 : " << prim1->GetName() << std::endl;
+		}
+	}
+
+}
+
+void PhysXEngine::onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count)
+{
+	for (PxU32 i = 0; i < count; i++)
+	{
+		PxTriggerPair p = pairs[i];
+		if (p.status & PxPairFlag::eNOTIFY_TOUCH_FOUND)
+		{
+			std::cout << "Touch Found ! \n";
+			PxShape* t = p.triggerShape;
+			PxShape* other = p.otherShape;
+
+			PrimitiveComponent* triggerPrimitive = static_cast<PrimitiveComponent*>(t->userData);
+			PrimitiveComponent* otherPrimitive = static_cast<PrimitiveComponent*>(other->userData);
+			if (triggerPrimitive)
+			{
+				std::cout << "triggerPrimitive : " << triggerPrimitive->GetName() << std::endl;
+				triggerPrimitive->OnComponentBeginOverlap.Execute(otherPrimitive);
+			}
+		}
+		else if (p.status & PxPairFlag::eNOTIFY_TOUCH_LOST)
+		{
+			std::cout << "Touch Lost ! \n";
+			PxShape* t = p.triggerShape;
+			PxShape* other = p.otherShape;
+
+			PrimitiveComponent* triggerPrimitive = static_cast<PrimitiveComponent*>(t->userData);
+			if (triggerPrimitive)
+			{
+				std::cout << "triggerPrimitive : " << triggerPrimitive->GetName() << std::endl;
+			}
+		}
+	}
 }

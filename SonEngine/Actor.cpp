@@ -1,13 +1,16 @@
 ﻿#include "Actor.h"
 #include "StaticMeshComponent.h"
+#include "World.h"
 
 using DirectX::SimpleMath::Vector3;
 
 Actor::Actor()
 {
 }
-Actor::Actor(std::string actorName)
-	:m_name(actorName)
+
+Actor::Actor(std::string actorName, World* world)
+	:m_name(actorName),
+	m_world(world)
 {
 }
 void Actor::Initialize()
@@ -56,6 +59,14 @@ void Actor::SetActorSpeed(const float& newSpeed)
 void Actor::SetRootComponent(std::shared_ptr<SceneComponent> newRootComponent)
 {
 	m_rootComponent = std::move(newRootComponent);
+}
+
+void Actor::OnRegister()
+{
+	if (m_rootComponent)
+	{
+		m_rootComponent->OnRegister();
+	}
 }
 
 DirectX::SimpleMath::Vector3 Actor::GetActorLocation() const

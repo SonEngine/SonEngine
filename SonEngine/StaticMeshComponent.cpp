@@ -36,6 +36,7 @@ void StaticMeshComponent::UpdateLocation()
 {
 	if (m_mesh)
 	{
-		m_mesh->SetLocation(m_location.x, m_location.y, m_location.z);
+		DirectX::SimpleMath::Vector3 loc = GetLocation();
+		m_mesh->SetLocation(loc.x, loc.y, loc.z);
 	}
 }

@@ -3,9 +3,9 @@
 #include <vector>
 #include <memory>
 
-
 #include "InputHelper.h"
 #include "ViewProjInfo.h"
+#include "d3d12.h"
 
 class Actor;
 class Camera;
@@ -16,9 +16,15 @@ public:
 	World();
 	virtual ~World();
 
+
 public:
 	// World 내의 카메라 및 actor 초기화
-	void Initialize(int cameraWidth, int cameraHeight);
+	void Initialize(int cameraWidth, int cameraHeight, class RenderEngine* renderEngine, ID3D12Device5* device, ID3D12GraphicsCommandList* commandList);
+	void InitializePhysics(class PhysXEngine* renderEngine);
+
+	void SpawnActor(const std::shared_ptr<Actor>& actor);
+
+	//void SpawnActor(const std::shared_ptr<Actor>& actor);
 	void InitCamera(int width, int height);
 
 	void UpdateCamera(int width, int height);
@@ -32,7 +38,7 @@ public:
 	void SetFoucusMode(bool newFocusMode) { isFocused = newFocusMode; }
 
 public:
-	// 사용자 input에 따른 카메라 플레이어 이동 처리
+	// 사용자 input에 따른 카메라 & 플레이어 이동 처리
 	void Tick(float deltaTime);
 
 public:
@@ -41,6 +47,7 @@ public:
 public:
 	const std::vector<std::shared_ptr<Actor>>& GetActors() { return m_actors; }
 	Actor* Getplayer() { return m_player.get(); }
+	class PhysXEngine* GetPhysXEngine() const { return m_physXEngine; }
 
 // actors
 protected:
@@ -49,6 +56,13 @@ protected:
 	std::vector<std::shared_ptr<Actor>> m_addActors;
 	std::shared_ptr<Actor> m_player;
 	std::shared_ptr<Camera> m_camera;
+
+public:
+	void RegisterPrimitive(class PrimitiveComponent* primitive, bool usePhysX);
+
+	// Tick 함수에서 이동시킨 플레이어와 같은
+	// kinematic actor들 물리엔진에 동기화
+	void SyncKinematicToPhysX();
 
 protected:
 	Input::InputHelper m_inputHelper;
@@ -64,4 +78,8 @@ public:
 
 public:
 	std::atomic<bool> isRunning = true;
+
+private:
+	class RenderEngine* m_renderEngine;
+	class PhysXEngine* m_physXEngine;
 };

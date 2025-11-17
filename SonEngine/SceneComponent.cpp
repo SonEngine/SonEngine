@@ -6,7 +6,6 @@ using DirectX::SimpleMath::Vector3;
 
 SceneComponent::SceneComponent(Actor* owner)
 	:ActorComponent(owner),
-	m_location(Vector3(0, 0, 0)),
 	m_frontDirection(Vector3(0, 0, 1)),
 	m_baseFrontDirection(Vector3(0, 0, 1)),
 	m_upDirection(Vector3(0, 1, 0)),
@@ -30,31 +29,16 @@ void SceneComponent::SetRotateSpeed(const float& newSpeed)
 
 void SceneComponent::SetLocation(const DirectX::SimpleMath::Vector3& newLocation)
 {
-	m_location = newLocation;
+	localTransform.location = newLocation;
 	if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(this))
 	{
 		cmp->UpdateLocation();
 	}
 }
 
-void SceneComponent::SetFrontDirection(const DirectX::SimpleMath::Vector3& newDir)
-{
-	m_frontDirection = newDir;
-}
-
-void SceneComponent::SetUpDirection(const DirectX::SimpleMath::Vector3& newDir)
-{
-	m_upDirection = newDir;
-}
-
-void SceneComponent::SetRightDirection(const DirectX::SimpleMath::Vector3& newDir)
-{
-	m_rightDirection = newDir;
-}
-
 void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation)
 {
-	m_location += delLocation;
+	localTransform.location += delLocation;
 	if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(this))
 	{
 		cmp->UpdateLocation();
@@ -63,11 +47,19 @@ void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation
 
 DirectX::SimpleMath::Matrix SceneComponent::GetViewMatrix() const
 {
-	return XMMatrixLookToLH(m_location, m_frontDirection, m_upDirection);
+	return XMMatrixLookToLH(GetLocation(), m_frontDirection, m_upDirection);
 }
 
 void SceneComponent::GetChildrenComponents(std::vector<std::shared_ptr<SceneComponent>>& children) const
 {
 	children = m_children;
+}
+
+void SceneComponent::OnRegister() 
+{
+	for (const auto & c : m_children)
+	{
+		c->OnRegister();
+	}
 }
 

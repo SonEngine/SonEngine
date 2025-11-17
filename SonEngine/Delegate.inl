@@ -3,12 +3,12 @@
 #include "Delegate.h"
 
 template<typename Object, typename RetType, typename ...Params>
-inline RetType MemberFunctionInvoker<Object, RetType, Params...>::Execute(Params ...)
+inline RetType MemberFunctionInvoker<Object, RetType, Params...>::Execute(Params... params)
 {
 	if (m_object == nullptr)
 		return RetType();
 
-	return (m_object->*m_function)(Params ...);
+	return (m_object->*m_function)(params...);
 }
 
 template<typename RetType, typename ...Params>

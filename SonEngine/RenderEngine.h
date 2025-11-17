@@ -33,6 +33,10 @@ public:
 	void RequestResize(int newWidth, int newHeight);
 	void OnResize();
 
+public:
+	// primitive 등록
+	void RegisterPrimitive(class PrimitiveComponent* primitive);
+
 protected:
 	void CreateCommandObjects();
 	void CreateSwapChain(IDXGIFactory7* factory, HWND wnd);
@@ -44,8 +48,9 @@ protected:
 	void BuildFrameResources();
 
 	void PostActorChanges();
+	void BuildRenderProxy();
 	void Update(float deltaTime);
-	void BuildProxy(const std::vector<std::shared_ptr<Actor>>& actors, Actor* player);
+	//void BuildRenderProxy(const std::vector<std::shared_ptr<Actor>>& actors, Actor* player);
 	void AddProxy(SceneComponent* component);
 	void AddTextProxy(SceneComponent* component);
 	void Render(const std::string& psoName, int idx, bool isText, bool isFinal, bool clear);
@@ -177,4 +182,6 @@ private:
 	std::condition_variable cv;
 	std::condition_variable captureCv;
 
+private:
+	std::vector<class PrimitiveComponent*> m_primitives;
 };

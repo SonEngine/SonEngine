@@ -5,6 +5,7 @@
 
 #include "ActorComponent.h"
 #include "directxtk12/SimpleMath.h"
+#include "Transform.h"
 
 // transform
 class SceneComponent : public ActorComponent {
@@ -16,9 +17,9 @@ public:
 	void SetSpeed(const float& newSpeed);
 	void SetRotateSpeed(const float& newSpeed);
 	void SetLocation(const DirectX::SimpleMath::Vector3& newLocation);
-	void SetFrontDirection(const DirectX::SimpleMath::Vector3& newDir);
-	void SetUpDirection(const DirectX::SimpleMath::Vector3& newDir);
-	void SetRightDirection(const DirectX::SimpleMath::Vector3& newDir);
+	void SetFrontDirection(const DirectX::SimpleMath::Vector3& newDir) { m_frontDirection = newDir; }
+	void SetUpDirection(const DirectX::SimpleMath::Vector3& newDir) {m_upDirection = newDir;}
+	void SetRightDirection(const DirectX::SimpleMath::Vector3& newDir) { m_rightDirection = newDir; }
 	void AddLocation(const DirectX::SimpleMath::Vector3& delLocation);
 
 public:
@@ -29,13 +30,21 @@ public:
 	DirectX::SimpleMath::Vector3 GetBaseUpDirection() const { return m_baseUpDirection; }
 	DirectX::SimpleMath::Vector3 GetUpDirection() const { return m_upDirection; }
 	DirectX::SimpleMath::Vector3 GetRightDirection()const { return m_rightDirection; }
-	DirectX::SimpleMath::Vector3 GetLocation()const { return m_location; }
+	
+	DirectX::SimpleMath::Vector3 GetLocation()const { return worldTransform.location + localTransform.location; }
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
 	void GetChildrenComponents(std::vector<std::shared_ptr<SceneComponent>>& children) const;
 
+
+public:
+	// world->actor 호출
+	virtual void OnRegister();
+	
 protected:
-	DirectX::SimpleMath::Vector3 m_location;
-	DirectX::SimpleMath::Matrix m_rotation;
+	//DirectX::SimpleMath::Vector3 m_location;
+	//DirectX::SimpleMath::Matrix m_rotation;
+	Transform worldTransform;
+	Transform localTransform;
 
 	DirectX::SimpleMath::Vector3 m_baseUpDirection;
 	DirectX::SimpleMath::Vector3 m_baseFrontDirection;

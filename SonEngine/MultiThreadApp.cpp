@@ -1,8 +1,7 @@
-﻿
-#include "MultiThreadApp.h"
+﻿#include "MultiThreadApp.h"
 #include "RootSignature.h"
 #include "PipelineState.h"
-#include "GeometryGenerater.h"
+#include "GeometryGenerator.h"
 
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
@@ -103,7 +102,13 @@ bool Core::MultiThreadApp::InitDirectX()
 
 	Graphics::InitializeCommonState(m_device);
 	Renderer::Initialize(m_device);
-	m_renderEngine = std::make_unique<RenderEngine>(m_device.Get());
+
+	m_physXEngine = std::make_shared<PhysXEngine>();
+	m_physXEngine->Initialize();
+
+	if (world) { world->InitializePhysics(m_physXEngine.get()); }
+	
+	m_renderEngine = std::make_shared<RenderEngine>(m_device.Get());
 	m_renderEngine->Initialize(m_width, m_height, m_dxgiFactory.Get(), m_mainWnd);
 
 	return true;
@@ -116,34 +121,6 @@ bool Core::MultiThreadApp::InitGUI()
 		return m_renderEngine->InitGUI(m_mainWnd);
 	}
 	return false;
-	//IMGUI_CHECKVERSION();
-	//ImGui::CreateContext();
-	//ImGuiIO& io = ImGui::GetIO();
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-	//// io.Fonts->TexID = (ImTextureID)m_guiFont->GetSpriteSheet().ptr;
-
-	//ImGui::StyleColorsLight();
-	//const char* fontPath = "Fonts/Hack-Regular.ttf";
-	//float fontSize = 15.0f;
-	//// 폰트 로드 
-	//io.Fonts->AddFontFromFileTTF(fontPath, fontSize);
-
-	//D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-	//heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	//heapDesc.NumDescriptors = 1;
-	//heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	//m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_guiFontHeap));
-
-	//// Setup Platform/Renderer backends
-	//ImGui_ImplWin32_Init(m_mainWnd);
-
-	//ImGui_ImplDX12_Init(m_device.Get(), m_swapChainBufferCount, Renderer::backBufferFormat,
-	//	m_guiFontHeap.Get(),
-	//	m_guiFontHeap->GetCPUDescriptorHandleForHeapStart(),
-	//	m_guiFontHeap->GetGPUDescriptorHandleForHeapStart());
-
-	return true;
 }
 
 // main thread
@@ -154,7 +131,10 @@ void Core::MultiThreadApp::Update(float deltaTime)
 	if (world)
 	{
 		world->Tick(deltaTime);
+		world->SyncKinematicToPhysX();
+
 	}
+	m_physXEngine->Tick(deltaTime);
 	m_renderEngine->Tick(deltaTime);
 
 }

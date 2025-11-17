@@ -3,7 +3,7 @@
 #include "PipelineState.h"
 #include "Vertex.h"
 #include "StaticMesh.h"
-#include "GeometryGenerater.h"
+#include "Geometrygenerator.h"
 
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
@@ -515,11 +515,11 @@ void Core::SimpleApp::BuildGeometry()
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
 	mesh = std::make_shared<StaticMesh>();
-	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleRect(2, 2));
+	mesh->Initialize<SimpleVertex,uint16_t>(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleRect(2, 2));
 	mesh->SetAlbedoTexture("test_albedo");
 
 		std::shared_ptr<StaticMesh> sphere3 = std::make_shared<StaticMesh>();
-	sphere3->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakePlane(1, 1,1));
+	sphere3->Initialize<Vertex, uint16_t>(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakePlane(1, 1,1));
 	sphere3->SetAlbedoTexture("8k_earth_albedo");
 	sphere3->SetLocation(0, 0, 0);
 	phongMeshes.push_back(sphere3);

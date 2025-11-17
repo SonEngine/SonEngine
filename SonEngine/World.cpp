@@ -1,9 +1,12 @@
 ﻿#include "World.h"
 #include "Renderer.h"
 #include "StaticMesh.h"
-#include "GeometryGenerater.h"
+#include "GeometryGenerator.h"
 #include "Actor.h"
 #include "Camera.h"
+#include "RenderEngine.h"
+#include "PhysXEngine.h"
+#include "TriggerBox.h"
 
 using namespace Graphics;
 
@@ -16,26 +19,50 @@ World::~World()
 {
 }
 
-void World::Initialize(int cameraWidth, int cameraHeight)
+void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEngine, ID3D12Device5* device, ID3D12GraphicsCommandList* commandList)
 {
+	m_renderEngine = renderEngine;
+
 	m_camera = std::make_shared<Camera>();
-	InitCamera(cameraWidth, cameraHeight);	
+	InitCamera(cameraWidth, cameraHeight);
+
 	int planeSize = 6;
 	m_player = utility->CreateActor(
 		"player",
 		GeometryGenerator::MakeCube(1.f, 1.f, 1.f),
 		"pavement_03_albedo",
-		{ -1.5f, 0.5f, -1.5f }
+		{ -1.5f, 0.5f, -1.5f },
+		this,
+		true,
+		PhysXMode::PM_Kinematic
 	);
+
 	m_player->SetActorSpeed(1.f);
 
 	std::shared_ptr<Actor> plane = utility->CreateActor(
 		"plane",
 		GeometryGenerator::MakePlane((float)planeSize, (float)planeSize, 1),
 		"ComTex",
-		{ 0.f,0.f,0.f }
+		{ 0.f,0.f,0.f },
+		this
 	);
-	m_actors.push_back(plane);
+
+	//std::shared_ptr<Actor> box = utility->CreateActor(
+	//	"box",
+	//	GeometryGenerator::MakeCube(1.f, 1.f, 1.f),
+	//	"pavement_03_albedo",
+	//	{ 0.f, 0.6f, 0.f },
+	//	this,
+	//	true,
+	//	PhysXMode::PM_Trigger
+	//);
+
+	std::shared_ptr<ATriggerBox> box = std::make_shared<ATriggerBox>("box", this);
+	box->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(0.f, 0.6f, 0.f));
+
+	SpawnActor(plane);
+	SpawnActor(m_player);
+	SpawnActor(box);
 
 	//int x = 3;
 	//int z = 3;
@@ -71,6 +98,17 @@ void World::Initialize(int cameraWidth, int cameraHeight)
 	//}
 }
 
+void World::InitializePhysics(PhysXEngine* engine)
+{
+	m_physXEngine = engine;
+}
+
+void World::SpawnActor(const std::shared_ptr<Actor>& actor)
+{
+	m_actors.push_back(actor);
+	actor->OnRegister();
+}
+
 void World::InitCamera(int width, int height)
 {
 	if (m_camera == nullptr)
@@ -78,14 +116,13 @@ void World::InitCamera(int width, int height)
 		std::cout << "Camera가 할당되지 않았습니다\n";
 		return;
 	}
-
 	m_camera->m_aspectRatio = width / (float)height;
-	m_camera->m_width = 1280;
-	m_camera->m_height = 720;
+	m_camera->m_width = width;
+	m_camera->m_height = height;
 	m_camera->SetCameraMode(CameraMode::CM_Perspective);
 	m_camera->Initialize();
-	m_camera->SetActorLocation({ 0.f, 5.2f, 0.f });
-	m_camera->UpdateCameraRotation(0, 178);
+	m_camera->SetActorLocation({ 0.f, 5.f, -5.f });
+	m_camera->UpdateCameraRotation(0, 100);
 }
 
 void World::UpdateCamera(int width, int height)
@@ -102,7 +139,7 @@ void World::UpdateCamera(int width, int height)
 	m_camera->UpdateProjMatrix();
 }
 
-void World::PrintCameraInfo() 
+void World::PrintCameraInfo()
 {
 	if (m_camera == nullptr)
 	{
@@ -141,8 +178,8 @@ void World::Tick(float deltaTime)
 	{
 		m_player->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_player.get()));
 	}
-
 }
+
 ViewProjInfo World::GetViewProjInfo()
 {
 	ViewProjInfo info;
@@ -152,11 +189,32 @@ ViewProjInfo World::GetViewProjInfo()
 			m_camera->GetActorFrontDir(),
 			m_camera->GetActorLocation(),
 			m_camera->GetViewMatrix(),
-			m_camera->GetProjMatrix() 
+			m_camera->GetProjMatrix()
 		};
 	}
 	return info;
 }
+
+void World::RegisterPrimitive(PrimitiveComponent* primitive, bool usePhysX)
+{
+	if (m_renderEngine)
+	{
+		m_renderEngine->RegisterPrimitive(primitive);
+	}
+	if (m_physXEngine)
+	{
+		m_physXEngine->RegisterPrimitive(primitive, usePhysX);
+	}
+}
+
+void World::SyncKinematicToPhysX()
+{
+	if (m_physXEngine)
+	{
+		m_physXEngine->SyncKinematics();
+	}
+}
+
 void World::SetInputState(size_t key, bool isKeyDown)
 {
 	m_inputHelper.SetInputState(key, isKeyDown);

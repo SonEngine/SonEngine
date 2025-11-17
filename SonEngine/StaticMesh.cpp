@@ -58,6 +58,5 @@ void StaticMesh::SetRotation(const DirectX::SimpleMath::Matrix& mat)
 			localConstant.model.m[i][j] = mat.m[i][j];
 		}
 	}
-
 	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 }

@@ -3,7 +3,7 @@
 #include "PipelineState.h"
 #include "Vertex.h"
 #include "StaticMesh.h"
-#include "GeometryGenerater.h"
+#include "Geometrygenerator.h"
 
 #include <fstream>
 
@@ -421,11 +421,8 @@ void Core::VideoApp::CreateSwapChain()
 
 void Core::VideoApp::BuildGeometry()
 {
-
 	mesh = std::make_shared<StaticMesh>();
-	mesh->Initialize(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleRect(2, 2));
-
-
+	mesh->Initialize<SimpleVertex, uint16_t>(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleRect(2, 2));
 }
 
 void Core::VideoApp::BuildConstantBuffers()

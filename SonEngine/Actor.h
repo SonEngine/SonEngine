@@ -7,11 +7,13 @@
 #include "TextureLoader.h"
 #include "SceneComponent.h"
 
+class World;
+
 class Actor
 {
 public:
 	Actor();
-	Actor(std::string actorName);
+	Actor(std::string actorName, World* world);
 
 protected:
 	virtual void Initialize();
@@ -27,7 +29,13 @@ public:
 	void SetRootComponent(std::shared_ptr<SceneComponent> newRootComponent);
 
 public:
+	void OnRegister();
+
+public:
 	SceneComponent* GetRootComponent() const { return m_rootComponent.get(); }
+	World* GetWorld() const { return m_world; }
+	std::string GetName() const { return m_name; }
+
 public:
 	DirectX::SimpleMath::Vector3 GetActorLocation() const;
 	DirectX::SimpleMath::Vector3 GetActorFrontDir() const;
@@ -39,4 +47,7 @@ public:
 protected:
 	std::shared_ptr<SceneComponent> m_rootComponent;
 	std::string m_name;
+
+private:
+	class World* m_world;
 };

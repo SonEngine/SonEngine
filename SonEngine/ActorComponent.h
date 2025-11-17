@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 class Actor;
 
@@ -14,6 +14,6 @@ protected:
 public:
 	virtual void Tick(const float& deltaTime);
 	
-private:
+protected:
 	Actor* m_owner;
 };

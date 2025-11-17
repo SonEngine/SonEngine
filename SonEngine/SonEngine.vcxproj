@@ -152,7 +152,7 @@
     <ClCompile Include="BaseApp.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="FrameResource.cpp" />
-    <ClCompile Include="GeometryGenerater.cpp" />
+    <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="GraphicsCommon.cpp" />
     <ClCompile Include="InputHelper.cpp" />
     <ClCompile Include="Light.cpp" />
@@ -170,6 +170,7 @@
     <ClCompile Include="StaticMeshComponent.cpp" />
     <ClCompile Include="TextureLoader.cpp" />
     <ClCompile Include="Timer.cpp" />
+    <ClCompile Include="TriggerBox.cpp" />
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="VideoApp.cpp" />
     <ClCompile Include="World.cpp" />
@@ -182,7 +183,7 @@
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="dds.h" />
     <ClInclude Include="Delegate.h" />
-    <ClInclude Include="GeometryGenerater.h" />
+    <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="GpuResource.h" />
     <ClInclude Include="GraphicsCommon.h" />
     <ClInclude Include="ImageInfo.h" />
@@ -191,6 +192,9 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="MultiThreadApp.h" />
     <ClInclude Include="PhysXEngine.h" />
+    <ClInclude Include="PhysXEvent.h" />
+    <ClInclude Include="PhysXMode.h" />
+    <ClInclude Include="PhysXProxy.h" />
     <ClInclude Include="PrimitiveComponent.h" />
     <ClInclude Include="Proxy.h" />
     <ClInclude Include="RenderEngine.h" />
@@ -206,6 +210,8 @@
     <ClInclude Include="TextureGPUResource.h" />
     <ClInclude Include="TextureLoader.h" />
     <ClInclude Include="Timer.h" />
+    <ClInclude Include="Transform.h" />
+    <ClInclude Include="TriggerBox.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VideoApp.h" />
@@ -272,6 +278,7 @@
     <None Include="Delegate.inl" />
     <None Include="packages.config" />
     <None Include="PhongCommon.hlsli" />
+    <None Include="StaticMesh.inl" />
     <None Include="TextCommon.hlsli" />
     <None Include="Utility.inl" />
   </ItemGroup>

@@ -48,7 +48,7 @@
     <ClCompile Include="VideoApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="GeometryGenerater.cpp">
+    <ClCompile Include="GeometryGenerator.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="InputHelper.cpp">
@@ -91,6 +91,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="RenderEngine.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TriggerBox.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -143,7 +146,7 @@
     <ClInclude Include="Mesh.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="GeometryGenerater.h">
+    <ClInclude Include="GeometryGenerator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="InputHelper.h">
@@ -209,6 +212,21 @@
     <ClInclude Include="ViewProjInfo.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="PhysXProxy.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysXMode.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TriggerBox.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysXEvent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultVS.hlsl" />
@@ -228,6 +246,9 @@
     </None>
     <None Include="TextCommon.hlsli" />
     <None Include="Delegate.inl">
+      <Filter>헤더 파일</Filter>
+    </None>
+    <None Include="StaticMesh.inl">
       <Filter>헤더 파일</Filter>
     </None>
   </ItemGroup>

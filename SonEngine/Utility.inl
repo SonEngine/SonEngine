@@ -4,6 +4,7 @@
 #include "StaticMesh.h"
 #include "d3d12.h"
 #include "Utility.h"
+#include "World.h"
 
 namespace GraphicsUtils {
 
@@ -176,9 +177,17 @@ namespace GraphicsUtils {
 	}
 
 	template<typename V, typename I, typename MeshType>
-	inline std::shared_ptr<Actor> Utility::CreateActor(const std::string& actorname, Mesh<V, I>& meshData, const std::string& texture, const DirectX::SimpleMath::Vector3& location)
+	inline std::shared_ptr<Actor> Utility::CreateActor(
+		const std::string& actorname, 
+		Mesh<V, I>& meshData, 
+		const std::string& texture,
+		const DirectX::SimpleMath::Vector3& location,
+		World* world,
+		bool simulate,
+		PhysXMode physXMode
+	)
 	{
-		std::shared_ptr<Actor> actor = std::make_shared<Actor>(actorname);
+		std::shared_ptr<Actor> actor = std::make_shared<Actor>(actorname, world);
 
 		std::shared_ptr<MeshType> mesh = std::make_shared<MeshType>();
 		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
@@ -189,6 +198,8 @@ namespace GraphicsUtils {
 
 			std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
 			cmp->SetMesh(mesh);
+			cmp->SetPhysX(simulate);
+			cmp->SetPhysXMode(physXMode);
 			actor->SetRootComponent(cmp);
 		}
 		actor->SetActorLocation(location);
