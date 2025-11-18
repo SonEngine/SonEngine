@@ -149,6 +149,7 @@
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="ActorComponent.cpp" />
+    <ClCompile Include="AMovingPlatform.cpp" />
     <ClCompile Include="BaseApp.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="FrameResource.cpp" />
@@ -170,13 +171,14 @@
     <ClCompile Include="StaticMeshComponent.cpp" />
     <ClCompile Include="TextureLoader.cpp" />
     <ClCompile Include="Timer.cpp" />
-    <ClCompile Include="TriggerBox.cpp" />
+    <ClCompile Include="ATriggerBox.cpp" />
     <ClCompile Include="Utility.cpp" />
     <ClCompile Include="VideoApp.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActorComponent.h" />
+    <ClInclude Include="AMovingPlatform.h" />
     <ClInclude Include="BaseApp.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Constants.h" />
@@ -211,7 +213,7 @@
     <ClInclude Include="TextureLoader.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Transform.h" />
-    <ClInclude Include="TriggerBox.h" />
+    <ClInclude Include="ATriggerBox.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VideoApp.h" />

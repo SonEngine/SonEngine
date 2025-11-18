@@ -18,6 +18,7 @@ public:
 
 public:
 	StaticMesh* GetMesh() const { return m_mesh.get(); }
+
 private:
 	std::shared_ptr<StaticMesh> m_mesh;
 };

@@ -93,7 +93,10 @@
     <ClCompile Include="RenderEngine.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="TriggerBox.cpp">
+    <ClCompile Include="ATriggerBox.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="AMovingPlatform.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -221,10 +224,13 @@
     <ClInclude Include="PhysXMode.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="TriggerBox.h">
+    <ClInclude Include="ATriggerBox.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="PhysXEvent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="AMovingPlatform.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

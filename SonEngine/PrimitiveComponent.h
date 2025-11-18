@@ -6,7 +6,11 @@
 #include "physx\PxPhysicsAPI.h"
 #include "PhysXMode.h"
 
-DECLARE_DELEGATE_OneParam(ComponentBeginOverlapSignature, class PrimitiveComponent*);
+class PrimitiveComponent;
+
+DECLARE_DELEGATE_OneParam(ComponentBeginOverlapSignature, PrimitiveComponent*)
+DECLARE_DELEGATE_OneParam(ComponentEndOverlapSignature, PrimitiveComponent*)
+
 
 class PrimitiveComponent : public SceneComponent {
 public:
@@ -23,6 +27,7 @@ public:
 
 public:
     ComponentBeginOverlapSignature OnComponentBeginOverlap;
+    ComponentEndOverlapSignature OnComponentEndOverlap;
 
 public:
     class World* GetWorld() const;

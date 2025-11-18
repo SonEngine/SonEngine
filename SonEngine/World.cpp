@@ -6,7 +6,8 @@
 #include "Camera.h"
 #include "RenderEngine.h"
 #include "PhysXEngine.h"
-#include "TriggerBox.h"
+#include "ATriggerBox.h"
+#include "AMovingPlatform.h"
 
 using namespace Graphics;
 
@@ -47,22 +48,18 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		this
 	);
 
-	//std::shared_ptr<Actor> box = utility->CreateActor(
-	//	"box",
-	//	GeometryGenerator::MakeCube(1.f, 1.f, 1.f),
-	//	"pavement_03_albedo",
-	//	{ 0.f, 0.6f, 0.f },
-	//	this,
-	//	true,
-	//	PhysXMode::PM_Trigger
-	//);
-
 	std::shared_ptr<ATriggerBox> box = std::make_shared<ATriggerBox>("box", this);
 	box->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(0.f, 0.6f, 0.f));
+
+	std::shared_ptr<AMovingPlatform> platform = std::make_shared<AMovingPlatform>("platform", this);
+	platform->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(-2.f, 0.6f, 0.f));
+
+	box->SetTarget(platform.get());
 
 	SpawnActor(plane);
 	SpawnActor(m_player);
 	SpawnActor(box);
+	SpawnActor(platform);
 
 	//int x = 3;
 	//int z = 3;
@@ -177,6 +174,11 @@ void World::Tick(float deltaTime)
 	else
 	{
 		m_player->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_player.get()));
+	}
+
+	for (auto& A : m_actors)
+	{
+		A->Tick(deltaTime);
 	}
 }
 

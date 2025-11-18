@@ -390,7 +390,7 @@ void RenderEngine::BuildRenderProxy()
 		currentFrameResource->proxyBuffer.clear();
 		currentFrameResource->textProxyBuffer.clear();
 
-		//std::cout << m_currentResourceIndex << "build 중\n";
+		std::cout << m_currentResourceIndex << "번째 FR build 중\n";
 		int id = 0;
 		for (auto primitive : m_primitives)
 		{

@@ -5,6 +5,7 @@
 StaticMeshComponent::StaticMeshComponent(Actor* owner)
 	:PrimitiveComponent(owner)
 {
+	m_mesh = std::shared_ptr<StaticMesh>();
 }
 
 StaticMeshComponent::~StaticMeshComponent()
@@ -13,7 +14,7 @@ StaticMeshComponent::~StaticMeshComponent()
 
 void StaticMeshComponent::SetMesh(std::shared_ptr<StaticMesh> newMesh)
 {
-	m_mesh = newMesh;
+	m_mesh = std::move(newMesh);
 }
 
 void StaticMeshComponent::SetRotation(const DirectX::SimpleMath::Matrix& mat)

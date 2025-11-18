@@ -205,7 +205,7 @@ void PhysXEngine::onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count)
 			PrimitiveComponent* otherPrimitive = static_cast<PrimitiveComponent*>(other->userData);
 			if (triggerPrimitive)
 			{
-				std::cout << "triggerPrimitive : " << triggerPrimitive->GetName() << std::endl;
+				//std::cout << "triggerPrimitive : " << triggerPrimitive->GetName() << std::endl;
 				triggerPrimitive->OnComponentBeginOverlap.Execute(otherPrimitive);
 			}
 		}
@@ -216,9 +216,13 @@ void PhysXEngine::onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count)
 			PxShape* other = p.otherShape;
 
 			PrimitiveComponent* triggerPrimitive = static_cast<PrimitiveComponent*>(t->userData);
+			PrimitiveComponent* otherPrimitive = static_cast<PrimitiveComponent*>(other->userData);
+
 			if (triggerPrimitive)
 			{
-				std::cout << "triggerPrimitive : " << triggerPrimitive->GetName() << std::endl;
+				//std::cout << "triggerPrimitive : " << triggerPrimitive->GetName() << std::endl;
+				triggerPrimitive->OnComponentEndOverlap.Execute(otherPrimitive);
+
 			}
 		}
 	}
