@@ -43,7 +43,8 @@ void AMovingPlatform::Tick(const float& deltaTime)
 {
 	if (isTriggered)
 	{
-		Vector3 del = m_movingDir * deltaTime * m_speed;
-		Actor::UpdateActorLocation(del);
+		float radian = DirectX::XMConvertToRadians(deltaTime * 90.f);
+		auto q = DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(0, 1, 0), radian);
+		Actor::UpdateActorRotation(q);
 	}
 }

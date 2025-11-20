@@ -32,6 +32,11 @@ public:
 
 	void SetRotation(const DirectX::SimpleMath::Matrix& mat);
 
+public:
+	D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView()const { return m_vertexBufferView; }
+	D3D12_INDEX_BUFFER_VIEW GetIndexBufferView()const { return m_indexBufferView; }
+	UINT GetIndexCount()const { return m_indexCount; }
+
 	std::string GetAlbedoTextureName() const { return albedoTexture; }
 
 protected:

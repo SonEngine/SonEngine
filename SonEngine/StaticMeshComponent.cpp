@@ -41,3 +41,12 @@ void StaticMeshComponent::UpdateLocation()
 		m_mesh->SetLocation(loc.x, loc.y, loc.z);
 	}
 }
+
+void StaticMeshComponent::UpdateRotation()
+{
+	if (m_mesh)
+	{
+		DirectX::SimpleMath::Quaternion q = GetRotation();
+		m_mesh->SetRotation(DirectX::XMMatrixRotationQuaternion(q));
+	}
+}

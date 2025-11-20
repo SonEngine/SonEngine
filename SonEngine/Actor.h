@@ -24,7 +24,9 @@ public:
 public:
 	void SetActorLocation(const DirectX::SimpleMath::Vector3& newLocation);
 	void SetActorRotation(const DirectX::SimpleMath::Matrix& newMat);
+	void SetActorRotation(const DirectX::SimpleMath::Quaternion& newQuat);
 	void UpdateActorLocation(const DirectX::SimpleMath::Vector3& delLocation);
+	void UpdateActorRotation(const DirectX::SimpleMath::Quaternion& delQuat);
 	void SetActorSpeed(const float& newSpeed);
 	void SetRootComponent(std::shared_ptr<SceneComponent> newRootComponent);
 

@@ -36,12 +36,29 @@ void SceneComponent::SetLocation(const DirectX::SimpleMath::Vector3& newLocation
 	}
 }
 
+void SceneComponent::SetRotation(const DirectX::SimpleMath::Quaternion& newQuat)
+{
+	localTransform.quat = newQuat;
+	if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(this))
+	{
+		cmp->UpdateRotation();
+	}
+}
+
 void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation)
 {
 	localTransform.location += delLocation;
 	if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(this))
 	{
 		cmp->UpdateLocation();
+	}
+}
+void SceneComponent::AddRotation(const DirectX::SimpleMath::Quaternion& delQ)
+{
+	localTransform.quat *= delQ;
+	if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(this))
+	{
+		cmp->UpdateRotation();
 	}
 }
 

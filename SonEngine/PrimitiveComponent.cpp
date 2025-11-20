@@ -45,6 +45,8 @@ void PrimitiveComponent::OnRegister()
 void PrimitiveComponent::SyncFromPhysX(const physx::PxTransform& transform)
 {
     DirectX::SimpleMath::Vector3 loc(transform.p.x, transform.p.y, transform.p.z);
+    DirectX::SimpleMath::Quaternion rot(transform.q.x, transform.q.y, transform.q.z, transform.q.w);
     SetLocation(loc);
+    SetRotation(rot);
 
 }

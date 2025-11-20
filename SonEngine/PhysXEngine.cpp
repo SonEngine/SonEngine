@@ -44,7 +44,6 @@ PhysXEngine::~PhysXEngine()
 
 bool PhysXEngine::Initialize()
 {
-
 	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
 	gPvd = PxCreatePvd(*gFoundation);
 	PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
@@ -104,7 +103,9 @@ void PhysXEngine::RegisterPrimitive(class PrimitiveComponent* primitive, bool us
 	std::string name = primitive->GetName();
 
 	DirectX::SimpleMath::Vector3 loc = primitive->GetLocation();
-	PxTransform t = PxTransform(PxVec3(loc.x, loc.y, loc.z));
+	DirectX::SimpleMath::Quaternion rot = primitive->GetRotation();
+
+	PxTransform t = PxTransform(PxVec3(loc.x, loc.y, loc.z),PxQuat(rot.x,rot.y,rot.z,rot.w));
 	PxReal halfExtent = 0.5f;
 	PxFilterData filterData;
 	filterData.word0 = 1;

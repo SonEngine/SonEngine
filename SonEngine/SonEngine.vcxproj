@@ -162,6 +162,7 @@
     <ClCompile Include="PhysXEngine.cpp" />
     <ClCompile Include="PipelineState.cpp" />
     <ClCompile Include="PrimitiveComponent.cpp" />
+    <ClCompile Include="PrimitiveProxy.cpp" />
     <ClCompile Include="RenderEngine.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RootSignature.cpp" />
@@ -169,6 +170,7 @@
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="StaticMesh.cpp" />
     <ClCompile Include="StaticMeshComponent.cpp" />
+    <ClCompile Include="StaticMeshProxy.cpp" />
     <ClCompile Include="TextureLoader.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="ATriggerBox.cpp" />
@@ -198,6 +200,7 @@
     <ClInclude Include="PhysXMode.h" />
     <ClInclude Include="PhysXProxy.h" />
     <ClInclude Include="PrimitiveComponent.h" />
+    <ClInclude Include="PrimitiveProxy.h" />
     <ClInclude Include="Proxy.h" />
     <ClInclude Include="RenderEngine.h" />
     <ClInclude Include="Renderer.h" />
@@ -209,6 +212,7 @@
     <ClInclude Include="SphereComponent.h" />
     <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="StaticMeshComponent.h" />
+    <ClInclude Include="StaticMeshProxy.h" />
     <ClInclude Include="TextureGPUResource.h" />
     <ClInclude Include="TextureLoader.h" />
     <ClInclude Include="Timer.h" />

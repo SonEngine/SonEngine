@@ -17,10 +17,12 @@ public:
 	void SetSpeed(const float& newSpeed);
 	void SetRotateSpeed(const float& newSpeed);
 	void SetLocation(const DirectX::SimpleMath::Vector3& newLocation);
+	void SetRotation(const DirectX::SimpleMath::Quaternion& newQuat);
 	void SetFrontDirection(const DirectX::SimpleMath::Vector3& newDir) { m_frontDirection = newDir; }
 	void SetUpDirection(const DirectX::SimpleMath::Vector3& newDir) {m_upDirection = newDir;}
 	void SetRightDirection(const DirectX::SimpleMath::Vector3& newDir) { m_rightDirection = newDir; }
 	void AddLocation(const DirectX::SimpleMath::Vector3& delLocation);
+	void AddRotation(const DirectX::SimpleMath::Quaternion& delQ);
 
 public:
 	float GetSpeed() const { return m_speed; }
@@ -32,6 +34,7 @@ public:
 	DirectX::SimpleMath::Vector3 GetRightDirection()const { return m_rightDirection; }
 	
 	DirectX::SimpleMath::Vector3 GetLocation()const { return worldTransform.location + localTransform.location; }
+	DirectX::SimpleMath::Quaternion GetRotation()const { return worldTransform.quat * localTransform.quat; }
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
 	void GetChildrenComponents(std::vector<std::shared_ptr<SceneComponent>>& children) const;
 

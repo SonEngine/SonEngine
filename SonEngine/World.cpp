@@ -47,9 +47,20 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		{ 0.f,0.f,0.f },
 		this
 	);
-
+	std::shared_ptr<Actor> box2 = utility->CreateActor(
+		"box2",
+		GeometryGenerator::MakeCube(1,1,1),
+		"pavement_03_albedo",
+		{ 2.f,2.f,0.f },
+		this,
+		true,
+		PM_Dynamic
+	);
+	box2->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 4.f));
 	std::shared_ptr<ATriggerBox> box = std::make_shared<ATriggerBox>("box", this);
+
 	box->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(0.f, 0.6f, 0.f));
+	//box->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 4.f));
 
 	std::shared_ptr<AMovingPlatform> platform = std::make_shared<AMovingPlatform>("platform", this);
 	platform->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(-2.f, 0.6f, 0.f));
@@ -58,7 +69,9 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 
 	SpawnActor(plane);
 	SpawnActor(m_player);
+
 	SpawnActor(box);
+	SpawnActor(box2);
 	SpawnActor(platform);
 
 	//int x = 3;

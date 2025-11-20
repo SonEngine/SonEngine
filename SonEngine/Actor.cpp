@@ -40,11 +40,27 @@ void Actor::SetActorRotation(const DirectX::SimpleMath::Matrix& newMat)
 	}
 }
 
+void Actor::SetActorRotation(const DirectX::SimpleMath::Quaternion& newQuat)
+{
+	if (m_rootComponent)
+	{
+		m_rootComponent->SetRotation(newQuat);
+	}
+}
+
 void Actor::UpdateActorLocation(const DirectX::SimpleMath::Vector3& delLocation)
 {
 	if (m_rootComponent)
 	{
 		m_rootComponent->AddLocation(delLocation);
+	}
+}
+
+void Actor::UpdateActorRotation(const DirectX::SimpleMath::Quaternion& delQuat)
+{
+	if (m_rootComponent)
+	{
+		m_rootComponent->AddRotation(delQuat);
 	}
 }
 
