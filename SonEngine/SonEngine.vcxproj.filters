@@ -105,6 +105,9 @@
     <ClCompile Include="StaticMeshProxy.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="ModelLoader.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseApp.h">
@@ -243,6 +246,18 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="StaticMeshProxy.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelLoader.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Asset.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="HLSLCompat.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PhongHLSLCompat.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

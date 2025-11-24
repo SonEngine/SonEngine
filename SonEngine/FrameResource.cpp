@@ -20,39 +20,12 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 	);
 	for (size_t i = 0; i < commandCount; i++)
 	{
-		ThrowIfFailed(
-			device->CreateCommandAllocator(
-				D3D12_COMMAND_LIST_TYPE_DIRECT,
-				IID_PPV_ARGS(m_commandAllocator[i].ReleaseAndGetAddressOf())
-			));
-
-		ThrowIfFailed(
-			device->CreateCommandList(
-				0,
-				D3D12_COMMAND_LIST_TYPE_DIRECT,
-				m_commandAllocator[i].Get(),
-				nullptr,
-				IID_PPV_ARGS(m_commandList[i].ReleaseAndGetAddressOf())
-			));
-		m_commandList[i]->Close();
+		CreateCommand(device, m_commandAllocator[i], m_commandList[i]);
 	}
 
-	ThrowIfFailed(
-		device->CreateCommandAllocator(
-			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			IID_PPV_ARGS(m_textCommandAllocator.ReleaseAndGetAddressOf())
-		));
-
-	ThrowIfFailed(
-		device->CreateCommandList(
-			0,
-			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			m_textCommandAllocator.Get(),
-			nullptr,
-			IID_PPV_ARGS(m_textCommandList.ReleaseAndGetAddressOf())
-		));
-	m_textCommandList->Close();
-
+	CreateCommand(device, m_textCommandAllocator, m_textCommandList);
+	CreateCommand(device, m_guiCommandAllocator, m_guiCommandList);
+		
 
 	if (textCount == 0)
 	{
@@ -120,17 +93,43 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 
 }
 
-void FrameResource::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo)
+void FrameResource::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo> & lightInfos)
 {
-	phongGC.viewDir = ToVector4(viewProjInfo.viewDirection, 0.f);
-	phongGC.viewLoc = ToVector4(viewProjInfo.viewLocation, 0.f);
-	phongGC.view = viewProjInfo.view;
-	phongGC.proj = viewProjInfo.proj;
+	phongGC.cameraDir = ToVector4(viewProjInfo.viewDirection, 0.f);
+	phongGC.cameraPos = ToVector4(viewProjInfo.viewLocation, 0.f);
+	phongGC.view = viewProjInfo.view.Transpose();
+	phongGC.proj = viewProjInfo.proj.Transpose();
 
+	for (size_t i = 0; i < lightInfos.size(); i++)
+	{
+		phongGC.lights[i].direction = lightInfos[0].direction;
+		phongGC.lights[i].location = lightInfos[0].location;
+		phongGC.lights[i].brightness = lightInfos[0].brightness;
+	}
+	
 	memcpy(pPhongGCB, &phongGC, sizeof(PhongGlobalConstant));
 }
 
 void FrameResource::ResetAllocator(int idx)
 {
 	m_commandAllocator[idx]->Reset();
+}
+
+void FrameResource::CreateCommand(ID3D12Device5* device, Microsoft::WRL::ComPtr<ID3D12CommandAllocator> & alloc, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> & commandList)
+{
+	ThrowIfFailed(
+		device->CreateCommandAllocator(
+			D3D12_COMMAND_LIST_TYPE_DIRECT,
+			IID_PPV_ARGS(alloc.ReleaseAndGetAddressOf())
+		));
+
+	ThrowIfFailed(
+		device->CreateCommandList(
+			0,
+			D3D12_COMMAND_LIST_TYPE_DIRECT,
+			alloc.Get(),
+			nullptr,
+			IID_PPV_ARGS(commandList.ReleaseAndGetAddressOf())
+		));
+	commandList->Close();
 }

@@ -21,7 +21,7 @@ namespace GraphicsUtils {
 		texDesc.SampleDesc.Count = 1;
 		texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		texDesc.Flags = Flag;
-		
+
 		ThrowIfFailed(m_device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -175,11 +175,10 @@ namespace GraphicsUtils {
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(gpuBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON));
 
 	}
-
 	template<typename V, typename I, typename MeshType>
 	inline std::shared_ptr<Actor> Utility::CreateActor(
 		const std::string& actorname, 
-		Mesh<V, I>& meshData, 
+		const std::vector<Mesh<V, I>>& meshes, 
 		const std::string& texture,
 		const DirectX::SimpleMath::Vector3& location,
 		World* world,
@@ -192,7 +191,37 @@ namespace GraphicsUtils {
 		std::shared_ptr<MeshType> mesh = std::make_shared<MeshType>();
 		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
 		{
-			mesh->Initialize(m_device, m_commandList, meshData);
+			mesh->Initialize(m_device, m_commandList, meshes);
+			mesh->SetAlbedoTexture(texture);
+			//mesh->SetLocation(location.x, location.y, location.z);
+			
+			std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
+			cmp->SetMesh(mesh);
+			cmp->SetPhysX(simulate);
+			cmp->SetPhysXMode(physXMode);
+			actor->SetRootComponent(cmp);
+		}
+		actor->SetActorLocation(location);
+		return actor;
+	}
+
+	template<typename A, typename V, typename I, typename MeshType>
+	inline std::shared_ptr<A> Utility::CreateActor(
+		const std::string& actorname, 
+		const std::vector<Mesh<V, I>>& meshes, 
+		const std::string& texture, 
+		const DirectX::SimpleMath::Vector3& location, 
+		World* world, 
+		bool simulate, 
+		PhysXMode physXMode
+	)
+	{
+		std::shared_ptr<A> actor = std::make_shared<A>(actorname, world);
+
+		std::shared_ptr<MeshType> mesh = std::make_shared<MeshType>();
+		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
+		{
+			mesh->Initialize(m_device, m_commandList, meshes);
 			mesh->SetAlbedoTexture(texture);
 			//mesh->SetLocation(location.x, location.y, location.z);
 
@@ -205,4 +234,6 @@ namespace GraphicsUtils {
 		actor->SetActorLocation(location);
 		return actor;
 	}
+
+	
 }

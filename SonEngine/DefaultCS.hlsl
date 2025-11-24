@@ -12,24 +12,24 @@ float magnitude2(float2 a)
 [numthreads(32, 32, 1)]
 void main( uint3 DTid : SV_DispatchThreadID )
 {
-    uint w, h;
-    gOutput.GetDimensions(w, h);
-    float jx = 1.5f * (((float) w / 2 - DTid.x) / ((float) w / 2));
-    float jy = 1.5f * (((float) h / 2 - DTid.y) / ((float) h / 2));
+    //uint w, h;
+    //gOutput.GetDimensions(w, h);
+    //float jx = 1.5f * (((float) w / 2 - DTid.x) / ((float) w / 2));
+    //float jy = 1.5f * (((float) h / 2 - DTid.y) / ((float) h / 2));
 
-    float2 c = float2(-0.8, 0.156);
-    float2 a = float2(jx, jy);
+    //float2 c = float2(-0.8, 0.156);
+    //float2 a = float2(jx, jy);
     
     
-    for (int i = 0; i < 200; i++)
-    {
-        a = c_mul(a, a) + c;
+    //for (int i = 0; i < 200; i++)
+    //{
+    //    a = c_mul(a, a) + c;
         
-        if (magnitude2(a) > 1000)
-        {
-            gOutput[DTid.xy] = float4(0, 0, 0, 1);
-            return;
-        }
-    }
+    //    if (magnitude2(a) > 1000)
+    //    {
+    //        gOutput[DTid.xy] = float4(0, 0, 0, 1);
+    //        return;
+    //    }
+    //}
     gOutput[DTid.xy] = float4(1, 1, 1, 1);
 }

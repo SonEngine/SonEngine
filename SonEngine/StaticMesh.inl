@@ -7,19 +7,77 @@
 template<typename V, typename I>
 inline void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, Mesh<V, I>& mesh)
 {
-	m_indexCount = (UINT)mesh.m_indices.size();
+	m_indexCounts.push_back((UINT)mesh.m_indices.size());
+	meshCount = 1;
 
-	Graphics::utility->CreateBuffer<V>(mesh.m_vertices, m_vertexGpu, m_vertexUpload);
-	Graphics::utility->CreateBuffer<I>(mesh.m_indices, m_indexGpu, m_indexUpload);
+	m_vertexGpu.resize(meshCount);
+	m_vertexUpload.resize(meshCount);
+	m_indexGpu.resize(meshCount);
+	m_indexUpload.resize(meshCount);
 
-	m_vertexBufferView.BufferLocation = m_vertexGpu->GetGPUVirtualAddress();
-	m_vertexBufferView.SizeInBytes = (UINT)(mesh.m_vertices.size() * sizeof(V));
-	m_vertexBufferView.StrideInBytes = (UINT)(sizeof(V));
+	Graphics::utility->CreateBuffer<V>(mesh.m_vertices, m_vertexGpu[0], m_vertexUpload[0]);
+	Graphics::utility->CreateBuffer<I>(mesh.m_indices, m_indexGpu[0], m_indexUpload[0]);
 
-	m_indexBufferView.BufferLocation = m_indexGpu->GetGPUVirtualAddress();
-	m_indexBufferView.Format = ((sizeof(I) == sizeof(uint16_t)) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT);
-	m_indexBufferView.SizeInBytes = (UINT)(mesh.m_indices.size() * sizeof(I));
+	D3D12_VERTEX_BUFFER_VIEW VBV;
+	D3D12_INDEX_BUFFER_VIEW IBV;
+	VBV.BufferLocation = m_vertexGpu[0]->GetGPUVirtualAddress();
+	VBV.SizeInBytes = (UINT)(mesh.m_vertices.size() * sizeof(V));
+	VBV.StrideInBytes = (UINT)(sizeof(V));
 
+	IBV.BufferLocation = m_indexGpu[0]->GetGPUVirtualAddress();
+	IBV.Format = ((sizeof(I) == sizeof(uint16_t)) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT);
+	IBV.SizeInBytes = (UINT)(mesh.m_indices.size() * sizeof(I));
+
+	m_vertexBufferViews.push_back(VBV);
+	m_indexBufferViews.push_back(IBV);
+
+
+	Graphics::utility->CreateConstantBuffer(
+		sizeof(LocalConstant),
+		m_localCB,
+		reinterpret_cast<void**>(&pLocalConstant)
+	);
+
+	memcpy(
+		pLocalConstant,
+		&localConstant,
+		sizeof(LocalConstant)
+	);
+
+}
+
+template<typename V, typename I>
+inline void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, const std::vector<Mesh<V, I>>& meshes)
+{
+	meshCount = (UINT)meshes.size();
+	
+	m_vertexGpu.resize(meshCount);
+	m_vertexUpload.resize(meshCount);
+	m_indexGpu.resize(meshCount);
+	m_indexUpload.resize(meshCount);
+
+	for (size_t i = 0; i < meshCount; i++)
+	{
+		const auto& mesh = meshes[i];
+		m_indexCounts.push_back((UINT)mesh.m_indices.size());
+
+		Graphics::utility->CreateBuffer<V>(mesh.m_vertices, m_vertexGpu[i], m_vertexUpload[i]);
+		Graphics::utility->CreateBuffer<I>(mesh.m_indices, m_indexGpu[i], m_indexUpload[i]);
+
+		D3D12_VERTEX_BUFFER_VIEW VBV;
+		D3D12_INDEX_BUFFER_VIEW IBV;
+		VBV.BufferLocation = m_vertexGpu[i]->GetGPUVirtualAddress();
+		VBV.SizeInBytes = (UINT)(mesh.m_vertices.size() * sizeof(V));
+		VBV.StrideInBytes = (UINT)(sizeof(V));
+
+		IBV.BufferLocation = m_indexGpu[i]->GetGPUVirtualAddress();
+		IBV.Format = ((sizeof(I) == sizeof(uint16_t)) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT);
+		IBV.SizeInBytes = (UINT)(mesh.m_indices.size() * sizeof(I));
+
+		m_vertexBufferViews.push_back(VBV);
+		m_indexBufferViews.push_back(IBV);
+		
+	}
 	Graphics::utility->CreateConstantBuffer(
 		sizeof(LocalConstant),
 		m_localCB,

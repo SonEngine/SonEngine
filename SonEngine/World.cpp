@@ -1,19 +1,25 @@
 ﻿#include "World.h"
+
 #include "Renderer.h"
 #include "StaticMesh.h"
 #include "GeometryGenerator.h"
+
 #include "Actor.h"
 #include "Camera.h"
+#include "Light.h"
+
 #include "RenderEngine.h"
 #include "PhysXEngine.h"
+
 #include "ATriggerBox.h"
 #include "AMovingPlatform.h"
+#include "ModelLoader.h"
 
 using namespace Graphics;
 
 World::World()
 {
-	m_camera = std::make_shared<Camera>();
+	//m_camera = std::make_shared<Camera>();
 }
 
 World::~World()
@@ -27,10 +33,33 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	m_camera = std::make_shared<Camera>();
 	InitCamera(cameraWidth, cameraHeight);
 
+	std::shared_ptr<Light> l = utility->CreateActor<Light, Vertex, uint16_t>(
+		"plane",
+		std::vector{ GeometryGenerator::MakeSphere(10,0.3f) },
+		"ComTex",
+		{ 0,5,-5 },
+		this
+	);
+
+	l->SetBrightness({ 0.8f,0.8f,0.8f,1.f });
+
+	LightInfo lInfo;
+	lInfo.location = l->GetActorLocation();
+	lInfo.brightness = l->GetBrightness();
+
+	m_lightInfos.push_back(lInfo);
+
+
+	ModelLoader<Vertex, uint16_t> modelLoader;
+
+	modelLoader.Initialize();
+	modelLoader.Load("torus.fbx");
+
+
 	int planeSize = 6;
 	m_player = utility->CreateActor(
 		"player",
-		GeometryGenerator::MakeCube(1.f, 1.f, 1.f),
+		modelLoader.GetMeshes("cube"),
 		"pavement_03_albedo",
 		{ -1.5f, 0.5f, -1.5f },
 		this,
@@ -42,37 +71,48 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 
 	std::shared_ptr<Actor> plane = utility->CreateActor(
 		"plane",
-		GeometryGenerator::MakePlane((float)planeSize, (float)planeSize, 1),
+		std::vector{ GeometryGenerator::MakePlane((float)planeSize, (float)planeSize, 1) },
 		"ComTex",
 		{ 0.f,0.f,0.f },
 		this
 	);
-	std::shared_ptr<Actor> box2 = utility->CreateActor(
-		"box2",
-		GeometryGenerator::MakeCube(1,1,1),
-		"pavement_03_albedo",
-		{ 2.f,2.f,0.f },
-		this,
-		true,
-		PM_Dynamic
-	);
-	box2->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 4.f));
-	std::shared_ptr<ATriggerBox> box = std::make_shared<ATriggerBox>("box", this);
+	//std::shared_ptr<Actor> box2 = utility->CreateActor(
+	//	"box2",
+	//	std::vector{ GeometryGenerator::MakeCube(1, 1, 1) },
+	//	"pavement_03_albedo",
+	//	{ 2.f,2.f,0.f },
+	//	this,
+	//	true,
+	//	PM_Dynamic
+	//);
 
-	box->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(0.f, 0.6f, 0.f));
-	//box->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 4.f));
+	//std::shared_ptr<Actor> torus = utility->CreateActor(
+	//	"torus",
+	//	modelLoader.GetMeshes("torus"),
+	//	"pavement_03_albedo",
+	//	{ 0.f,1.f,-1.f },
+	//	this
+	//);
 
-	std::shared_ptr<AMovingPlatform> platform = std::make_shared<AMovingPlatform>("platform", this);
-	platform->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(-2.f, 0.6f, 0.f));
+	//box2->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 4.f));
+	//std::shared_ptr<ATriggerBox> box = std::make_shared<ATriggerBox>("box", this);
 
-	box->SetTarget(platform.get());
+	//box->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(0.f, 0.6f, 0.f));
+	////box->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 4.f));
+
+	//std::shared_ptr<AMovingPlatform> platform = std::make_shared<AMovingPlatform>("platform", this);
+	//platform->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(-2.f, 0.6f, 0.f));
+
+	//box->SetTarget(platform.get());
 
 	SpawnActor(plane);
 	SpawnActor(m_player);
+	SpawnActor(l);
 
-	SpawnActor(box);
-	SpawnActor(box2);
-	SpawnActor(platform);
+	//SpawnActor(torus);
+	//SpawnActor(box);
+	//SpawnActor(box2);
+	//SpawnActor(platform);
 
 	//int x = 3;
 	//int z = 3;
@@ -208,6 +248,11 @@ ViewProjInfo World::GetViewProjInfo()
 		};
 	}
 	return info;
+}
+
+std::vector<LightInfo> World::GetLightInfos() const
+{
+	return m_lightInfos;
 }
 
 void World::RegisterPrimitive(PrimitiveComponent* primitive, bool usePhysX)

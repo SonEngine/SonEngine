@@ -41,10 +41,12 @@ protected:
 	void CreateCommandObjects();
 	void CreateSwapChain(IDXGIFactory7* factory, HWND wnd);
 	void CreateDepthBuffer();
+	void UpdateGUI();
 	void CreateTextures();
 	void CreateFonts();
 
 	void RenderWithText();
+	void RenderWithCompute();
 	void BuildFrameResources();
 
 	void PostActorChanges();
@@ -54,18 +56,17 @@ protected:
 	void AddProxy(SceneComponent* component);
 	void AddTextProxy(SceneComponent* component);
 	void Render(const std::string& psoName, int idx, bool isText, bool isFinal, bool clear);
-
+	void RenderGUI(bool isFinal);
 	void Compute(const std::string& cpsoName, int idx, bool isFinal, D3D12_RESOURCE_STATES prevState);
 
 	void UpdateTexts();
-	void UpdateGUI(float deltaTime);
+	
 
 public:
 	void Tick(float deltaTime);
 	void Quit();
 
 protected:
-	void RenderWithCompute();
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRtvCpuHandle() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCpuHandle() const;
 	ID3D12Resource* GetCurrentSwapChainResource() const;

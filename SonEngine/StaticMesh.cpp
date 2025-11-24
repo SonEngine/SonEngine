@@ -14,21 +14,28 @@ StaticMesh::~StaticMesh()
 
 void StaticMesh::Render(ID3D12GraphicsCommandList* commandList, const TextureLoader * textureLoader)
 {
-	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-	commandList->IASetIndexBuffer(&m_indexBufferView);
-	commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
+	for (size_t i = 0; i < meshCount; i++)
+	{
+		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
+		commandList->IASetIndexBuffer(&m_indexBufferViews[i]);
+		commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
+
+		commandList->SetGraphicsRootDescriptorTable(0, textureLoader->GetGPUHandle(albedoTexture));
+		commandList->DrawIndexedInstanced(m_indexCounts[i], 1, 0, 0, 0);
+	}
 	
-	commandList->SetGraphicsRootDescriptorTable(0, textureLoader->GetGPUHandle(albedoTexture));
-	commandList->DrawIndexedInstanced(m_indexCount, 1, 0, 0, 0);
 }
 
 void StaticMesh::Render(ID3D12GraphicsCommandList* commandList)
 {
-	commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-	commandList->IASetIndexBuffer(&m_indexBufferView);
-	commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
+	for (size_t i = 0; i < meshCount; i++)
+	{
+		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
+		commandList->IASetIndexBuffer(&m_indexBufferViews[i]);
+		commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
 
-	commandList->DrawIndexedInstanced(m_indexCount, 1, 0, 0, 0);
+		commandList->DrawIndexedInstanced(m_indexCounts[i], 1, 0, 0, 0);
+	}
 } 
 
 void StaticMesh::SetLocation(const float& x, const float& y, const float& z)
@@ -36,6 +43,8 @@ void StaticMesh::SetLocation(const float& x, const float& y, const float& z)
 	localConstant.model.m[3][0] = x;
 	localConstant.model.m[3][1] = y;
 	localConstant.model.m[3][2] = z;
+
+	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();;
 
 	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 }
@@ -46,11 +55,14 @@ void StaticMesh::Translate(const float& delX, const float& delY, const float& de
 	localConstant.model.m[3][1] += delY;
 	localConstant.model.m[3][2] += delZ;
 
+	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();;
+
 	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 }
 
 void StaticMesh::SetRotation(const DirectX::SimpleMath::Matrix& mat)
 {
+
 	for (int i = 0; i < 3; i++)
 	{
 		for (int j = 0; j < 3; j++)
@@ -58,5 +70,7 @@ void StaticMesh::SetRotation(const DirectX::SimpleMath::Matrix& mat)
 			localConstant.model.m[i][j] = mat.m[i][j];
 		}
 	}
+	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();
+
 	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 }

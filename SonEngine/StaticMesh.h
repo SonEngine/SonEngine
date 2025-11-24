@@ -22,6 +22,9 @@ public:
 	template<typename V, typename I>
 	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, Mesh<V,I>& mesh);
 
+	template<typename V, typename I>
+	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, const std::vector<Mesh<V, I>>& meshes);
+
 	void Render(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
 	void Render(ID3D12GraphicsCommandList* commandList);
 	
@@ -33,25 +36,26 @@ public:
 	void SetRotation(const DirectX::SimpleMath::Matrix& mat);
 
 public:
-	D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView()const { return m_vertexBufferView; }
-	D3D12_INDEX_BUFFER_VIEW GetIndexBufferView()const { return m_indexBufferView; }
-	UINT GetIndexCount()const { return m_indexCount; }
+	D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView(int index = 0) const { return m_vertexBufferViews[index]; }
+	D3D12_INDEX_BUFFER_VIEW GetIndexBufferView(int index = 0)const { return m_indexBufferViews[index]; }
+	UINT GetIndexCount(int index = 0)const { return m_indexCounts[index]; }
 
 	std::string GetAlbedoTextureName() const { return albedoTexture; }
 
 protected:
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexGpu;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexUpload;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexGpu;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexUpload;
+	std::vector <Microsoft::WRL::ComPtr<ID3D12Resource>> m_vertexGpu;
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_vertexUpload;
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_indexGpu;
+	std::vector <Microsoft::WRL::ComPtr<ID3D12Resource>> m_indexUpload;
 
-	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
-	D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
+	std::vector<D3D12_VERTEX_BUFFER_VIEW> m_vertexBufferViews;
+	std::vector<D3D12_INDEX_BUFFER_VIEW> m_indexBufferViews;
 
 	std::vector<TextureGPUResource> GPUResources;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_texturesHeap;
 
-	UINT m_indexCount = 0;
+	std::vector<UINT> m_indexCounts;
+	UINT meshCount = 0;
 
 	std::string albedoTexture;
 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -158,6 +158,7 @@
     <ClCompile Include="InputHelper.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="MultiThreadApp.cpp" />
     <ClCompile Include="PhysXEngine.cpp" />
     <ClCompile Include="PipelineState.cpp" />
@@ -181,6 +182,7 @@
   <ItemGroup>
     <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="AMovingPlatform.h" />
+    <ClInclude Include="Asset.h" />
     <ClInclude Include="BaseApp.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Constants.h" />
@@ -190,11 +192,14 @@
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="GpuResource.h" />
     <ClInclude Include="GraphicsCommon.h" />
+    <ClInclude Include="HLSLCompat.h" />
     <ClInclude Include="ImageInfo.h" />
     <ClInclude Include="InputHelper.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="MultiThreadApp.h" />
+    <ClInclude Include="PhongHLSLCompat.h" />
     <ClInclude Include="PhysXEngine.h" />
     <ClInclude Include="PhysXEvent.h" />
     <ClInclude Include="PhysXMode.h" />

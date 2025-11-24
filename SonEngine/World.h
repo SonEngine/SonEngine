@@ -5,17 +5,19 @@
 
 #include "InputHelper.h"
 #include "ViewProjInfo.h"
+
 #include "d3d12.h"
+#include "PhongHLSLCompat.h"
 
 class Actor;
 class Camera;
+class Light;
 
 class World {
 
 public:
 	World();
 	virtual ~World();
-
 
 public:
 	// World 내의 카메라 및 actor 초기화
@@ -43,6 +45,7 @@ public:
 
 public:
 	ViewProjInfo GetViewProjInfo();
+	std::vector<LightInfo> GetLightInfos() const;
 
 public:
 	const std::vector<std::shared_ptr<Actor>>& GetActors() { return m_actors; }
@@ -54,8 +57,13 @@ protected:
 	std::vector<std::shared_ptr<Actor>> m_actors;
 	std::vector<std::shared_ptr<Actor>> m_textActors;
 	std::vector<std::shared_ptr<Actor>> m_addActors;
+	
 	std::shared_ptr<Actor> m_player;
 	std::shared_ptr<Camera> m_camera;
+	
+protected:
+	std::vector<std::shared_ptr<Light>> m_light;
+	std::vector<LightInfo> m_lightInfos;
 
 public:
 	void RegisterPrimitive(class PrimitiveComponent* primitive, bool usePhysX);

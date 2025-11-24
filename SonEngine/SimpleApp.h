@@ -7,6 +7,7 @@
 #include "BaseApp.h"
 #include "Renderer.h"
 #include "Constants.h"
+#include "PhongHLSLCompat.h"
 #include "Camera.h"
 #include "Light.h"
 #include "TextureLoader.h"

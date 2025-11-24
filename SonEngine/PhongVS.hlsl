@@ -10,6 +10,7 @@ psInput main(vsInput input)
     
     float4 position = float4(input.pos, 1.f);
     position = mul(position, gLocalCB.model);
+    output.worldPosition = position;
     position = mul(position, gPhongGCB.view);
     position = mul(position, gPhongGCB.proj);
     
@@ -17,6 +18,9 @@ psInput main(vsInput input)
     
     output.uv = input.uv;
     
-    output.normal = input.normal;
+    float3 normal = mul(float4(input.normal, 0.f), gLocalCB.modelInvTranspose).xyz;
+    normal = normalize(normal);
+    output.normal = normal;
+    
     return output;
 }

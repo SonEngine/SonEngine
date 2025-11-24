@@ -8,6 +8,7 @@
 #include "Proxy.h"
 #include "Constants.h"
 #include "ViewProjInfo.h"
+#include "PhongHLSLCompat.h"
 
 struct TextResource {
 	UINT64 textureWidth;
@@ -22,8 +23,10 @@ public:
 
 public:
 	void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount);
-	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo);
+	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo>& lightInfos);
 	void ResetAllocator(int idx);
+
+	void CreateCommand(ID3D12Device5* device, Microsoft::WRL::ComPtr<ID3D12CommandAllocator>& alloc, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 
 public:
 	D3D12_GPU_VIRTUAL_ADDRESS GetGCBGPUAddress() const { return m_phongGCBuffer->GetGPUVirtualAddress(); }
@@ -34,6 +37,8 @@ public:
 	
 	ID3D12CommandAllocator* GetTextAllocator() const { return m_textCommandAllocator.Get(); }
 	ID3D12GraphicsCommandList* GetTextCommandList() const { return m_textCommandList.Get(); }
+	ID3D12CommandAllocator* GetGUIAllocator() const { return m_guiCommandAllocator.Get(); }
+	ID3D12GraphicsCommandList* GetGUICommandList() const { return m_guiCommandList.Get(); }
 
 	ID3D12DescriptorHeap* GetTextSrvHeap() const { return m_textSrvHeap.Get(); }
 	ID3D12DescriptorHeap* GetTextRtvHeap() const { return m_textRtvHeap.Get(); }
@@ -52,6 +57,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList[commandCount];
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_textCommandAllocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_textCommandList;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_guiCommandAllocator;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_guiCommandList;
+
 public:
 	UINT64 m_currentFence = 0;
 	bool proxyDirty = true;

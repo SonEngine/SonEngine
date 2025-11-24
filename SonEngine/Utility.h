@@ -12,6 +12,7 @@
 
 #include "PhysXMode.h"
 #include "Actor.h"
+#include "Light.h"
 
 //#include "StaticMesh.h"
 class StaticMesh;
@@ -125,12 +126,22 @@ namespace GraphicsUtils {
 		template<typename V, typename I, typename MeshType = class StaticMesh>
 		std::shared_ptr<Actor> CreateActor(
 			const std::string& actorname,
-			Mesh<V, I>& mesh,
+			const std::vector<Mesh<V, I>>& meshes,
 			const std::string& texture,
 			const DirectX::SimpleMath::Vector3& location,
 			class World* world,
 			bool simulate = false,
 			PhysXMode mode = PhysXMode::PM_Default);
+				 
+		template<typename A, typename V, typename I, typename MeshType = class StaticMesh>
+		std::shared_ptr<A> CreateActor(
+			const std::string& actorname,
+			const std::vector<Mesh<V, I>>& meshes,
+			const std::string& texture,
+			const DirectX::SimpleMath::Vector3& location,
+			class World* world,
+			bool simulate = false,
+			PhysXMode physXMode = PhysXMode::PM_Default);
 
 		void CreateResourceView(
 			Microsoft::WRL::ComPtr<ID3D12Resource> & buffer,
@@ -140,6 +151,5 @@ namespace GraphicsUtils {
 			const DescriptorType& type);
 		
 	};
-
 }
 #include "Utility.inl"

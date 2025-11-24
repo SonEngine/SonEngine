@@ -349,11 +349,11 @@ void RenderEngine::CreateDepthBuffer()
 	m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &dsvDesc, handle);
 }
 
-void RenderEngine::UpdateGUI(float deltaTime)
+void RenderEngine::UpdateGUI()
 {
-	/*std::string str = "FPS : ";
-	str += std::to_string(int(1 / deltaTime));
-	ImGui::Text(str.c_str());*/
+	std::string str = "FPS : ";
+	
+	ImGui::Text(str.c_str());
 }
 
 void RenderEngine::BuildFrameResources()
@@ -454,7 +454,7 @@ void RenderEngine::Tick(float deltaTime)
 
 	if (world)
 	{
-		currentFrameResource->UpdateGlobalConstantBuffer(world->GetViewProjInfo());
+		currentFrameResource->UpdateGlobalConstantBuffer(world->GetViewProjInfo(), world->GetLightInfos());
 		BuildRenderProxy();
 	}
 	//std::cout << "Main Thread : " << m_currentResourceIndex << std::endl;
@@ -573,6 +573,60 @@ void RenderEngine::Render(const std::string& psoName, int idx, bool isText, bool
 
 	commandList->Close();
 
+	ID3D12CommandList* commands[] = { commandList };
+	{
+		std::lock_guard<std::mutex> lock(queue_mtx);
+		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+
+		if (isFinal)
+		{
+			ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), m_currentFence));
+			// text 업데이트를 위해 graphcics memory 사용 시 commit 해줘야 Graphics 메모리를 재사용한다
+			m_graphicsMemory->Commit(m_commandQueue.Get());
+			ThrowIfFailed(m_swapChain->Present(1, 0));
+			m_currentBackBufferIndex = (m_currentBackBufferIndex + 1) % m_swapChainBufferCount;
+		}
+	}
+}
+
+void RenderEngine::RenderGUI(bool isFinal)
+{
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	ImGui::Begin("GUI");
+	UpdateGUI();
+
+	ImGui::End();
+	ImGui::Render();
+
+	r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
+	ID3D12CommandAllocator* commandAllocator = r_currentFrameResource->GetGUIAllocator();
+	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetGUICommandList();
+	
+	ThrowIfFailed(commandAllocator->Reset());
+	ThrowIfFailed(commandList->Reset(commandAllocator, nullptr));
+
+	commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			GetCurrentSwapChainResource(),
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_RENDER_TARGET
+		));
+
+	commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), false, nullptr);
+	ID3D12DescriptorHeap* pHeaps[] = { m_guiFontHeap.Get() };
+	commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+
+	commandList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			GetCurrentSwapChainResource(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PRESENT
+		));
+
+	commandList->Close();
 	ID3D12CommandList* commands[] = { commandList };
 	{
 		std::lock_guard<std::mutex> lock(queue_mtx);
@@ -779,15 +833,18 @@ void RenderEngine::CreateFonts()
 
 void RenderEngine::RenderWithText()
 {
-	Render(renderPSO, 0, false, false, true);
+	// 현재 Render함수는 호출 될 때마다 commandList Allcator를 reset하고 있기 때문에
+	// 한 프레임에 두 번 호출 될 수 없다
+	/*Render(renderPSO, 0, false, false, true);
 	UpdateTexts();
-	Render(textPSO, 1, true, true, false);
+	Render(textPSO, 1, true, true, false);*/
 }
 
 void RenderEngine::RenderWithCompute()
 {
 	Compute(computePSO, 0, false, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	Render(renderPSO, 1, false, true, true);
+	Render(renderPSO, 1, false/*isText*/, false/*isFinal*/, true);
+	RenderGUI(true);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetCurrentRtvCpuHandle() const

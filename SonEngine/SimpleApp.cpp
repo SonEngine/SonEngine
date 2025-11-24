@@ -563,13 +563,12 @@ void Core::SimpleApp::BuildConstantBuffers()
 
 	phongGC.proj = XMMatrixPerspectiveFovLH(
 		m_fovRadians, m_aspectRatio, m_nearZ, m_farZ);
+	
 	phongGC.view = m_camera->GetViewMatrix();
 
-	phongGC.viewLoc = ToVector4(m_camera->GetActorLocation(), 0.f);
-	phongGC.viewDir = ToVector4(m_camera->GetActorFrontDir(), 0.f);
-	phongGC.DirectionLightLoc = ToVector4(m_directionLight->GetActorLocation(), 0.f);
-	phongGC.DirectionLightDir = ToVector4(m_directionLight->GetActorFrontDir(), 0.f);
-
+	phongGC.cameraPos = ToVector4(m_camera->GetActorLocation(), 0.f);
+	phongGC.cameraDir = ToVector4(m_camera->GetActorFrontDir(), 0.f);
+	
 	memcpy(
 		pPhongCB,
 		&phongGC,
