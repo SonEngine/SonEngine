@@ -54,6 +54,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 
 	modelLoader.Initialize();
 	modelLoader.Load("torus.fbx");
+	modelLoader.LoadPointCloud("map.ply");
 
 
 	int planeSize = 6;

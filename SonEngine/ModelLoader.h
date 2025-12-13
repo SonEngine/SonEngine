@@ -37,6 +37,7 @@ private:
 
 public:
 	void Load(std::string filename, DirectX::SimpleMath::Matrix tr = DirectX::SimpleMath::Matrix());
+	void LoadPointCloud(std::string filename, DirectX::SimpleMath::Matrix tr = DirectX::SimpleMath::Matrix());
 	void ProcessNode(std::vector<Mesh<V, I>> & meshes, aiNode* node, const aiScene* scene, DirectX::SimpleMath::Matrix tr);
 	void ProcessMesh(std::vector<Mesh<V, I>>& meshes, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr);
 
@@ -66,6 +67,21 @@ inline void ModelLoader<V,I>::Load(std::string filename, DirectX::SimpleMath::Ma
 	const aiScene* scene = importer.ReadFile(basePath + filename,
 		aiProcess_ConvertToLeftHanded | aiProcess_Triangulate);
 
+	if (scene == nullptr)
+	{
+		return;
+	}
+	Asset<V, I> asset;
+	ProcessNode(asset.m_meshes, scene->mRootNode, scene, tr);
+	std::filesystem::path p = filename;
+	assets[p.stem().string()] = asset;
+}
+
+template<typename V, typename I>
+inline void ModelLoader<V, I>::LoadPointCloud(std::string filename, DirectX::SimpleMath::Matrix tr)
+{
+	Assimp::Importer importer;
+	const aiScene* scene = importer.ReadFile(basePath + filename, 0);
 	if (scene == nullptr)
 	{
 		return;
