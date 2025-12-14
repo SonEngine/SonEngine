@@ -22,6 +22,10 @@ public:
 	template<typename V, typename I>
 	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, Mesh<V,I>& mesh);
 
+	// PointCloud 초기화
+	template<typename V, typename I>
+	void InitializePC(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, const std::vector<Mesh<V, I>>& meshes);
+
 	template<typename V, typename I>
 	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, const std::vector<Mesh<V, I>>& meshes);
 
@@ -30,6 +34,8 @@ public:
 	
 	void SetAlbedoTexture(const std::string& filename) { albedoTexture = filename; }
 	
+	void RenderPoints(ID3D12GraphicsCommandList* commandList);
+
 	void SetLocation(const float& x, const float& y, const float& z);
 	void Translate(const float& delX, const float& delY, const float& delZ);
 
@@ -55,6 +61,7 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_texturesHeap;
 
 	std::vector<UINT> m_indexCounts;
+	std::vector<UINT> m_vertexCounts;
 	UINT meshCount = 0;
 
 	std::string albedoTexture;

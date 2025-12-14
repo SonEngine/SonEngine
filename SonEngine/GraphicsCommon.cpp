@@ -15,6 +15,7 @@ namespace Graphics
     D3D12_DEPTH_STENCIL_DESC depthStateDefault;
 
 	RootSignature g_commonRS;
+	RootSignature g_pointCloudRS;
 	RootSignature g_videoRS;
 	RootSignature g_U1_RS;
 
@@ -69,6 +70,11 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	g_videoRS.InitStaticSampler(0, wrapLinearSampler);
 
 	g_videoRS.Finalize(device, L"VideoRS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	g_pointCloudRS.Reset(2);
+	g_pointCloudRS[0].InitCBV(0);
+	g_pointCloudRS[1].InitCBV(1);
+	g_pointCloudRS.Finalize(device, L"PointCloudRS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 }
 

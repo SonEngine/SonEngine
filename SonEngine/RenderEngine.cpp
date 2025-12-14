@@ -16,6 +16,8 @@
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
 
+#include <pix3.h>
+
 using Microsoft::WRL::ComPtr;
 using namespace GraphicsUtils;
 using namespace Graphics;
@@ -408,7 +410,13 @@ void RenderEngine::AddProxy(SceneComponent* component)
 		proxy.mesh = staticMeshComp->GetMesh();
 		currentFrameResource->proxyBuffer.push_back(proxy);
 	}
-
+	else if (PointCloudComponent* pointCloudComp = dynamic_cast<PointCloudComponent*>(component))
+	{
+		//std::cout << "Mesh exist\n";
+		Proxy proxy;
+		proxy.mesh = pointCloudComp->GetMesh();
+		currentFrameResource->pcProxyBuffer.push_back(proxy);
+	}
 	/*std::vector<std::shared_ptr<SceneComponent>> child;
 	component->GetChildrenComponents(child);
 	for (size_t i = 0; i < child.size(); i++)
@@ -468,10 +476,11 @@ void RenderEngine::Tick(float deltaTime)
 	cv.notify_one();
 }
 
-void RenderEngine::Render(const std::string& psoName, int idx, bool isText, bool isFinal, bool clear)
+void RenderEngine::Render(const std::string& psoName, int idx, RenderType renderType, bool isFinal, bool clear)
 {
-	using namespace Renderer;
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), "test");
 
+	using namespace Renderer;
 	// N번을 update했을 때 N-1 번 프레임을 렌더링 
 	// update의 경우 m_frameResourceCount만큼 미리 업데이트 가능
 	r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
@@ -510,8 +519,6 @@ void RenderEngine::Render(const std::string& psoName, int idx, bool isText, bool
 	commandList->RSSetScissorRects(1, &m_scissorRect);
 	commandList->RSSetViewports(1, &m_viewport);
 
-	commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	commandList->SetPipelineState(pso.GetPSO());
 	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
 
@@ -529,11 +536,11 @@ void RenderEngine::Render(const std::string& psoName, int idx, bool isText, bool
 		commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
 	}
 	commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
-
-
-	commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetGCBGPUAddress());
-	if (!isText)
+	
+	if (renderType == RT_Default)
 	{
+		commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetGCBGPUAddress());
+
 		ID3D12DescriptorHeap* heaps[] = {
 			m_textureLoader->GetHeap()
 		};
@@ -544,8 +551,10 @@ void RenderEngine::Render(const std::string& psoName, int idx, bool isText, bool
 			proxy.mesh->Render(commandList, m_textureLoader.get());
 		}
 	}
-	else
+	else if(renderType == RT_TEXT)
 	{
+		commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetGCBGPUAddress());
+
 		if (r_currentFrameResource->textProxyBuffer.size() > 0)
 		{
 			ID3D12DescriptorHeap* heaps[] = {
@@ -562,7 +571,15 @@ void RenderEngine::Render(const std::string& psoName, int idx, bool isText, bool
 			}
 		}
 	}
+	else if (renderType == RT_PointCloud)
+	{
+		commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
 
+		for (auto& proxy : r_currentFrameResource->pcProxyBuffer)
+		{
+			proxy.mesh->RenderPoints(commandList);
+		}
+	}
 	commandList->ResourceBarrier(
 		1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -587,6 +604,7 @@ void RenderEngine::Render(const std::string& psoName, int idx, bool isText, bool
 			m_currentBackBufferIndex = (m_currentBackBufferIndex + 1) % m_swapChainBufferCount;
 		}
 	}
+	PIXEndEvent(m_commandQueue.Get());
 }
 
 void RenderEngine::RenderGUI(bool isFinal)
@@ -842,9 +860,10 @@ void RenderEngine::RenderWithText()
 
 void RenderEngine::RenderWithCompute()
 {
-	Compute(computePSO, 0, false, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	Render(renderPSO, 1, false/*isText*/, false/*isFinal*/, true);
-	RenderGUI(true);
+	//Compute(computePSO, 0, false, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	Render("phongPSO", 0, RT_Default, false/*isFinal*/, true);
+	Render("pointCloudPSO", 1, RT_PointCloud, true/*isFinal*/, false);
+	//RenderGUI(true);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetCurrentRtvCpuHandle() const

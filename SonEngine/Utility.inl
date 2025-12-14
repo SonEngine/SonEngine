@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "StaticMeshComponent.h"
+#include "PointCloudComponent.h"
 #include "StaticMesh.h"
 #include "d3d12.h"
 #include "Utility.h"
@@ -202,6 +203,31 @@ namespace GraphicsUtils {
 			actor->SetRootComponent(cmp);
 		}
 		actor->SetActorLocation(location);
+		return actor;
+	}
+	template<typename V, typename I, typename MeshType>
+	inline std::shared_ptr<Actor> Utility::CreatePCActor(
+		const std::string& actorname,
+		const std::vector<Mesh<V, I>>& meshes,
+		World* world,
+		bool simulate,
+		PhysXMode physXMode
+	)
+	{
+		std::shared_ptr<Actor> actor = std::make_shared<Actor>(actorname, world);
+
+		std::shared_ptr<MeshType> mesh = std::make_shared<MeshType>();
+		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
+		{
+			m->InitializePC(m_device, m_commandList, meshes);
+	
+			std::shared_ptr<PointCloudComponent> cmp = std::make_shared<PointCloudComponent>(actor.get());
+			cmp->SetMesh(mesh);
+			cmp->SetPhysX(simulate);
+			cmp->SetPhysXMode(physXMode);
+			actor->SetRootComponent(cmp);
+		}
+		
 		return actor;
 	}
 

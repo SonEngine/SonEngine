@@ -108,6 +108,9 @@
     <ClCompile Include="ModelLoader.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="PointCloudComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseApp.h">
@@ -260,6 +263,9 @@
     <ClInclude Include="PhongHLSLCompat.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="PointCloudComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultVS.hlsl" />
@@ -270,6 +276,9 @@
     <FxCompile Include="TextVS.hlsl" />
     <FxCompile Include="TextPS.hlsl" />
     <FxCompile Include="DefaultCS.hlsl" />
+    <FxCompile Include="PointCloudVS.hlsl" />
+    <FxCompile Include="PointCloudPS.hlsl" />
+    <FxCompile Include="PointCloudGS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />
@@ -284,6 +293,7 @@
     <None Include="StaticMesh.inl">
       <Filter>헤더 파일</Filter>
     </None>
+    <None Include="PointCloud.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\earth_Albedo.dds">

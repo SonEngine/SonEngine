@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "directxtk12/SimpleMath.h"
 
+using DirectX::SimpleMath::Vector4;
 using DirectX::SimpleMath::Vector3;
 using DirectX::SimpleMath::Vector2;
 
@@ -18,4 +19,9 @@ struct Vertex {
 	Vector3 position;
 	Vector3 normal;
 	Vector2 uv;
+};
+
+struct PointCloudVertex {
+	Vector3 position;
+	Vector4 color;
 };

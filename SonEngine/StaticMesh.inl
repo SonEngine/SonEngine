@@ -43,7 +43,42 @@ inline void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandL
 		&localConstant,
 		sizeof(LocalConstant)
 	);
+}
 
+template<typename V, typename I>
+inline void StaticMesh::InitializePC(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, const std::vector<Mesh<V, I>>& meshes)
+{
+	meshCount = (UINT)meshes.size();
+
+	m_vertexGpu.resize(meshCount);
+	m_vertexUpload.resize(meshCount);
+
+	for (size_t i = 0; i < meshCount; i++)
+	{
+		const auto& mesh = meshes[i];
+		m_vertexCounts.push_back((UINT)mesh.m_vertices.size());
+
+		Graphics::utility->CreateBuffer<V>(mesh.m_vertices, m_vertexGpu[i], m_vertexUpload[i]);
+
+		D3D12_VERTEX_BUFFER_VIEW VBV;
+		VBV.BufferLocation = m_vertexGpu[i]->GetGPUVirtualAddress();
+		VBV.SizeInBytes = (UINT)(mesh.m_vertices.size() * sizeof(V));
+		VBV.StrideInBytes = (UINT)(sizeof(V));
+		
+		m_vertexBufferViews.push_back(VBV);
+	}
+
+	Graphics::utility->CreateConstantBuffer(
+		sizeof(LocalConstant),
+		m_localCB,
+		reinterpret_cast<void**>(&pLocalConstant)
+	);
+
+	memcpy(
+		pLocalConstant,
+		&localConstant,
+		sizeof(LocalConstant)
+	);
 }
 
 template<typename V, typename I>
@@ -60,6 +95,7 @@ inline void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandL
 	{
 		const auto& mesh = meshes[i];
 		m_indexCounts.push_back((UINT)mesh.m_indices.size());
+		m_vertexCounts.push_back((UINT)mesh.m_vertices.size());
 
 		Graphics::utility->CreateBuffer<V>(mesh.m_vertices, m_vertexGpu[i], m_vertexUpload[i]);
 		Graphics::utility->CreateBuffer<I>(mesh.m_indices, m_indexGpu[i], m_indexUpload[i]);

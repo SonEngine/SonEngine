@@ -11,6 +11,10 @@
 #include "CompiledShaders/PhongVS.h"
 #include "CompiledShaders/PhongPS.h"
 
+#include "CompiledShaders/PointCloudVS.h"
+#include "CompiledShaders/PointCloudGS.h"
+#include "CompiledShaders/PointCloudPS.h"
+
 #include "CompiledShaders/TextVS.h"
 #include "CompiledShaders/TextPS.h"
 
@@ -36,6 +40,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     GraphicsPSO videoPSO(L"video PSO");
     GraphicsPSO phongPSO(L"phong PSO");
     GraphicsPSO textPSO(L"text PSO");
+    GraphicsPSO pointCloudPSO(L"pointCloud PSO");
 
     ComputePSO defaultCPSO(L"default CPSO");
 
@@ -66,6 +71,13 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
         { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
     };
+
+    D3D12_INPUT_ELEMENT_DESC pointCloudIL[] =
+    {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+    };
+
     defaultPSO.SetInputLayout(_countof(simpleIL), simpleIL);
     defaultPSO.SetRootSignature(g_commonRS);
     defaultPSO.SetRasterizerState(rasterizerDefault);
@@ -120,6 +132,20 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     textPSO.Finalize(device);
     m_PSOs["textPSO"] = textPSO;
     psoNames.push_back("textPSO");
+
+    pointCloudPSO.SetInputLayout(_countof(pointCloudIL), pointCloudIL);
+    pointCloudPSO.SetRootSignature(g_pointCloudRS);
+    pointCloudPSO.SetRasterizerState(rasterizerDefault);
+    pointCloudPSO.SetBlendState(blendNoColorWrite);
+    pointCloudPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+    pointCloudPSO.SetVertexShader(g_pPointCloudVS, sizeof(g_pPointCloudVS));
+    pointCloudPSO.SetGeometryShader(g_pPointCloudGS, sizeof(g_pPointCloudGS));
+    pointCloudPSO.SetPixelShader(g_pPointCloudPS, sizeof(g_pPointCloudPS));
+    pointCloudPSO.SetSampleMask(UINT_MAX);
+    pointCloudPSO.SetRenderTargetFormat(backBufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
+    pointCloudPSO.Finalize(device);
+    m_PSOs["pointCloudPSO"] = pointCloudPSO;
+    psoNames.push_back("pointCloudPSO");
 
     defaultCPSO.SetComputeShader(g_pDefaultCS, sizeof(g_pDefaultCS));
     defaultCPSO.SetRootSignature(g_U1_RS);

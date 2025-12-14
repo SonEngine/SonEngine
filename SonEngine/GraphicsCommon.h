@@ -23,6 +23,7 @@ namespace Graphics
     extern D3D12_DEPTH_STENCIL_DESC depthStateDefault;
 
     extern RootSignature g_commonRS;
+    extern RootSignature g_pointCloudRS;
     extern RootSignature g_videoRS;
     extern RootSignature g_U1_RS;
 

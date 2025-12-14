@@ -21,6 +21,12 @@
 #include "ImageInfo.h"
 #include "Renderer.h"
 
+enum RenderType {
+	RT_TEXT,
+	RT_Default,
+	RT_PointCloud
+};
+
 class RenderEngine {
 public:
 	RenderEngine(ID3D12Device5* device = nullptr);
@@ -55,7 +61,7 @@ protected:
 	//void BuildRenderProxy(const std::vector<std::shared_ptr<Actor>>& actors, Actor* player);
 	void AddProxy(SceneComponent* component);
 	void AddTextProxy(SceneComponent* component);
-	void Render(const std::string& psoName, int idx, bool isText, bool isFinal, bool clear);
+	void Render(const std::string& psoName, int idx, RenderType renderType, bool isFinal, bool clear);
 	void RenderGUI(bool isFinal);
 	void Compute(const std::string& cpsoName, int idx, bool isFinal, D3D12_RESOURCE_STATES prevState);
 

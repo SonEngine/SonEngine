@@ -32,6 +32,8 @@ public:
 	std::vector<Mesh<V, I>> GetMeshes(const std::string& assetName) const;
 	DirectX::SimpleMath::Vector3 aiToVector3(aiVector3D vector);
 
+	DirectX::SimpleMath::Vector4 aiToVector4(aiColor4D vector);
+
 private:
 	std::unordered_map<std::string, Asset<V,I>> assets;
 
@@ -40,6 +42,8 @@ public:
 	void LoadPointCloud(std::string filename, DirectX::SimpleMath::Matrix tr = DirectX::SimpleMath::Matrix());
 	void ProcessNode(std::vector<Mesh<V, I>> & meshes, aiNode* node, const aiScene* scene, DirectX::SimpleMath::Matrix tr);
 	void ProcessMesh(std::vector<Mesh<V, I>>& meshes, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr);
+	void ProcessPCNode(std::vector<Mesh<V, I>>& meshes, aiNode* node, const aiScene* scene, DirectX::SimpleMath::Matrix tr);
+	void ProcessPCMesh(std::vector<Mesh<V, I>>& meshes, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr);
 
 };
 
@@ -61,6 +65,13 @@ inline DirectX::SimpleMath::Vector3 ModelLoader<V, I>::aiToVector3(aiVector3D ve
 }
 
 template<typename V, typename I>
+inline DirectX::SimpleMath::Vector4 ModelLoader<V, I>::aiToVector4(aiColor4D vector)
+{
+	DirectX::SimpleMath::Vector4 v(vector.r, vector.g, vector.b, vector.a);
+	return v;
+}
+
+template<typename V, typename I>
 inline void ModelLoader<V,I>::Load(std::string filename, DirectX::SimpleMath::Matrix tr)
 {
 	Assimp::Importer importer;
@@ -77,20 +88,6 @@ inline void ModelLoader<V,I>::Load(std::string filename, DirectX::SimpleMath::Ma
 	assets[p.stem().string()] = asset;
 }
 
-template<typename V, typename I>
-inline void ModelLoader<V, I>::LoadPointCloud(std::string filename, DirectX::SimpleMath::Matrix tr)
-{
-	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(basePath + filename, 0);
-	if (scene == nullptr)
-	{
-		return;
-	}
-	Asset<V, I> asset;
-	ProcessNode(asset.m_meshes, scene->mRootNode, scene, tr);
-	std::filesystem::path p = filename;
-	assets[p.stem().string()] = asset;
-}
 
 template<typename V, typename I>
 inline void ModelLoader<V, I>::ProcessNode(std::vector<Mesh<V, I>>& meshes, aiNode* node, const aiScene* scene, DirectX::SimpleMath::Matrix tr)
@@ -135,3 +132,54 @@ inline void ModelLoader<V, I>::ProcessMesh(std::vector<Mesh<V, I>>& meshes, aiMe
 
 	meshes.push_back(meshData);
 }
+
+template<typename V, typename I>
+inline void ModelLoader<V, I>::LoadPointCloud(std::string filename, DirectX::SimpleMath::Matrix tr)
+{
+	Assimp::Importer importer;
+	const aiScene* scene = importer.ReadFile(basePath + filename, aiProcess_ConvertToLeftHanded);
+	if (scene == nullptr)
+	{
+		return;
+	}
+	Asset<V, I> asset;
+	ProcessPCNode(asset.m_meshes, scene->mRootNode, scene, tr);
+	std::filesystem::path p = filename;
+	assets[p.stem().string()] = asset;
+}
+
+template<typename V, typename I>
+inline void ModelLoader<V, I>::ProcessPCNode(std::vector<Mesh<V, I>>& meshes, aiNode* node, const aiScene* scene, DirectX::SimpleMath::Matrix tr)
+{
+	for (unsigned int i = 0; i < node->mNumMeshes; i++)
+	{
+		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+		ProcessPCMesh(meshes, mesh, scene, tr);
+	}
+
+	for (unsigned int i = 0; i < node->mNumChildren; i++)
+	{
+		ProcessPCNode(meshes, node->mChildren[i], scene, tr);
+	}
+}
+
+template<typename V, typename I>
+inline void ModelLoader<V, I>::ProcessPCMesh(std::vector<Mesh<V, I>>& meshes, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr)
+{
+	Mesh<V, I> meshData;
+	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+		aiVector3D v = mesh->mVertices[i];
+		aiColor4D c(1.f, 1.f, 1.f, 1.f);
+
+		if (mesh->HasVertexColors(0) && mesh->mColors[0])
+			c = mesh->mColors[0][i];
+
+		meshData.m_vertices.push_back({
+				aiToVector3(v),
+				aiToVector4(c)
+			});
+		
+	}
+	meshes.push_back(meshData);
+}
+

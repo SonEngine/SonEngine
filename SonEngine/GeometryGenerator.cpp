@@ -237,3 +237,35 @@ Mesh<Vertex, uint16_t> GeometryGenerator::MakeSphere(int c, float r)
 
 	return mesh;
 }
+
+Mesh<PointCloudVertex, uint16_t> GeometryGenerator::MakePointCube(float x, float y, float z)
+{
+	float halfX = x / 2.f;
+	float halfY = y / 2.f;
+	float halfZ = z / 2.f;
+	std::vector<Vector3> v{
+		Vector3(-halfX, -halfY, -halfZ),
+		Vector3(-halfX, halfY,  -halfZ),
+		Vector3(halfX, halfY,  -halfZ),
+		Vector3(halfX, -halfY,  -halfZ),
+		Vector3(-halfX, -halfY, halfZ),
+		Vector3(-halfX, halfY,  halfZ),
+		Vector3(halfX, halfY,  halfZ),
+		Vector3(halfX, -halfY,  halfZ)
+	};
+
+	
+	std::vector<PointCloudVertex> vertices;
+	std::vector<uint16_t> indices;
+
+	for (size_t i = 0; i < v.size(); i++)
+	{
+		vertices.push_back({ v[i], Vector4(1,1,1,1) });
+	}
+	Mesh<PointCloudVertex, uint16_t> mesh;
+
+	mesh.m_vertices = vertices;
+	mesh.m_indices = indices;
+
+	return mesh;
+}

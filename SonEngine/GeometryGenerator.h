@@ -14,4 +14,6 @@ struct GeometryGenerator
 
 	static Mesh<Vertex, uint16_t> GeometryGenerator::MakeSphere(int c, float r);
 
+	static Mesh<PointCloudVertex, uint16_t> MakePointCube(float x, float y, float z);
+
 };

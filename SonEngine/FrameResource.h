@@ -52,7 +52,7 @@ private:
 	void* pPhongGCB = nullptr;
 
 private:
-	const static int commandCount = 2;
+	const static int commandCount = 3;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator[commandCount];
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList[commandCount];
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_textCommandAllocator;
@@ -64,6 +64,7 @@ public:
 	UINT64 m_currentFence = 0;
 	bool proxyDirty = true;
 	std::vector<Proxy> proxyBuffer;
+	std::vector<Proxy> pcProxyBuffer;
 	std::vector<TextProxy> textProxyBuffer;
 	std::vector<TextResource> textResources;
 
