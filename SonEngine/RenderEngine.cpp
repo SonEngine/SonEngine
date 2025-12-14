@@ -35,7 +35,7 @@ RenderEngine::~RenderEngine()
 	ImGui::DestroyContext();
 }
 
-bool RenderEngine::Initialize(int width,int height, IDXGIFactory7* factory, HWND wnd)
+bool RenderEngine::Initialize(int width, int height, IDXGIFactory7* factory, HWND wnd)
 {
 	m_width = width;
 	m_height = height;
@@ -46,7 +46,7 @@ bool RenderEngine::Initialize(int width,int height, IDXGIFactory7* factory, HWND
 	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
 
 	CreateCommandObjects();
-	
+
 	utility = std::make_shared<GraphicsUtils::Utility>(m_device, m_commandList.Get());
 	m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_fence.GetAddressOf()));
 	m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_createBufferfence.GetAddressOf()));
@@ -106,7 +106,7 @@ bool RenderEngine::Initialize(int width,int height, IDXGIFactory7* factory, HWND
 		{
 			world->Initialize(m_width, m_height, this, m_device, m_commandList.Get());
 		}
-		
+
 		m_commandList->Close();
 		ID3D12CommandList* commands[] = { m_commandList.Get() };
 		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
@@ -155,14 +155,15 @@ bool RenderEngine::Initialize(int width,int height, IDXGIFactory7* factory, HWND
 				FlushResourceCommands();
 				OnResize();
 			}
-			//TODO : capture 
-			//if (captureDirty)
-			//{
-			//	captureDirty = false;
-			//	FlushResourceCommands();
-			//	SaveTextureGPU(m_computeTextureName);
-			//}
-			
+
+			if (captureDirty)
+			{
+				captureDirty = false;
+				FlushResourceCommands();
+				//SaveTextureGPU(m_computeTextureName, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+				SaveTextureGPU("BackBuffer", D3D12_RESOURCE_STATE_PRESENT);
+			}
+
 			frameReady = false;
 			lock.unlock();
 
@@ -170,7 +171,7 @@ bool RenderEngine::Initialize(int width,int height, IDXGIFactory7* factory, HWND
 			RenderWithCompute();
 		}});
 
-	return true;
+		return true;
 }
 
 bool RenderEngine::InitGUI(HWND wnd)
@@ -214,7 +215,13 @@ void RenderEngine::RequestResize(int newWidth, int newHeight)
 		resize = true;
 	}
 }
-
+void RenderEngine::RequestCapture()
+{
+	{
+		std::lock_guard<std::mutex> lock(g_mtx);
+		captureDirty = true;
+	}
+}
 void RenderEngine::OnResize()
 {
 	if (m_swapChain == nullptr) return;
@@ -354,7 +361,7 @@ void RenderEngine::CreateDepthBuffer()
 void RenderEngine::UpdateGUI()
 {
 	std::string str = "FPS : ";
-	
+
 	ImGui::Text(str.c_str());
 }
 
@@ -370,18 +377,18 @@ void RenderEngine::BuildFrameResources()
 }
 void RenderEngine::PostActorChanges()
 {
-//	if (!m_addActors.empty())
-//{
-//	for (auto& pFr : m_frameResources)
-//	{
-//		pFr->proxyDirty = true;
-//	}
-//	//std::cout << m_addActors.size() << "개 추가\n";
-//	for (auto& a : m_addActors)
-//	{
-//		m_actors.push_back(a);
-//	}
-//	m_addActors.clear();
+	//	if (!m_addActors.empty())
+	//{
+	//	for (auto& pFr : m_frameResources)
+	//	{
+	//		pFr->proxyDirty = true;
+	//	}
+	//	//std::cout << m_addActors.size() << "개 추가\n";
+	//	for (auto& a : m_addActors)
+	//	{
+	//		m_actors.push_back(a);
+	//	}
+	//	m_addActors.clear();
 }
 
 void RenderEngine::BuildRenderProxy()
@@ -536,7 +543,7 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 		commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
 	}
 	commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
-	
+
 	if (renderType == RT_Default)
 	{
 		commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetGCBGPUAddress());
@@ -551,7 +558,7 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 			proxy.mesh->Render(commandList, m_textureLoader.get());
 		}
 	}
-	else if(renderType == RT_TEXT)
+	else if (renderType == RT_TEXT)
 	{
 		commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetGCBGPUAddress());
 
@@ -621,7 +628,7 @@ void RenderEngine::RenderGUI(bool isFinal)
 	r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
 	ID3D12CommandAllocator* commandAllocator = r_currentFrameResource->GetGUIAllocator();
 	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetGUICommandList();
-	
+
 	ThrowIfFailed(commandAllocator->Reset());
 	ThrowIfFailed(commandList->Reset(commandAllocator, nullptr));
 
@@ -912,11 +919,17 @@ void RenderEngine::FlushResourceCommands()
 	}
 }
 
-void RenderEngine::SaveTextureGPU(std::string& name)
+void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES state)
 {
 	std::cout << "SaveTextureGPU\n";
+	ID3D12Resource* t;
+	if (name == "BackBuffer")
+	{
+		t = GetCurrentSwapChainResource();
+	}
+	else
+		t = m_textureLoader->GetTexture(name);
 
-	ID3D12Resource* t = m_textureLoader->GetTexture(name);
 	D3D12_RESOURCE_DESC desc = t->GetDesc();
 	UINT64 w = desc.Width;
 	UINT64 h = desc.Height;
@@ -949,7 +962,7 @@ void RenderEngine::SaveTextureGPU(std::string& name)
 	m_commandList->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			t,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			state,
 			D3D12_RESOURCE_STATE_COPY_SOURCE));
 
 	CD3DX12_TEXTURE_COPY_LOCATION dst(m_saveBuffer.Get(), footprint);
@@ -960,7 +973,7 @@ void RenderEngine::SaveTextureGPU(std::string& name)
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			t,
 			D3D12_RESOURCE_STATE_COPY_SOURCE,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+			state
 		));
 
 	m_commandList->Close();
@@ -991,7 +1004,7 @@ void RenderEngine::SaveTextureCPU()
 	}
 	m_saveBuffer->Unmap(0, nullptr);
 
-	std::string filename = imageInfo.name + ".png";
+	std::string filename = imageInfo.name + utility->MakeTimestamp() + ".png";
 	std::string fileFullPath = imageFilePath + filename;
 	stbi_write_png(fileFullPath.c_str(), (int)imageInfo.width, (int)imageInfo.height, 4, image.data(), imageInfo.rowSize);
 	std::cout << imageInfo.name << " 가 성공적으로 저장되었습니다.\n";

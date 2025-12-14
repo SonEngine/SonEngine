@@ -37,6 +37,7 @@ public:
 	bool InitGUI(HWND wnd);
 
 	void RequestResize(int newWidth, int newHeight);
+	void RequestCapture();
 	void OnResize();
 
 public:
@@ -81,7 +82,7 @@ private:
 	void FlushCommands();
 	void FlushResourceCommands();
 
-	void SaveTextureGPU(std::string& name);
+	void SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES state);
 	void SaveTextureCPU();
 
 	
@@ -180,6 +181,7 @@ private:
 	std::atomic<bool> frameReady = false;
 	std::atomic<bool> saveReady = false;
 	std::atomic<bool> resize = false;
+	std::atomic<bool> captureDirty = false;
 
 	std::mutex r_mtx;
 	std::mutex g_mtx;

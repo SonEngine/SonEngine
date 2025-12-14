@@ -30,6 +30,9 @@ namespace Core {
 		// Called when the window is resized
 		void OnResize() override;
 
+		// C 눌리면 호출
+		void OnCapture() override;
+
 	private:
 		Microsoft::WRL::ComPtr<IDXGIFactory7> m_dxgiFactory;
 		Microsoft::WRL::ComPtr<IDXGIAdapter4> m_adapter;

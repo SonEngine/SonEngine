@@ -29,6 +29,7 @@ namespace Core {
 
         // Called when the window is resized
         virtual void OnResize() = 0;
+        virtual void OnCapture() {};
         bool InitWindow();
 
     protected:

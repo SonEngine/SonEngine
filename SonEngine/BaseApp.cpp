@@ -170,7 +170,7 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			printDirty = true;
 
 		if (wParam == 'C')
-			captureDirty = true;
+			OnCapture();
 
 		if (Graphics::world) Graphics::world->SetInputState((size_t)wParam, false);
 

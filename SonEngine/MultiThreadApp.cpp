@@ -149,3 +149,12 @@ void Core::MultiThreadApp::OnResize()
 		m_renderEngine->RequestResize(m_width, m_height);
 	}
 }
+
+
+void Core::MultiThreadApp::OnCapture()
+{
+	if (m_renderEngine)
+	{
+		m_renderEngine->RequestCapture();
+	}
+}

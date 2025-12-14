@@ -159,6 +159,7 @@ namespace GraphicsUtils {
 			D3D12_CPU_DESCRIPTOR_HANDLE& handle,
 			const DescriptorType& type);
 		
+		std::string MakeTimestamp();
 	};
 }
 #include "Utility.inl"
