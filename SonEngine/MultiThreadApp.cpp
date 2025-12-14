@@ -132,7 +132,6 @@ void Core::MultiThreadApp::Update(float deltaTime)
 	{
 		world->Tick(deltaTime);
 		world->SyncKinematicToPhysX();
-
 	}
 	m_physXEngine->Tick(deltaTime);
 	m_renderEngine->Tick(deltaTime);

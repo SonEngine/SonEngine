@@ -111,7 +111,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     phongPSO.SetVertexShader(g_pPhongVS, sizeof(g_pPhongVS));
     phongPSO.SetPixelShader(g_pPhongPS, sizeof(g_pPhongPS));
     phongPSO.SetSampleMask(UINT_MAX);
-    phongPSO.SetRenderTargetFormat(backBufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
+    phongPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
     phongPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
     phongPSO.SetDepthStencilState(depthStateDefault);
     phongPSO.Finalize(device);
@@ -135,14 +135,16 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 
     pointCloudPSO.SetInputLayout(_countof(pointCloudIL), pointCloudIL);
     pointCloudPSO.SetRootSignature(g_pointCloudRS);
-    pointCloudPSO.SetRasterizerState(rasterizerDefault);
+    pointCloudPSO.SetRasterizerState(noneCullRasterizer);
     pointCloudPSO.SetBlendState(blendNoColorWrite);
     pointCloudPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
     pointCloudPSO.SetVertexShader(g_pPointCloudVS, sizeof(g_pPointCloudVS));
     pointCloudPSO.SetGeometryShader(g_pPointCloudGS, sizeof(g_pPointCloudGS));
     pointCloudPSO.SetPixelShader(g_pPointCloudPS, sizeof(g_pPointCloudPS));
     pointCloudPSO.SetSampleMask(UINT_MAX);
-    pointCloudPSO.SetRenderTargetFormat(backBufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
+    pointCloudPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+    pointCloudPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
+    pointCloudPSO.SetDepthStencilState(depthStateDefault);
     pointCloudPSO.Finalize(device);
     m_PSOs["pointCloudPSO"] = pointCloudPSO;
     psoNames.push_back("pointCloudPSO");

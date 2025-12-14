@@ -56,7 +56,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	modelLoader.Load("torus.fbx");
 
 	ModelLoader<PointCloudVertex, uint16_t> pcModelLoader;
-	pcModelLoader.LoadPointCloud("map.ply");
+	pcModelLoader.LoadPointCloud("map.ply",DirectX::XMMatrixRotationZ(3.141592));
 
 	int planeSize = 6;
 	m_player = utility->CreateActor(
@@ -81,8 +81,8 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 
 	std::shared_ptr<Actor> test = utility->CreatePCActor(
 		"pointCloud",
-		//pcModelLoader.GetMeshes("map"),
-		std::vector{GeometryGenerator::MakePointCube(1,1,1)},
+		pcModelLoader.GetMeshes("map"),
+		//std::vector{GeometryGenerator::MakePointCube(1,1,1)},
 		this
 	);
 
@@ -182,8 +182,8 @@ void World::InitCamera(int width, int height)
 	m_camera->m_height = height;
 	m_camera->SetCameraMode(CameraMode::CM_Perspective);
 	m_camera->Initialize();
-	m_camera->SetActorLocation({ 0.f, 5.f, -5.f });
-	m_camera->UpdateCameraRotation(0, 100);
+	m_camera->SetActorLocation({ 0.f, 0.f, -5.f });
+	m_camera->UpdateCameraRotation(0, 0);
 }
 
 void World::UpdateCamera(int width, int height)

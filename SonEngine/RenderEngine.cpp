@@ -861,8 +861,8 @@ void RenderEngine::RenderWithText()
 void RenderEngine::RenderWithCompute()
 {
 	//Compute(computePSO, 0, false, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	Render("phongPSO", 0, RT_Default, false/*isFinal*/, true);
-	Render("pointCloudPSO", 1, RT_PointCloud, true/*isFinal*/, false);
+	//Render("phongPSO", 0, RT_Default, false/*isFinal*/, true);
+	Render("pointCloudPSO", 0, RT_PointCloud, true/*isFinal*/, true);
 	//RenderGUI(true);
 }
 

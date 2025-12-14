@@ -137,7 +137,7 @@ template<typename V, typename I>
 inline void ModelLoader<V, I>::LoadPointCloud(std::string filename, DirectX::SimpleMath::Matrix tr)
 {
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(basePath + filename, aiProcess_ConvertToLeftHanded);
+	const aiScene* scene = importer.ReadFile(basePath + filename, 0);
 	if (scene == nullptr)
 	{
 		return;
@@ -173,9 +173,10 @@ inline void ModelLoader<V, I>::ProcessPCMesh(std::vector<Mesh<V, I>>& meshes, ai
 
 		if (mesh->HasVertexColors(0) && mesh->mColors[0])
 			c = mesh->mColors[0][i];
-
+		Vector3 pos = aiToVector3(v);
+		pos = Vector3::Transform(pos, tr);
 		meshData.m_vertices.push_back({
-				aiToVector3(v),
+				pos,
 				aiToVector4(c)
 			});
 		

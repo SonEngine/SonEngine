@@ -17,7 +17,6 @@ void Camera::Tick(const float& deltaTime)
 {
 }
 
-
 void Camera::UpdateCameraLocation(const DirectX::SimpleMath::Vector3& delLoc)
 {
 	Actor::UpdateActorLocation(delLoc);

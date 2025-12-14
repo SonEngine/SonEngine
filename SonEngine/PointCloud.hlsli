@@ -1,12 +1,11 @@
-﻿struct LocalConstant
+﻿#define HLSL
+#include "PhongHLSLCompat.h"
+
+struct LocalConstant
 {
     row_major matrix model;
-};
-
-struct GlobalConstant
-{
-    row_major matrix view;
-    row_major matrix proj;
+    row_major matrix modelInvTranspose;
+    
 };
 
 struct VSInput
