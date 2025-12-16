@@ -34,7 +34,9 @@ public:
 	
 	void SetAlbedoTexture(const std::string& filename) { albedoTexture = filename; }
 	
-	void RenderPoints(ID3D12GraphicsCommandList* commandList);
+	void RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx /* constant Buffer Index*/);
+
+	void RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx, const TextureLoader* textureLoader);
 
 	void SetLocation(const float& x, const float& y, const float& z);
 	void Translate(const float& delX, const float& delY, const float& delZ);

@@ -16,4 +16,6 @@ struct GeometryGenerator
 
 	static Mesh<PointCloudVertex, uint16_t> MakePointCube(float x, float y, float z);
 
+	static Mesh<SimpleVertex, uint16_t> MakePoint();
+
 };

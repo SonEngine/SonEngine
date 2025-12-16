@@ -35,13 +35,15 @@ RenderEngine::~RenderEngine()
 	ImGui::DestroyContext();
 }
 
-bool RenderEngine::Initialize(int width, int height, IDXGIFactory7* factory, HWND wnd)
-{
+bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd)
+{	
+	m_guiWidth = guiWidth;
 	m_width = width;
 	m_height = height;
+	mainWnd = wnd;
 
-	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)1280, (FLOAT)720);
-	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)1280, (LONG)720);
+	m_viewport = CD3DX12_VIEWPORT((FLOAT)m_guiWidth, 0.F, (FLOAT)(m_width - m_guiWidth), (FLOAT)m_height);
+	m_scissorRect = CD3DX12_RECT((LONG)0, 0, (LONG)(m_width), (LONG)m_height);
 
 	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
 
@@ -71,8 +73,10 @@ bool RenderEngine::Initialize(int width, int height, IDXGIFactory7* factory, HWN
 
 	// Compute Shader에서 사용할 버퍼 생성
 	{
+		computeTextureDIMX = m_width - m_guiWidth;
+		computeTextureDIMY = m_height;
 		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIM, computeTextureDIM, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_SRVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
@@ -168,7 +172,8 @@ bool RenderEngine::Initialize(int width, int height, IDXGIFactory7* factory, HWN
 			lock.unlock();
 
 			//RenderWithText();
-			RenderWithCompute();
+			//RenderWithCompute();
+			DrawingWithMouse();
 		}});
 
 		return true;
@@ -179,8 +184,8 @@ bool RenderEngine::InitGUI(HWND wnd)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
+	io.IniFilename = nullptr;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	// io.Fonts->TexID = (ImTextureID)m_guiFont->GetSpriteSheet().ptr;
 
 	ImGui::StyleColorsLight();
@@ -202,6 +207,7 @@ bool RenderEngine::InitGUI(HWND wnd)
 		m_guiFontHeap.Get(),
 		m_guiFontHeap->GetCPUDescriptorHandleForHeapStart(),
 		m_guiFontHeap->GetGPUDescriptorHandleForHeapStart());
+
 
 	return true;
 }
@@ -254,8 +260,10 @@ void RenderEngine::OnResize()
 
 	m_currentBackBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
-	m_viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)m_width, (FLOAT)m_height);
-	m_scissorRect = CD3DX12_RECT(0, 0, (LONG)m_width, (LONG)m_height);
+	m_viewport = CD3DX12_VIEWPORT((FLOAT)m_guiWidth, 0.F, (FLOAT)(m_width - m_guiWidth), (FLOAT)m_height);
+
+	m_scissorRect = CD3DX12_RECT((LONG)0, 0, (LONG)(m_width), (LONG)m_height);
+
 }
 
 void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
@@ -360,8 +368,11 @@ void RenderEngine::CreateDepthBuffer()
 
 void RenderEngine::UpdateGUI()
 {
-	std::string str = "FPS : ";
-
+	ImGui::SetWindowSize(ImVec2((float)m_guiWidth, (float)m_height));
+	ImGui::SetWindowPos(ImVec2(0.f, 0.f));
+	UINT dpi = GetDpiForWindow(mainWnd); // 예: 96, 120, 144...
+	float s = (float)dpi / 96.0f;
+	std::string str = "dpi : " + std::to_string(s);
 	ImGui::Text(str.c_str());
 }
 
@@ -523,6 +534,8 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 
 	ThrowIfFailed(commandList->Reset(r_currentFrameResource->GetAllocator(idx), pso.GetPSO()));
 
+	//m_viewport = CD3DX12_VIEWPORT((FLOAT)m_guiWidth, 0.F, (FLOAT)(m_width- m_guiWidth), (FLOAT)m_height);
+
 	commandList->RSSetScissorRects(1, &m_scissorRect);
 	commandList->RSSetViewports(1, &m_viewport);
 
@@ -582,9 +595,24 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 	{
 		commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
 
+		// Build Proxy 함수에서 등록된 메시가 PointCloud 일 경우 pcProxy에 등록됨
 		for (auto& proxy : r_currentFrameResource->pcProxyBuffer)
 		{
-			proxy.mesh->RenderPoints(commandList);
+			proxy.mesh->RenderPoints(commandList, 0);
+		}
+	}
+	else if (renderType == RT_Dot)
+	{
+		commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetGCBGPUAddress());
+		ID3D12DescriptorHeap* heaps[] = {
+			m_textureLoader->GetHeap()
+		};
+
+		commandList->SetDescriptorHeaps(1, heaps);
+		// Build Proxy 함수에서 등록된 메시가 PointCloud 일 경우 pcProxy에 등록됨
+		for (auto& proxy : r_currentFrameResource->pcProxyBuffer)
+		{
+			proxy.mesh->RenderPoints(commandList, 1, m_textureLoader.get());
 		}
 	}
 	commandList->ResourceBarrier(
@@ -616,10 +644,14 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 
 void RenderEngine::RenderGUI(bool isFinal)
 {
-	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
+	ImGui_ImplDX12_NewFrame();
 	ImGui::NewFrame();
-	ImGui::Begin("GUI");
+
+
+	ImGuiWindowFlags flags = 0;
+
+	ImGui::Begin("GUI", nullptr, flags);
 	UpdateGUI();
 
 	ImGui::End();
@@ -724,7 +756,7 @@ void RenderEngine::Compute(const std::string& cpsoName, int idx, bool isFinal, D
 
 	commandList->SetComputeRootDescriptorTable(0, m_UAVHeap->GetGPUDescriptorHandleForHeapStart());
 
-	commandList->Dispatch((UINT)ceil(computeTextureDIM / 32.f), (UINT)ceil(computeTextureDIM / 32.f), 1);
+	commandList->Dispatch((UINT)ceil((computeTextureDIMX) / 32.f), (UINT)ceil(computeTextureDIMY / 32.f), 1);
 
 	commandList->ResourceBarrier(
 		1,
@@ -867,10 +899,17 @@ void RenderEngine::RenderWithText()
 
 void RenderEngine::RenderWithCompute()
 {
-	//Compute(computePSO, 0, false, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	//Render("phongPSO", 0, RT_Default, false/*isFinal*/, true);
-	Render("pointCloudPSO", 0, RT_PointCloud, true/*isFinal*/, true);
+	Compute(computePSO, 0, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	Render("phongPSO", 1/*sequence*/, RT_Default, false/*isFinal*/, true/*clear RT*/);
+	Render("pointCloudPSO", 2, RT_PointCloud, true/*isFinal*/, false/*clear RT*/);
 	//RenderGUI(true);
+}
+
+void RenderEngine::DrawingWithMouse()
+{
+	Compute(computePSO, 0, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	Render("renderTexturePSO", 1, RT_Dot, false/*isFinal*/, true/*clear RT*/);
+	RenderGUI(true);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetCurrentRtvCpuHandle() const

@@ -26,6 +26,7 @@ namespace Graphics
     extern RootSignature g_pointCloudRS;
     extern RootSignature g_videoRS;
     extern RootSignature g_U1_RS;
+    extern RootSignature g_R1_RS;
 
     extern std::shared_ptr<GraphicsUtils::Utility> utility;
     extern std::unique_ptr<World> world;

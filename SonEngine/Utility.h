@@ -136,10 +136,11 @@ namespace GraphicsUtils {
 		// Create Point Cloud Actor
 		template<typename V, typename I, typename MeshType = class StaticMesh>
 		std::shared_ptr<Actor> CreatePCActor(
-			const std::string& actorname,
-			const std::vector<Mesh<V, I>>& meshes,
+			const std::string& actorname, 
+			const std::vector<Mesh<V, I>>& meshes, 
+			const std::string& texture, 
 			World* world, 
-			bool simulate = false,
+			bool simulatee = false,
 			PhysXMode physXMode = PhysXMode::PM_Default);
 
 		template<typename A, typename V, typename I, typename MeshType = class StaticMesh>

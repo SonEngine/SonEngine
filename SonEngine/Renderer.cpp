@@ -15,6 +15,10 @@
 #include "CompiledShaders/PointCloudGS.h"
 #include "CompiledShaders/PointCloudPS.h"
 
+#include "CompiledShaders/RenderTextureVS.h"
+#include "CompiledShaders/RenderTextureGS.h"
+#include "CompiledShaders/RenderTexturePS.h"
+
 #include "CompiledShaders/TextVS.h"
 #include "CompiledShaders/TextPS.h"
 
@@ -41,6 +45,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     GraphicsPSO phongPSO(L"phong PSO");
     GraphicsPSO textPSO(L"text PSO");
     GraphicsPSO pointCloudPSO(L"pointCloud PSO");
+    GraphicsPSO renderTexturePSO(L"renderTexture PSO");
 
     ComputePSO defaultCPSO(L"default CPSO");
 
@@ -148,6 +153,22 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     pointCloudPSO.Finalize(device);
     m_PSOs["pointCloudPSO"] = pointCloudPSO;
     psoNames.push_back("pointCloudPSO");
+
+    renderTexturePSO.SetInputLayout(_countof(pointCloudIL), pointCloudIL);
+    renderTexturePSO.SetRootSignature(g_R1_RS);
+    renderTexturePSO.SetRasterizerState(noneCullRasterizer);
+    renderTexturePSO.SetBlendState(blendNoColorWrite);
+    renderTexturePSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+    renderTexturePSO.SetVertexShader(g_pRenderTextureVS, sizeof(g_pRenderTextureVS));
+    renderTexturePSO.SetGeometryShader(g_pRenderTextureGS, sizeof(g_pRenderTextureGS));
+    renderTexturePSO.SetPixelShader(g_pRenderTexturePS, sizeof(g_pRenderTexturePS));
+    renderTexturePSO.SetSampleMask(UINT_MAX);
+    renderTexturePSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+    renderTexturePSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
+    renderTexturePSO.SetDepthStencilState(depthStateDefault);
+    renderTexturePSO.Finalize(device);
+    m_PSOs["renderTexturePSO"] = renderTexturePSO;
+    psoNames.push_back("renderTexturePSO");
 
     defaultCPSO.SetComputeShader(g_pDefaultCS, sizeof(g_pDefaultCS));
     defaultCPSO.SetRootSignature(g_U1_RS);

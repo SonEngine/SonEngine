@@ -16,7 +16,8 @@ namespace Core {
 	public:
 
 		MultiThreadApp();
-		MultiThreadApp(const int width, const int height);
+		MultiThreadApp(const int width, const int height, const int guiWidth);
+		//MultiThreadApp(const int width, const int height);
 
 		virtual ~MultiThreadApp();
 		virtual int Run() override;
@@ -41,6 +42,7 @@ namespace Core {
 
 
 		float deltaTime = 0.f;
+		int m_guiWidth;
 
 	private:
 		std::shared_ptr<RenderEngine> m_renderEngine;

@@ -17,11 +17,13 @@ using namespace Renderer;
 Core::MultiThreadApp::MultiThreadApp()
 	:BaseApp()
 {
+	m_guiWidth = 100;
 }
 
-Core::MultiThreadApp::MultiThreadApp(const int width, const int height)
+Core::MultiThreadApp::MultiThreadApp(const int width, const int height, const int guiWidth)
 	:BaseApp(width, height)
 {
+	m_guiWidth = guiWidth;
 }
 
 Core::MultiThreadApp::~MultiThreadApp()
@@ -99,7 +101,6 @@ bool Core::MultiThreadApp::InitDirectX()
 
 	ThrowIfFailed(device.As(&m_device));
 
-
 	Graphics::InitializeCommonState(m_device);
 	Renderer::Initialize(m_device);
 
@@ -109,7 +110,7 @@ bool Core::MultiThreadApp::InitDirectX()
 	if (world) { world->InitializePhysics(m_physXEngine.get()); }
 	
 	m_renderEngine = std::make_shared<RenderEngine>(m_device.Get());
-	m_renderEngine->Initialize(m_width, m_height, m_dxgiFactory.Get(), m_mainWnd);
+	m_renderEngine->Initialize(m_width, m_height, m_guiWidth, m_dxgiFactory.Get(), m_mainWnd);
 
 	return true;
 }
@@ -126,7 +127,7 @@ bool Core::MultiThreadApp::InitGUI()
 // main thread
 void Core::MultiThreadApp::Update(float deltaTime)
 {
-	PIXBeginEvent(0, L"Game Update");
+	//PIXBeginEvent(0, L"Game Update");
 
 	if (world)
 	{
@@ -142,7 +143,7 @@ void Core::MultiThreadApp::OnResize()
 {
 	if (world)
 	{
-		world->UpdateCamera(m_width, m_height);
+		world->UpdateCamera(m_width - m_guiWidth, m_height);
 	}
 	if (m_renderEngine)
 	{

@@ -56,7 +56,8 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	modelLoader.Load("torus.fbx");
 
 	ModelLoader<PointCloudVertex, uint16_t> pcModelLoader;
-	pcModelLoader.LoadPointCloud("map.ply",DirectX::XMMatrixRotationZ(3.141592));
+	auto mat = DirectX::XMMatrixRotationZ(3.141592) * DirectX::XMMatrixRotationX(-3.14f / 12.f);
+	pcModelLoader.LoadPointCloud("map.ply", mat);
 
 	int planeSize = 6;
 	m_player = utility->CreateActor(
@@ -71,18 +72,25 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 
 	m_player->SetActorSpeed(1.f);
 
-	/*std::shared_ptr<Actor> plane = utility->CreateActor(
+	std::shared_ptr<Actor> plane = utility->CreateActor(
 		"plane",
 		std::vector{ GeometryGenerator::MakePlane((float)planeSize, (float)planeSize, 1) },
 		"ComTex",
 		{ 0.f,0.f,0.f },
 		this
-	);*/
+	);
 
-	std::shared_ptr<Actor> test = utility->CreatePCActor(
-		"pointCloud",
-		pcModelLoader.GetMeshes("map"),
-		//std::vector{GeometryGenerator::MakePointCube(1,1,1)},
+	//std::shared_ptr<Actor> test = utility->CreatePCActor(
+	//	"pointCloud",
+	//	pcModelLoader.GetMeshes("map"),
+	//	//std::vector{GeometryGenerator::MakePointCube(1,1,1)},
+	//	this
+	//);
+
+	std::shared_ptr<Actor> dot = utility->CreatePCActor(
+		"dot",
+		std::vector{GeometryGenerator::MakePoint()},
+		"ComTex",
 		this
 	);
 
@@ -115,10 +123,11 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 
 	//box->SetTarget(platform.get());
 
-	//SpawnActor(plane);
+	SpawnActor(plane);
 	SpawnActor(m_player);
 	SpawnActor(l);
-	SpawnActor(test);
+	//SpawnActor(test);
+	SpawnActor(dot);
 
 	//SpawnActor(torus);
 	//SpawnActor(box);

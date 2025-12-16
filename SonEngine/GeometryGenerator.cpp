@@ -269,3 +269,18 @@ Mesh<PointCloudVertex, uint16_t> GeometryGenerator::MakePointCube(float x, float
 
 	return mesh;
 }
+
+
+Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakePoint()
+{
+	
+	Mesh<SimpleVertex, uint16_t> mesh;
+	std::vector< SimpleVertex> vertices;
+	std::vector< uint16_t> indices;
+
+	vertices.push_back({ Vector3(0,0,0) });
+	mesh.m_vertices = vertices;
+	mesh.m_indices = indices;
+
+	return mesh;
+}

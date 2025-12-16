@@ -12,8 +12,8 @@ float magnitude2(float2 a)
 [numthreads(32, 32, 1)]
 void main( uint3 DTid : SV_DispatchThreadID )
 {
-    //uint w, h;
-    //gOutput.GetDimensions(w, h);
+    uint w, h;
+    gOutput.GetDimensions(w, h);
     //float jx = 1.5f * (((float) w / 2 - DTid.x) / ((float) w / 2));
     //float jy = 1.5f * (((float) h / 2 - DTid.y) / ((float) h / 2));
 
@@ -31,5 +31,10 @@ void main( uint3 DTid : SV_DispatchThreadID )
     //        return;
     //    }
     //}
-    gOutput[DTid.xy] = float4(1, 1, 1, 1);
+    
+    if(DTid.x > 200)
+        gOutput[DTid.xy] = float4(1, 1, 1, 1);
+    else
+        gOutput[DTid.xy] = float4(1, 0, 0, 1);
+    
 }

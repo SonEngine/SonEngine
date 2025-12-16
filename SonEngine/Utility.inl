@@ -230,6 +230,7 @@ namespace GraphicsUtils {
 	inline std::shared_ptr<Actor> Utility::CreatePCActor(
 		const std::string& actorname,
 		const std::vector<Mesh<V, I>>& meshes,
+		const std::string& texture,
 		World* world,
 		bool simulate,
 		PhysXMode physXMode
@@ -241,7 +242,7 @@ namespace GraphicsUtils {
 		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
 		{
 			m->InitializePC(m_device, m_commandList, meshes);
-	
+			m->SetAlbedoTexture(texture);
 			std::shared_ptr<PointCloudComponent> cmp = std::make_shared<PointCloudComponent>(actor.get());
 			cmp->SetMesh(mesh);
 			cmp->SetPhysX(simulate);

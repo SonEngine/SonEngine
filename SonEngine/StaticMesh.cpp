@@ -40,18 +40,34 @@ void StaticMesh::Render(ID3D12GraphicsCommandList* commandList)
 } 
 
 //Render Point Cloud
-void StaticMesh::RenderPoints(ID3D12GraphicsCommandList* commandList)
+void StaticMesh::RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx)
 {
 	for (size_t i = 0; i < meshCount; i++)
 	{
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
-		commandList->SetGraphicsRootConstantBufferView(0, m_localCB->GetGPUVirtualAddress());
+		commandList->SetGraphicsRootConstantBufferView(cbIdx, m_localCB->GetGPUVirtualAddress());
 
 		commandList->DrawInstanced(m_vertexCounts[i], 1, 0, 0);
 	}
 }
+
+//Render Point Cloud
+void StaticMesh::RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx, const TextureLoader* textureLoader)
+{
+	for (size_t i = 0; i < meshCount; i++)
+	{
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
+		commandList->SetGraphicsRootConstantBufferView(cbIdx, m_localCB->GetGPUVirtualAddress());
+		commandList->SetGraphicsRootDescriptorTable(0, textureLoader->GetGPUHandle(albedoTexture));
+
+		commandList->DrawInstanced(m_vertexCounts[i], 1, 0, 0);
+	}
+}
+
 void StaticMesh::SetLocation(const float& x, const float& y, const float& z)
 {
 	localConstant.model.m[3][0] = x;

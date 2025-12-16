@@ -24,7 +24,8 @@
 enum RenderType {
 	RT_TEXT,
 	RT_Default,
-	RT_PointCloud
+	RT_PointCloud,
+	RT_Dot /*렌더타겟에 점하나 넣고 texture 그리기 용도*/
 };
 
 class RenderEngine {
@@ -33,7 +34,7 @@ public:
 	virtual ~RenderEngine();
 
 public:
-	bool Initialize(int width, int height, IDXGIFactory7* factory, HWND wnd);
+	bool Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd);
 	bool InitGUI(HWND wnd);
 
 	void RequestResize(int newWidth, int newHeight);
@@ -54,6 +55,7 @@ protected:
 
 	void RenderWithText();
 	void RenderWithCompute();
+	void DrawingWithMouse();
 	void BuildFrameResources();
 
 	void PostActorChanges();
@@ -99,6 +101,8 @@ private:
 	D3D12_RECT m_scissorRect;
 	int m_width;
 	int m_height;
+	int m_guiWidth;
+	HWND mainWnd;
 
 private:
 	int m_currentBackBufferIndex = 0;
@@ -128,6 +132,8 @@ private:
 	DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	std::string m_computeTextureName = "ComTex";
 	UINT computeTextureDIM = 1024 * 4;
+	UINT computeTextureDIMX;
+	UINT computeTextureDIMY;
 
 // TextureLoader
 private:

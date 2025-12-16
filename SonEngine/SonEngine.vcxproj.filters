@@ -279,6 +279,9 @@
     <FxCompile Include="PointCloudVS.hlsl" />
     <FxCompile Include="PointCloudPS.hlsl" />
     <FxCompile Include="PointCloudGS.hlsl" />
+    <FxCompile Include="RenderTextureVS.hlsl" />
+    <FxCompile Include="RenderTextureGS.hlsl" />
+    <FxCompile Include="RenderTexturePS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />
@@ -294,6 +297,7 @@
       <Filter>헤더 파일</Filter>
     </None>
     <None Include="PointCloud.hlsli" />
+    <None Include="RT.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\earth_Albedo.dds">
