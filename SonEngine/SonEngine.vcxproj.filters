@@ -111,6 +111,12 @@
     <ClCompile Include="PointCloudComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="DotComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MouseInputState.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseApp.h">
@@ -266,6 +272,15 @@
     <ClInclude Include="PointCloudComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="DotComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PaintBoardHLSLCompat.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MouseInputState.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultVS.hlsl" />
@@ -275,13 +290,14 @@
     <FxCompile Include="PhongPS.hlsl" />
     <FxCompile Include="TextVS.hlsl" />
     <FxCompile Include="TextPS.hlsl" />
-    <FxCompile Include="DefaultCS.hlsl" />
+    <FxCompile Include="PaintBoardCS.hlsl" />
     <FxCompile Include="PointCloudVS.hlsl" />
     <FxCompile Include="PointCloudPS.hlsl" />
     <FxCompile Include="PointCloudGS.hlsl" />
     <FxCompile Include="RenderTextureVS.hlsl" />
     <FxCompile Include="RenderTextureGS.hlsl" />
     <FxCompile Include="RenderTexturePS.hlsl" />
+    <FxCompile Include="TestCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />

@@ -31,13 +31,14 @@ public:
 
 	void Render(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
 	void Render(ID3D12GraphicsCommandList* commandList);
-	
-	void SetAlbedoTexture(const std::string& filename) { albedoTexture = filename; }
-	
-	void RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx /* constant Buffer Index*/);
 
+	void RenderDot(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
+
+	//Render Point Cloud
+	void RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx /* constant Buffer Index*/);
 	void RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx, const TextureLoader* textureLoader);
 
+	void SetAlbedoTexture(const std::string& filename) { albedoTexture = filename; }
 	void SetLocation(const float& x, const float& y, const float& z);
 	void Translate(const float& delX, const float& delY, const float& delZ);
 

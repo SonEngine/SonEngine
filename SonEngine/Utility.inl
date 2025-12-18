@@ -2,6 +2,7 @@
 
 #include "StaticMeshComponent.h"
 #include "PointCloudComponent.h"
+#include "DotComponent.h"
 #include "StaticMesh.h"
 #include "d3d12.h"
 #include "Utility.h"
@@ -83,12 +84,19 @@ namespace GraphicsUtils {
 		texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		texDesc.Flags = Flag;
 
+		D3D12_CLEAR_VALUE clearValue;
+		clearValue.Format = format;
+
+		clearValue.Color[0] = 1.f;
+		clearValue.Color[1] = 1.f;
+		clearValue.Color[2] = 1.f;
+		clearValue.Color[3] = 1.f;
 		ThrowIfFailed(m_device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&texDesc,
 			state,
-			nullptr,
+			&clearValue,
 			IID_PPV_ARGS(gpuBuffer.ReleaseAndGetAddressOf())
 		));
 
@@ -199,8 +207,8 @@ namespace GraphicsUtils {
 	}
 	template<typename V, typename I, typename MeshType>
 	inline std::shared_ptr<Actor> Utility::CreateActor(
-		const std::string& actorname, 
-		const std::vector<Mesh<V, I>>& meshes, 
+		const std::string& actorname,
+		const std::vector<Mesh<V, I>>& meshes,
 		const std::string& texture,
 		const DirectX::SimpleMath::Vector3& location,
 		World* world,
@@ -216,7 +224,7 @@ namespace GraphicsUtils {
 			mesh->Initialize(m_device, m_commandList, meshes);
 			mesh->SetAlbedoTexture(texture);
 			//mesh->SetLocation(location.x, location.y, location.z);
-			
+
 			std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
 			cmp->SetMesh(mesh);
 			cmp->SetPhysX(simulate);
@@ -226,6 +234,39 @@ namespace GraphicsUtils {
 		actor->SetActorLocation(location);
 		return actor;
 	}
+	template<typename V, typename I, typename MeshType, typename RootComponentType>
+	inline std::shared_ptr<Actor> Utility::CreateActor2(
+		const std::string& actorname,
+		const std::vector<Mesh<V, I>>& meshes,
+		const std::string& texture,
+		const DirectX::SimpleMath::Vector3& location,
+		World* world,
+		bool simulate,
+		PhysXMode physXMode
+	)
+	{
+		std::shared_ptr<Actor> actor = std::make_shared<Actor>(actorname, world);
+
+		std::shared_ptr<MeshType> mesh = std::make_shared<MeshType>();
+		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
+		{
+			if constexpr (std::is_same_v<RootComponentType, StaticMeshComponent>)
+				m->Initialize(m_device, m_commandList, meshes);
+			else
+				m->InitializePC(m_device, m_commandList, meshes);
+
+			m->SetAlbedoTexture(texture);
+
+			std::shared_ptr<RootComponentType> cmp = std::make_shared<RootComponentType>(actor.get());
+			cmp->SetMesh(mesh);
+			cmp->SetPhysX(simulate);
+			cmp->SetPhysXMode(physXMode);
+			actor->SetRootComponent(cmp);
+		}
+		actor->SetActorLocation(location);
+		return actor;
+	}
+
 	template<typename V, typename I, typename MeshType>
 	inline std::shared_ptr<Actor> Utility::CreatePCActor(
 		const std::string& actorname,
@@ -243,24 +284,25 @@ namespace GraphicsUtils {
 		{
 			m->InitializePC(m_device, m_commandList, meshes);
 			m->SetAlbedoTexture(texture);
+
 			std::shared_ptr<PointCloudComponent> cmp = std::make_shared<PointCloudComponent>(actor.get());
 			cmp->SetMesh(mesh);
 			cmp->SetPhysX(simulate);
 			cmp->SetPhysXMode(physXMode);
 			actor->SetRootComponent(cmp);
 		}
-		
+
 		return actor;
 	}
 
 	template<typename A, typename V, typename I, typename MeshType>
 	inline std::shared_ptr<A> Utility::CreateActor(
-		const std::string& actorname, 
-		const std::vector<Mesh<V, I>>& meshes, 
-		const std::string& texture, 
-		const DirectX::SimpleMath::Vector3& location, 
-		World* world, 
-		bool simulate, 
+		const std::string& actorname,
+		const std::vector<Mesh<V, I>>& meshes,
+		const std::string& texture,
+		const DirectX::SimpleMath::Vector3& location,
+		World* world,
+		bool simulate,
 		PhysXMode physXMode
 	)
 	{
@@ -283,5 +325,5 @@ namespace GraphicsUtils {
 		return actor;
 	}
 
-	
+
 }

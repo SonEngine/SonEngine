@@ -10,6 +10,7 @@
 #include "Timer.h"
 #include "GraphicsCommon.h"
 
+#include "MouseInputState.h"
 
 namespace Core {
     class BaseApp {
@@ -53,6 +54,9 @@ namespace Core {
     protected:
         bool addDirty = false;
         bool printDirty = false;
+
+    protected:
+        MouseInputStateHelper mouseInputStateHelper;
 
     };
 }

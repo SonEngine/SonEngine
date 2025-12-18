@@ -4,7 +4,7 @@
 
 #include "CompiledShaders/DefaultPS.h"
 #include "CompiledShaders/DefaultVS.h"
-#include "CompiledShaders/DefaultCS.h"
+#include "CompiledShaders/PaintBoardCS.h"
 
 #include "CompiledShaders/VideoPS.h"
 
@@ -170,8 +170,8 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     m_PSOs["renderTexturePSO"] = renderTexturePSO;
     psoNames.push_back("renderTexturePSO");
 
-    defaultCPSO.SetComputeShader(g_pDefaultCS, sizeof(g_pDefaultCS));
-    defaultCPSO.SetRootSignature(g_U1_RS);
+    defaultCPSO.SetComputeShader(g_pPaintBoardCS, sizeof(g_pPaintBoardCS));
+    defaultCPSO.SetRootSignature(g_U1_C1_RS);
     defaultCPSO.Finalize(device);
     m_CPSOs["defaultCPSO"] = defaultCPSO;
     cpsoNames.push_back("defaultCPSO");

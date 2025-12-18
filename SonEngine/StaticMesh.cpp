@@ -37,7 +37,18 @@ void StaticMesh::Render(ID3D12GraphicsCommandList* commandList)
 
 		commandList->DrawIndexedInstanced(m_indexCounts[i], 1, 0, 0, 0);
 	}
-} 
+}
+
+void StaticMesh::RenderDot(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader)
+{
+	for (size_t i = 0; i < meshCount; i++)
+	{
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+		commandList->SetGraphicsRootDescriptorTable(0, textureLoader->GetGPUHandle(albedoTexture));
+		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
+		commandList->DrawInstanced(m_vertexCounts[i], 1, 0, 0);
+	}
+}
 
 //Render Point Cloud
 void StaticMesh::RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx)

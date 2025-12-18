@@ -20,6 +20,7 @@
 //#include "ViewProjInfo.h"
 #include "ImageInfo.h"
 #include "Renderer.h"
+#include "MouseInputState.h"
 
 enum RenderType {
 	RT_TEXT,
@@ -34,7 +35,7 @@ public:
 	virtual ~RenderEngine();
 
 public:
-	bool Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd);
+	bool Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd, MouseInputStateHelper* mouseInputState);
 	bool InitGUI(HWND wnd);
 
 	void RequestResize(int newWidth, int newHeight);
@@ -64,12 +65,13 @@ protected:
 	//void BuildRenderProxy(const std::vector<std::shared_ptr<Actor>>& actors, Actor* player);
 	void AddProxy(SceneComponent* component);
 	void AddTextProxy(SceneComponent* component);
+	void UpdateMousePosition();
 	void Render(const std::string& psoName, int idx, RenderType renderType, bool isFinal, bool clear);
 	void RenderGUI(bool isFinal);
 	void Compute(const std::string& cpsoName, int idx, bool isFinal, D3D12_RESOURCE_STATES prevState);
 
 	void UpdateTexts();
-	
+
 
 public:
 	void Tick(float deltaTime);
@@ -87,7 +89,7 @@ private:
 	void SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES state);
 	void SaveTextureCPU();
 
-	
+
 private:
 	ID3D12Device5* m_device;
 
@@ -125,7 +127,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
 
-// Compute Shader 용
+	// Compute Shader 용
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_computeBuffer;
 	//DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -135,7 +137,7 @@ private:
 	UINT computeTextureDIMX;
 	UINT computeTextureDIMY;
 
-// TextureLoader
+	// TextureLoader
 private:
 	std::shared_ptr<TextureLoader> m_textureLoader;
 	std::shared_ptr<TextureLoader> m_fallbackLoader;
@@ -149,8 +151,7 @@ private:
 	std::string textPSO = "textPSO";
 	std::string computePSO = "defaultCPSO";
 
-
-//FrameResource
+	//FrameResource
 private:
 	static const int m_frameResourceCount = 3;
 	std::vector<std::shared_ptr<FrameResource>> m_frameResources;
@@ -166,7 +167,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
 	Microsoft::WRL::ComPtr<ID3D12Fence> m_createBufferfence;
 
-// text용
+	// text용
 private:
 	std::shared_ptr<DirectX::SpriteBatch> spriteBatch;
 	std::shared_ptr<DirectX::SpriteFont> font;
@@ -199,4 +200,11 @@ private:
 
 private:
 	std::vector<class PrimitiveComponent*> m_primitives;
+	bool test = false;
+
+private:
+	MouseInputStateHelper* pMouseinputStateHelper = nullptr;
+	POINT currMousPt = { 0,0 };
+	POINT prevMousePt = { 0,0 };
+
 };

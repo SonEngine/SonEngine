@@ -1,13 +1,4 @@
-﻿#define HLSL
-#include "PhongHLSLCompat.h"
-
-struct LocalConstant
-{
-    row_major matrix model;
-    row_major matrix modelInvTranspose;
-    
-};
-
+﻿
 struct VSInput
 {
     float3 pos : POSITION;

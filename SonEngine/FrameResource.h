@@ -9,6 +9,8 @@
 #include "Constants.h"
 #include "ViewProjInfo.h"
 #include "PhongHLSLCompat.h"
+#include "PaintBoardHLSLCompat.h"
+#include "MouseInputState.h"
 
 struct TextResource {
 	UINT64 textureWidth;
@@ -22,14 +24,18 @@ public:
 	FrameResource() {};
 
 public:
-	void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount);
+	void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd);
 	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo>& lightInfos);
+	void UpdatePBGlobalConstantBuffer(const int& guiWidth, const MouseInputState& mouseInputState);
+	
+	
 	void ResetAllocator(int idx);
 
 	void CreateCommand(ID3D12Device5* device, Microsoft::WRL::ComPtr<ID3D12CommandAllocator>& alloc, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 
 public:
 	D3D12_GPU_VIRTUAL_ADDRESS GetGCBGPUAddress() const { return m_phongGCBuffer->GetGPUVirtualAddress(); }
+	D3D12_GPU_VIRTUAL_ADDRESS GetPBGCBGPUAddress() const { return m_pbGCBuffer->GetGPUVirtualAddress(); }
 
 public:
 	ID3D12CommandAllocator* GetAllocator(int idx) const { return m_commandAllocator[idx].Get(); }
@@ -51,6 +57,16 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_phongGCBuffer;
 	void* pPhongGCB = nullptr;
 
+	PBGlobalConstant pbGC;
+	// paint board global constant buffer
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_pbGCBuffer;
+	void* pPBGCB = nullptr;
+
+
+private:
+	HWND hwnd;
+
+
 private:
 	const static int commandCount = 3;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator[commandCount];
@@ -65,6 +81,7 @@ public:
 	bool proxyDirty = true;
 	std::vector<Proxy> proxyBuffer;
 	std::vector<Proxy> pcProxyBuffer;
+	std::vector<Proxy> dotProxyBuffer;
 	std::vector<TextProxy> textProxyBuffer;
 	std::vector<TextResource> textResources;
 
@@ -75,4 +92,5 @@ private:
 
 	UINT srvIncrementSize = 0;
 	UINT rtvIncrementSize = 0;
+
 };

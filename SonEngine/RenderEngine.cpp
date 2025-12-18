@@ -35,8 +35,9 @@ RenderEngine::~RenderEngine()
 	ImGui::DestroyContext();
 }
 
-bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd)
+bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd, MouseInputStateHelper* mouseInputState)
 {	
+	pMouseinputStateHelper = mouseInputState;
 	m_guiWidth = guiWidth;
 	m_width = width;
 	m_height = height;
@@ -368,12 +369,10 @@ void RenderEngine::CreateDepthBuffer()
 
 void RenderEngine::UpdateGUI()
 {
-	ImGui::SetWindowSize(ImVec2((float)m_guiWidth, (float)m_height));
-	ImGui::SetWindowPos(ImVec2(0.f, 0.f));
-	UINT dpi = GetDpiForWindow(mainWnd); // 예: 96, 120, 144...
-	float s = (float)dpi / 96.0f;
-	std::string str = "dpi : " + std::to_string(s);
-	ImGui::Text(str.c_str());
+	ImGui::SetWindowSize(ImVec2((float)m_guiWidth, (float)m_height), ImGuiCond_FirstUseEver);
+	ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
+
+	ImGui::Checkbox("test", &test);
 }
 
 void RenderEngine::BuildFrameResources()
@@ -383,7 +382,7 @@ void RenderEngine::BuildFrameResources()
 	{
 		m_frameResources[i] = std::make_shared<FrameResource>();
 		// TODO textActor 개수 추가
-		m_frameResources[i]->Initialize(m_device, 512, 512, 0);
+		m_frameResources[i]->Initialize(m_device, 512, 512, 0, mainWnd);
 	}
 }
 void RenderEngine::PostActorChanges()
@@ -418,7 +417,7 @@ void RenderEngine::BuildRenderProxy()
 		}
 	}
 }
-
+// 새로운 compoenet 추가 시 Utility.inl에 h파일 추가
 void RenderEngine::AddProxy(SceneComponent* component)
 {
 	if (StaticMeshComponent* staticMeshComp = dynamic_cast<StaticMeshComponent*>(component))
@@ -434,6 +433,13 @@ void RenderEngine::AddProxy(SceneComponent* component)
 		Proxy proxy;
 		proxy.mesh = pointCloudComp->GetMesh();
 		currentFrameResource->pcProxyBuffer.push_back(proxy);
+	}
+	else if (DotComponent* pointCloudComp = dynamic_cast<DotComponent*>(component))
+	{
+		//std::cout << "Mesh exist\n";
+		Proxy proxy;
+		proxy.mesh = pointCloudComp->GetMesh();
+		currentFrameResource->dotProxyBuffer.push_back(proxy);
 	}
 	/*std::vector<std::shared_ptr<SceneComponent>> child;
 	component->GetChildrenComponents(child);
@@ -461,6 +467,14 @@ void RenderEngine::AddTextProxy(SceneComponent* component)
 	}
 }
 
+void  RenderEngine::UpdateMousePosition()
+{
+	GetCursorPos(&currMousPt);
+	ScreenToClient(mainWnd, &currMousPt);
+	pMouseinputStateHelper->UpdateMousePos(currMousPt.x, currMousPt.y);
+	pMouseinputStateHelper->UpdatePrevMousePos(prevMousePt.x, prevMousePt.y);
+}
+
 void RenderEngine::Tick(float deltaTime)
 {
 	currentFrameResource = m_frameResources[m_currentResourceIndex].get();
@@ -481,6 +495,16 @@ void RenderEngine::Tick(float deltaTime)
 	if (world)
 	{
 		currentFrameResource->UpdateGlobalConstantBuffer(world->GetViewProjInfo(), world->GetLightInfos());
+		
+		{
+			GetCursorPos(&currMousPt);
+			ScreenToClient(mainWnd, &currMousPt);
+			pMouseinputStateHelper->UpdateMousePos(currMousPt.x, currMousPt.y);
+			pMouseinputStateHelper->UpdatePrevMousePos(prevMousePt.x, prevMousePt.y);
+			currentFrameResource->UpdatePBGlobalConstantBuffer(m_guiWidth, pMouseinputStateHelper->GetInputState());
+			prevMousePt = currMousPt;
+		}
+
 		BuildRenderProxy();
 	}
 	//std::cout << "Main Thread : " << m_currentResourceIndex << std::endl;
@@ -603,16 +627,15 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 	}
 	else if (renderType == RT_Dot)
 	{
-		commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetGCBGPUAddress());
 		ID3D12DescriptorHeap* heaps[] = {
 			m_textureLoader->GetHeap()
 		};
 
 		commandList->SetDescriptorHeaps(1, heaps);
 		// Build Proxy 함수에서 등록된 메시가 PointCloud 일 경우 pcProxy에 등록됨
-		for (auto& proxy : r_currentFrameResource->pcProxyBuffer)
+		for (auto& proxy : r_currentFrameResource->dotProxyBuffer)
 		{
-			proxy.mesh->RenderPoints(commandList, 1, m_textureLoader.get());
+			proxy.mesh->RenderDot(commandList, m_textureLoader.get());
 		}
 	}
 	commandList->ResourceBarrier(
@@ -755,7 +778,7 @@ void RenderEngine::Compute(const std::string& cpsoName, int idx, bool isFinal, D
 	commandList->SetDescriptorHeaps(1, heaps);
 
 	commandList->SetComputeRootDescriptorTable(0, m_UAVHeap->GetGPUDescriptorHandleForHeapStart());
-
+	commandList->SetComputeRootConstantBufferView(1, r_currentFrameResource->GetPBGCBGPUAddress());
 	commandList->Dispatch((UINT)ceil((computeTextureDIMX) / 32.f), (UINT)ceil(computeTextureDIMY / 32.f), 1);
 
 	commandList->ResourceBarrier(
@@ -908,7 +931,10 @@ void RenderEngine::RenderWithCompute()
 void RenderEngine::DrawingWithMouse()
 {
 	Compute(computePSO, 0, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	Render("renderTexturePSO", 1, RT_Dot, false/*isFinal*/, true/*clear RT*/);
+	if(test)
+		Render("pointCloudPSO", 1, RT_PointCloud, false/*isFinal*/, true/*clear RT*/);
+	else
+		Render("renderTexturePSO", 1, RT_Dot, false/*isFinal*/, true/*clear RT*/);
 	RenderGUI(true);
 }
 

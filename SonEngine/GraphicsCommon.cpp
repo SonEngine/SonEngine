@@ -17,7 +17,7 @@ namespace Graphics
 	RootSignature g_commonRS;
 	RootSignature g_pointCloudRS;
 	RootSignature g_videoRS;
-	RootSignature g_U1_RS;
+	RootSignature g_U1_C1_RS;
 	RootSignature g_R1_RS;
 
 	std::shared_ptr<GraphicsUtils::Utility> utility;
@@ -51,10 +51,11 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 
 	depthStateDefault = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	
-	g_U1_RS.Reset(1, 1);
-	g_U1_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
-	g_U1_RS.InitStaticSampler(0, wrapLinearSampler);
-	g_U1_RS.Finalize(device, L"U1_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	g_U1_C1_RS.Reset(2, 1);
+	g_U1_C1_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1);
+	g_U1_C1_RS[1].InitCBV(0);
+	g_U1_C1_RS.InitStaticSampler(0, wrapLinearSampler);
+	g_U1_C1_RS.Finalize(device, L"U1_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
     g_commonRS.Reset(3, 1);
 	g_commonRS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
@@ -75,10 +76,8 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	g_pointCloudRS[1].InitCBV(1);
 	g_pointCloudRS.Finalize(device, L"PointCloudRS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-	g_R1_RS.Reset(3, 1);
+	g_R1_RS.Reset(1, 1);
 	g_R1_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
-	g_R1_RS[1].InitCBV();
-	g_R1_RS[2].InitCBV(1);
 	g_R1_RS.InitStaticSampler(0, wrapLinearSampler);
 	g_R1_RS.Finalize(device, L"R1_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 

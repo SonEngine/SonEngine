@@ -202,7 +202,18 @@ LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	}
 	break;
-	case WM_MBUTTONUP: 	
+	case WM_LBUTTONDOWN:
+	{
+		mouseInputStateHelper.Update(true);
+	}
+	break;
+	case WM_LBUTTONUP:
+	{
+		mouseInputStateHelper.Update(false);
+	}
+	break;
+	case WM_MBUTTONUP:
+
 	case WM_MOUSEWHEEL:
 	case WM_XBUTTONDOWN:
 	case WM_XBUTTONUP:

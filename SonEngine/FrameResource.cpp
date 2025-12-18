@@ -3,8 +3,9 @@
 #include "DirectXColors.h"
 #include <iostream>
 
-void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount)
+void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd)
 {
+	hwnd = mainHwnd;
 	if (Graphics::utility == nullptr)
 	{
 		std::cout << "Failed FrameResource::Initialize -> Graphics::utility == nullptr\n";
@@ -14,10 +15,17 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 	rtvIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	Graphics::utility->CreateConstantBuffer(
-		sizeof(GlobalConstant),
+		sizeof(PhongGlobalConstant),
 		m_phongGCBuffer,
 		reinterpret_cast<void**>(&pPhongGCB)
 	);
+
+	Graphics::utility->CreateConstantBuffer(
+		sizeof(PBGlobalConstant),
+		m_pbGCBuffer,
+		reinterpret_cast<void**>(&pPBGCB)
+	);
+
 	for (size_t i = 0; i < commandCount; i++)
 	{
 		CreateCommand(device, m_commandAllocator[i], m_commandList[i]);
@@ -25,7 +33,6 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 
 	CreateCommand(device, m_textCommandAllocator, m_textCommandList);
 	CreateCommand(device, m_guiCommandAllocator, m_guiCommandList);
-		
 
 	if (textCount == 0)
 	{
@@ -61,7 +68,7 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 		clearValue.Color[1] = 1.0f;
 		clearValue.Color[2] = 1.0f;
 		clearValue.Color[3] = 1.0f;
-
+		
 		ThrowIfFailed(device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -72,7 +79,6 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 		));
 
 		// -------------- Create text textures----------------------------------
-
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Format = resource.text->GetDesc().Format;
@@ -89,8 +95,6 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 		srvHandle.Offset(1, srvIncrementSize);
 		rtvHandle.Offset(1, rtvIncrementSize);
 	}
-		
-
 }
 
 void FrameResource::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo> & lightInfos)
@@ -108,6 +112,19 @@ void FrameResource::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo,
 	}
 	
 	memcpy(pPhongGCB, &phongGC, sizeof(PhongGlobalConstant));
+}
+
+void FrameResource::UpdatePBGlobalConstantBuffer(const int& guiWidth, const MouseInputState & mouseInputState)
+{
+	pbGC.mouseX = float(mouseInputState.mouseX - guiWidth);
+	pbGC.mouseY = float(mouseInputState.mouseY);
+	pbGC.prevMouseX = float(mouseInputState.prevMouseX - guiWidth);
+	pbGC.prevMouseY = float(mouseInputState.prevMouseY);
+	
+	pbGC.lMouseClickDown = mouseInputState.lmbDown ? 1.0f : 0.0f;
+	
+	// 여기서 복사
+	memcpy(pPBGCB, &pbGC, sizeof(PBGlobalConstant));
 }
 
 void FrameResource::ResetAllocator(int idx)

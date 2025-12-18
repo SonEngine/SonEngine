@@ -133,6 +133,16 @@ namespace GraphicsUtils {
 			bool simulate = false,
 			PhysXMode mode = PhysXMode::PM_Default);
 
+		template<typename V, typename I, typename MeshType, typename RootComponentType>
+		std::shared_ptr<Actor> CreateActor2(
+			const std::string& actorname,
+			const std::vector<Mesh<V, I>>& meshes, 
+			const std::string& texture, 
+			const DirectX::SimpleMath::Vector3& location, 
+			World* world, 
+			bool simulatee = false,
+			PhysXMode physXMode = PhysXMode::PM_Default);
+
 		// Create Point Cloud Actor
 		template<typename V, typename I, typename MeshType = class StaticMesh>
 		std::shared_ptr<Actor> CreatePCActor(

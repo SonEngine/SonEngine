@@ -80,17 +80,18 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		this
 	);
 
-	//std::shared_ptr<Actor> test = utility->CreatePCActor(
-	//	"pointCloud",
-	//	pcModelLoader.GetMeshes("map"),
-	//	//std::vector{GeometryGenerator::MakePointCube(1,1,1)},
-	//	this
-	//);
+	std::shared_ptr<Actor> pointCloud = utility->CreatePCActor(
+		"pointCloud",
+		pcModelLoader.GetMeshes("map"),
+		"",
+		this
+	);
 
-	std::shared_ptr<Actor> dot = utility->CreatePCActor(
+	std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t,StaticMesh,DotComponent>(
 		"dot",
 		std::vector{GeometryGenerator::MakePoint()},
 		"ComTex",
+		{ 0.f,0.f,0.f },
 		this
 	);
 
@@ -126,7 +127,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	SpawnActor(plane);
 	SpawnActor(m_player);
 	SpawnActor(l);
-	//SpawnActor(test);
+	SpawnActor(pointCloud);
 	SpawnActor(dot);
 
 	//SpawnActor(torus);

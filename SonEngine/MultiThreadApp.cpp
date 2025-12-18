@@ -8,7 +8,6 @@
 
 #include <pix3.h>
 
-
 using Microsoft::WRL::ComPtr;
 using namespace GraphicsUtils;
 using namespace Graphics;
@@ -110,7 +109,7 @@ bool Core::MultiThreadApp::InitDirectX()
 	if (world) { world->InitializePhysics(m_physXEngine.get()); }
 	
 	m_renderEngine = std::make_shared<RenderEngine>(m_device.Get());
-	m_renderEngine->Initialize(m_width, m_height, m_guiWidth, m_dxgiFactory.Get(), m_mainWnd);
+	m_renderEngine->Initialize(m_width, m_height, m_guiWidth, m_dxgiFactory.Get(), m_mainWnd, &mouseInputStateHelper);
 
 	return true;
 }
@@ -127,8 +126,6 @@ bool Core::MultiThreadApp::InitGUI()
 // main thread
 void Core::MultiThreadApp::Update(float deltaTime)
 {
-	//PIXBeginEvent(0, L"Game Update");
-
 	if (world)
 	{
 		world->Tick(deltaTime);
@@ -136,7 +133,6 @@ void Core::MultiThreadApp::Update(float deltaTime)
 	}
 	m_physXEngine->Tick(deltaTime);
 	m_renderEngine->Tick(deltaTime);
-
 }
 
 void Core::MultiThreadApp::OnResize()

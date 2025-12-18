@@ -26,4 +26,6 @@ struct PhongGlobalConstant
 
     LightInfo lights[NUM_LIGHTS];
 };
+
+
 #endif

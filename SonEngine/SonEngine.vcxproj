@@ -152,6 +152,7 @@
     <ClCompile Include="AMovingPlatform.cpp" />
     <ClCompile Include="BaseApp.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="DotComponent.cpp" />
     <ClCompile Include="FrameResource.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="GraphicsCommon.cpp" />
@@ -159,6 +160,7 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
+    <ClCompile Include="MouseInputState.cpp" />
     <ClCompile Include="MultiThreadApp.cpp" />
     <ClCompile Include="PhysXEngine.cpp" />
     <ClCompile Include="PipelineState.cpp" />
@@ -190,6 +192,7 @@
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="dds.h" />
     <ClInclude Include="Delegate.h" />
+    <ClInclude Include="DotComponent.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="GpuResource.h" />
     <ClInclude Include="GraphicsCommon.h" />
@@ -199,6 +202,7 @@
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="ModelLoader.h" />
+    <ClInclude Include="MouseInputState.h" />
     <ClInclude Include="MultiThreadApp.h" />
     <ClInclude Include="PhongHLSLCompat.h" />
     <ClInclude Include="PhysXEngine.h" />
@@ -213,6 +217,7 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="PipelineState.h" />
     <ClInclude Include="RootSignature.h" />
+    <ClInclude Include="PaintBoardHLSLCompat.h" />
     <ClInclude Include="SceneComponent.h" />
     <ClInclude Include="ShapeComponent.h" />
     <ClInclude Include="SimpleApp.h" />
@@ -234,7 +239,7 @@
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="DefaultCS.hlsl">
+    <FxCompile Include="PaintBoardCS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
@@ -311,6 +316,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="TestCS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="TextPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
