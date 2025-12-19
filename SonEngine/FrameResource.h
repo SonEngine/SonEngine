@@ -25,6 +25,8 @@ public:
 
 public:
 	void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd);
+	void UpdateGlobalConstantBuffer(const PhongGlobalConstant& pgc);
+	void UpdatePBGlobalConstantBuffer(const PBGlobalConstant& pbgc);
 	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo>& lightInfos);
 	void UpdatePBGlobalConstantBuffer(const int& guiWidth, const MouseInputState& mouseInputState);
 	
@@ -65,7 +67,6 @@ private:
 
 private:
 	HWND hwnd;
-
 
 private:
 	const static int commandCount = 3;

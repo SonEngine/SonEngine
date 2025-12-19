@@ -151,6 +151,7 @@
     <ClCompile Include="ActorComponent.cpp" />
     <ClCompile Include="AMovingPlatform.cpp" />
     <ClCompile Include="BaseApp.cpp" />
+    <ClCompile Include="BoundedQueue.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DotComponent.cpp" />
     <ClCompile Include="FrameResource.cpp" />
@@ -187,12 +188,14 @@
     <ClInclude Include="AMovingPlatform.h" />
     <ClInclude Include="Asset.h" />
     <ClInclude Include="BaseApp.h" />
+    <ClInclude Include="BoundedQueue.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="dds.h" />
     <ClInclude Include="Delegate.h" />
     <ClInclude Include="DotComponent.h" />
+    <ClInclude Include="FramePacket.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="GpuResource.h" />
     <ClInclude Include="GraphicsCommon.h" />

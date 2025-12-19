@@ -54,6 +54,7 @@ int Core::SimpleApp::Run()
 			float deltaTime = (float)m_timer.GetDeltaTime();
 
 			Update(deltaTime);
+			Compute(computePSO, 0, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 			Render(deltaTime);
 			RenderGUI(deltaTime);
 			Finalize(deltaTime);
@@ -122,6 +123,17 @@ bool Core::SimpleApp::InitDirectX()
 	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_textRtvHeap);
 	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_fontSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_textSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	
+	{
+		computeTextureDIMX = m_width;
+		computeTextureDIMY = m_height;
+		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, DXGI_FORMAT_R8G8B8A8_UNORM, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+		
+		utility->CreateResourceView(m_computeBuffer, DXGI_FORMAT_R8G8B8A8_UNORM, false, m_UAVHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
+	}
 
 	CreateSwapChain();
 	CreateDepthBuffer();
@@ -147,6 +159,7 @@ bool Core::SimpleApp::InitDirectX()
 	BuildGeometry();
 	BuildConstantBuffers();
 	CreateTextures();
+	m_textureLoader->AddTexture(m_computeBuffer, m_computeTextureName);
 
 	RenderText("1");
 
@@ -227,34 +240,19 @@ void Core::SimpleApp::OnResize()
 
 void Core::SimpleApp::Update(float deltaTime)
 {
-	//if (isFocused && isFPSMode)
-	//{
-	//	// set cursor pos center
-	//	GetWindowRect(m_mainWnd, &windowRect);
-	//	int x = (windowRect.right + windowRect.left) / 2;
-	//	int y = (windowRect.bottom + windowRect.top) / 2;
-	//	SetCursorPos(x, y);
+	GetCursorPos(&currMousPt);
+	ScreenToClient(m_mainWnd, &currMousPt);
 
-	//	// update camera
-	//	m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY);
-	//	m_camera->UpdateCameraLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
+	pbGC.lMouseClickDown = mouseInputStateHelper.GetInputState().lmbDown;
+	pbGC.mouseX = float(currMousPt.x);
+	pbGC.mouseY = float(currMousPt.y);
+	pbGC.prevMouseX = float(prevMousePt.x);
+	pbGC.prevMouseY = float(prevMousePt.y);
 
-	//	// update consatant
-	//	globalConstant.view = m_camera->GetViewMatrix();
-
-	//	phongGC.view = globalConstant.view;
-	//	phongGC.viewLoc = ToVector4(m_camera->GetActorLocation(), 0.f);
-	//	phongGC.viewDir = ToVector4(m_camera->GetActorFrontDir(), 0.f);
-	//	phongGC.DirectionLightLoc = ToVector4(m_directionLight->GetActorLocation(), 0.f);
-	//	phongGC.DirectionLightDir = ToVector4(m_directionLight->GetActorFrontDir(), 0.f);
-
-	//	memcpy(pGlobalConstant, &globalConstant, sizeof(GlobalConstant));
-	//	memcpy(pPhongCB, &phongGC, sizeof(PhongGlobalConstant));
-
-	//	// reset mouse
-	//	mouseDeltaX = 0;
-	//	mouseDeltaY = 0;
-	//}
+	// 여기서 복사
+	memcpy(pPBGCB, &pbGC, sizeof(PBGlobalConstant));
+	
+	prevMousePt = currMousPt;
 }
 
 void Core::SimpleApp::UpdateGUI(float deltaTime)
@@ -267,35 +265,23 @@ void Core::SimpleApp::UpdateGUI(float deltaTime)
 
 void Core::SimpleApp::Render(float deltaTime)
 {
-	int time = (int)m_timer.GetElapsedTime();
-	DrawString(std::to_string(time));
+	//int time = (int)m_timer.GetElapsedTime();
+	//DrawString(std::to_string(time));
 	RenderScene(renderPSO);
 }
 
 void  Core::SimpleApp::RenderScene(const std::string& psoName)
 {
-	GraphicsPSO pso;
-	if (m_PSOs.find(psoName) != m_PSOs.end())
-	{
-		pso = m_PSOs[psoName];
-	}
-	else
-	{
-		pso = m_PSOs["defaultPSO"];
-	}
-
-
+	GraphicsPSO pso = m_PSOs["renderTexturePSO"];
+	
 	m_commandAllocator->Reset();
 	m_commandList->Reset(m_commandAllocator.Get(), pso.GetPSO());
 
 	m_commandList->RSSetScissorRects(1, &m_scissorRect);
 	m_commandList->RSSetViewports(1, &m_viewport);
 
-	m_commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	m_commandList->SetPipelineState(pso.GetPSO());
 	m_commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
-
 
 	m_commandList->ResourceBarrier(
 		1,
@@ -308,42 +294,15 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 	m_commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
 	m_commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
 	m_commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
-
-	if (renderPSO == "defaultPSO")
-	{
-
-		ID3D12DescriptorHeap* heaps[] = {
-		m_textSrvHeap.Get()
-		};
-
-		m_commandList->SetDescriptorHeaps(1, heaps);
-		m_commandList->SetGraphicsRootDescriptorTable(0, m_textSrvHeap->GetGPUDescriptorHandleForHeapStart());
-
-		m_commandList->SetGraphicsRootConstantBufferView(2, m_globalCB->GetGPUVirtualAddress());
-		mesh->Render(m_commandList.Get());
-	}
-	else if (renderPSO == "phongPSO")
-	{
-		/*ID3D12DescriptorHeap* heaps[] = {
-		m_textureLoader->GetHeap()
-		};
-
-		m_commandList->SetDescriptorHeaps(1, heaps);*/
-		ID3D12DescriptorHeap* heaps[] = {
-			m_textSrvHeap.Get()
-		};
-
-		m_commandList->SetDescriptorHeaps(1, heaps);
-		m_commandList->SetGraphicsRootDescriptorTable(0, m_textSrvHeap->GetGPUDescriptorHandleForHeapStart());
-		m_commandList->SetGraphicsRootConstantBufferView(2, m_globalCB->GetGPUVirtualAddress());
-
-		for (auto& mesh : phongMeshes)
-		{
-			//mesh->Render(m_commandList.Get(), m_textureLoader.get());
-			mesh->Render(m_commandList.Get());
-		}
-	}
 	
+	ID3D12DescriptorHeap* heaps[] = {
+		m_textureLoader->GetHeap()
+	};
+	m_commandList->SetDescriptorHeaps(1, heaps);
+	// Build Proxy 함수에서 등록된 메시가 PointCloud 일 경우 pcProxy에 등록됨
+	mesh->RenderDot(m_commandList.Get(), m_textureLoader.get());
+
+		
 	m_commandList->ResourceBarrier(
 		1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -402,6 +361,56 @@ void Core::SimpleApp::RenderGUI(float deltaTime)
 
 
 	FlushCommands();
+}
+
+void Core::SimpleApp::Compute(const std::string& cpsoName, int idx, bool isFinal, D3D12_RESOURCE_STATES prevState)
+{
+	using namespace Renderer;
+
+	ComputePSO pso;
+	if (m_CPSOs.find(cpsoName) != m_CPSOs.end())
+	{
+		pso = m_CPSOs[cpsoName];
+	}
+	else
+	{
+		pso = m_CPSOs["defaultCPSO"];
+	}
+	m_commandAllocator->Reset();
+	m_commandList->Reset(m_commandAllocator.Get(), pso.GetPSO());
+
+	m_commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_computeBuffer.Get(),
+			prevState,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+		));
+
+	m_commandList->SetComputeRootSignature(pso.GetRootSignature()->GetSignature());
+
+	ID3D12DescriptorHeap* heaps[] = {
+		m_UAVHeap.Get()
+	};
+	m_commandList->SetDescriptorHeaps(1, heaps);
+
+	m_commandList->SetComputeRootDescriptorTable(0, m_UAVHeap->GetGPUDescriptorHandleForHeapStart());
+	m_commandList->SetComputeRootConstantBufferView(1, m_pbGCBuffer->GetGPUVirtualAddress());
+	m_commandList->Dispatch((UINT)ceil((computeTextureDIMX) / 32.f), (UINT)ceil(computeTextureDIMY / 32.f), 1);
+
+	m_commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_computeBuffer.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			prevState
+		));
+
+	m_commandList->Close();
+	ID3D12CommandList* lists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(lists), lists);
+	FlushCommands();
+
 }
 
 bool Core::SimpleApp::FinDirectX()
@@ -515,15 +524,8 @@ void Core::SimpleApp::BuildGeometry()
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
 	mesh = std::make_shared<StaticMesh>();
-	mesh->Initialize<SimpleVertex,uint16_t>(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakeSimpleRect(2, 2));
-	mesh->SetAlbedoTexture("test_albedo");
-
-		std::shared_ptr<StaticMesh> sphere3 = std::make_shared<StaticMesh>();
-	sphere3->Initialize<Vertex, uint16_t>(m_device.Get(), m_commandList.Get(), GeometryGenerator::MakePlane(1, 1,1));
-	sphere3->SetAlbedoTexture("8k_earth_albedo");
-	sphere3->SetLocation(0, 0, 0);
-	phongMeshes.push_back(sphere3);
-
+	mesh->InitializePC<SimpleVertex,uint16_t>(m_device.Get(), m_commandList.Get(), std::vector{ GeometryGenerator::MakePoint() });
+	mesh->SetAlbedoTexture("ComTex");
 
 	m_commandList->Close();
 
@@ -547,7 +549,11 @@ void Core::SimpleApp::BuildConstantBuffers()
 		m_phongGCB,
 		reinterpret_cast<void**>(&pPhongCB)
 	);
-
+	utility->CreateConstantBuffer(
+		sizeof(PBGlobalConstant),
+		m_pbGCBuffer,
+		reinterpret_cast<void**>(&pPBGCB)
+	);
 	// Initalize Constant Buffers	
 
 	m_fovRadians = XMConvertToRadians(m_fovDegrees);
@@ -587,9 +593,8 @@ void Core::SimpleApp::CreateTextures()
 
 	m_textureLoader = std::make_shared<TextureLoader>(texturePath, m_device.Get());
 	m_fallbackLoader = std::make_shared<TextureLoader>(fallbackPath, m_device.Get());
-
+	m_textureLoader->InitHeap(20);
 	m_textureLoader->LoadIdx();
-	m_fallbackLoader->LoadIdx();
 	m_textureLoader->LoadTextures(m_commandQueue);
 }
 

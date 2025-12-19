@@ -21,6 +21,7 @@
 #include "ImageInfo.h"
 #include "Renderer.h"
 #include "MouseInputState.h"
+#include "BoundedQueue.h"
 
 enum RenderType {
 	RT_TEXT,
@@ -61,9 +62,10 @@ protected:
 
 	void PostActorChanges();
 	void BuildRenderProxy();
+	void AddProxy(SceneComponent* component, FrameResource* fr);
 	void Update(float deltaTime);
 	//void BuildRenderProxy(const std::vector<std::shared_ptr<Actor>>& actors, Actor* player);
-	void AddProxy(SceneComponent* component);
+	//void AddProxy(SceneComponent* component);
 	void AddTextProxy(SceneComponent* component);
 	void UpdateMousePosition();
 	void Render(const std::string& psoName, int idx, RenderType renderType, bool isFinal, bool clear);
@@ -74,6 +76,8 @@ protected:
 
 
 public:
+	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo>& lightInfos);
+	void UpdatePBGlobalConstantBuffer(const int& guiWidth, const MouseInputState& mouseInputState);
 	void Tick(float deltaTime);
 	void Quit();
 
@@ -207,4 +211,9 @@ private:
 	POINT currMousPt = { 0,0 };
 	POINT prevMousePt = { 0,0 };
 
+private:
+	std::shared_ptr<BoundedQueue> m_boundedQueue;
+	uint64_t m_frameId = 0;
+	FramePacket packet;
+	FramePacket r_packet;
 };

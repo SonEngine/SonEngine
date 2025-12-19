@@ -21,7 +21,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
     if (DTid.x >= w || DTid.y >= h)
         return;
     
-    if (gGlobalCB.lMouseClickDown <= 0.1f)
+    if (gGlobalCB.lMouseClickDown == 0)
         return;
     
     float2 prev = float2(gGlobalCB.prevMouseX, gGlobalCB.prevMouseY);

@@ -97,9 +97,9 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 	}
 }
 
-void FrameResource::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo> & lightInfos)
+void FrameResource::UpdateGlobalConstantBuffer(const PhongGlobalConstant& pgc)
 {
-	phongGC.cameraDir = ToVector4(viewProjInfo.viewDirection, 0.f);
+	/*phongGC.cameraDir = ToVector4(viewProjInfo.viewDirection, 0.f);
 	phongGC.cameraPos = ToVector4(viewProjInfo.viewLocation, 0.f);
 	phongGC.view = viewProjInfo.view.Transpose();
 	phongGC.proj = viewProjInfo.proj.Transpose();
@@ -110,19 +110,22 @@ void FrameResource::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo,
 		phongGC.lights[i].location = lightInfos[0].location;
 		phongGC.lights[i].brightness = lightInfos[0].brightness;
 	}
-	
+	*/
+	phongGC = pgc;
 	memcpy(pPhongGCB, &phongGC, sizeof(PhongGlobalConstant));
 }
 
-void FrameResource::UpdatePBGlobalConstantBuffer(const int& guiWidth, const MouseInputState & mouseInputState)
+void FrameResource::UpdatePBGlobalConstantBuffer(const PBGlobalConstant& pbgc)
 {
-	pbGC.mouseX = float(mouseInputState.mouseX - guiWidth);
+	/*pbGC.mouseX = float(mouseInputState.mouseX - guiWidth);
 	pbGC.mouseY = float(mouseInputState.mouseY);
 	pbGC.prevMouseX = float(mouseInputState.prevMouseX - guiWidth);
 	pbGC.prevMouseY = float(mouseInputState.prevMouseY);
-	
-	pbGC.lMouseClickDown = mouseInputState.lmbDown ? 1.0f : 0.0f;
-	
+	std::cout << abs(mouseInputState.mouseX - mouseInputState.prevMouseX) / abs(mouseInputState.mouseY - mouseInputState.prevMouseY + 1e-5) <<'\n';
+
+	pbGC.lMouseClickDown = mouseInputState.lmbDown ? 1 : 0;
+	*/
+	pbGC = pbgc;
 	// 여기서 복사
 	memcpy(pPBGCB, &pbGC, sizeof(PBGlobalConstant));
 }

@@ -12,6 +12,7 @@
 #include "Light.h"
 #include "TextureLoader.h"
 #include <array>
+#include "PaintBoardHLSLCompat.h"
 
 class StaticMesh;
 
@@ -41,8 +42,9 @@ namespace Core {
 		void Render(float deltaTime);
 		void RenderScene(const std::string& psoName);
 		void RenderGUI(float deltaTime);
+		void Compute(const std::string& cpsoName, int idx, bool isFinal, D3D12_RESOURCE_STATES prevState);
 		void RenderText(const std::string& str);
-		void DrawString(const std::string & str);
+		void DrawString(const std::string& str);
 
 		// Fin
 
@@ -62,9 +64,6 @@ namespace Core {
 		void CreateTexts();
 
 	private:
-
-
-
 
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRtvCpuHandle() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCpuHandle() const;
@@ -117,7 +116,7 @@ namespace Core {
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_swapChainResources[m_swapChainBufferCount];
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_depthStencilBuffer;
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_textRT;
-		
+
 
 	private:
 
@@ -186,10 +185,27 @@ namespace Core {
 	private:
 		StaticMesh* selectedMesh = nullptr;
 
-	// text render 용
+		// text render 용
 	private:
 		std::shared_ptr<DirectX::SpriteBatch> spriteBatch;
 		std::shared_ptr<DirectX::SpriteFont> font;
 		std::unique_ptr < DirectX::GraphicsMemory > m_graphicsMemory;
+
+	private:
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_UAVHeap;
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_computeBuffer;
+
+		int computeTextureDIMX;
+		int computeTextureDIMY;
+		std::string computePSO = "defaultCPSO";
+
+		PBGlobalConstant pbGC;
+		// paint board global constant buffer
+		Microsoft::WRL::ComPtr<ID3D12Resource> m_pbGCBuffer;
+		void* pPBGCB = nullptr;
+		std::string m_computeTextureName = "ComTex";
+		POINT currMousPt;
+		POINT prevMousePt;
+
 	};
 }

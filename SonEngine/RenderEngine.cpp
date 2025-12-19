@@ -37,6 +37,7 @@ RenderEngine::~RenderEngine()
 
 bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd, MouseInputStateHelper* mouseInputState)
 {	
+	m_boundedQueue = std::make_shared<BoundedQueue>(m_frameResourceCount);
 	pMouseinputStateHelper = mouseInputState;
 	m_guiWidth = guiWidth;
 	m_width = width;
@@ -171,6 +172,13 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 			frameReady = false;
 			lock.unlock();
+
+			m_boundedQueue->Pop(r_packet);
+			r_currentResourceIndex = r_packet.frameId % m_frameResourceCount;
+			r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
+
+			r_currentFrameResource->UpdateGlobalConstantBuffer(r_packet.gc);
+			r_currentFrameResource->UpdatePBGlobalConstantBuffer(r_packet.pbgc);
 
 			//RenderWithText();
 			//RenderWithCompute();
@@ -403,43 +411,46 @@ void RenderEngine::PostActorChanges()
 
 void RenderEngine::BuildRenderProxy()
 {
-	if (currentFrameResource->proxyDirty)
+	for (auto& pFr : m_frameResources)
 	{
-		currentFrameResource->proxyDirty = false;
-		currentFrameResource->proxyBuffer.clear();
-		currentFrameResource->textProxyBuffer.clear();
-
-		std::cout << m_currentResourceIndex << "번째 FR build 중\n";
-		int id = 0;
-		for (auto primitive : m_primitives)
+		if (pFr->proxyDirty)
 		{
-			AddProxy(primitive);
+			pFr->proxyDirty = false;
+			pFr->proxyBuffer.clear();
+			pFr->textProxyBuffer.clear();
+
+			for (auto primitive : m_primitives)
+			{
+				AddProxy(primitive, pFr.get());
+			}
 		}
 	}
+	
 }
+
 // 새로운 compoenet 추가 시 Utility.inl에 h파일 추가
-void RenderEngine::AddProxy(SceneComponent* component)
+void RenderEngine::AddProxy(SceneComponent* component, FrameResource* fr)
 {
 	if (StaticMeshComponent* staticMeshComp = dynamic_cast<StaticMeshComponent*>(component))
 	{
 		//std::cout << "Mesh exist\n";
 		Proxy proxy;
 		proxy.mesh = staticMeshComp->GetMesh();
-		currentFrameResource->proxyBuffer.push_back(proxy);
+		fr->proxyBuffer.push_back(proxy);
 	}
 	else if (PointCloudComponent* pointCloudComp = dynamic_cast<PointCloudComponent*>(component))
 	{
 		//std::cout << "Mesh exist\n";
 		Proxy proxy;
 		proxy.mesh = pointCloudComp->GetMesh();
-		currentFrameResource->pcProxyBuffer.push_back(proxy);
+		fr->pcProxyBuffer.push_back(proxy);
 	}
 	else if (DotComponent* pointCloudComp = dynamic_cast<DotComponent*>(component))
 	{
 		//std::cout << "Mesh exist\n";
 		Proxy proxy;
 		proxy.mesh = pointCloudComp->GetMesh();
-		currentFrameResource->dotProxyBuffer.push_back(proxy);
+		fr->dotProxyBuffer.push_back(proxy);
 	}
 	/*std::vector<std::shared_ptr<SceneComponent>> child;
 	component->GetChildrenComponents(child);
@@ -475,47 +486,61 @@ void  RenderEngine::UpdateMousePosition()
 	pMouseinputStateHelper->UpdatePrevMousePos(prevMousePt.x, prevMousePt.y);
 }
 
-void RenderEngine::Tick(float deltaTime)
+void RenderEngine::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo>& lightInfos)
 {
-	currentFrameResource = m_frameResources[m_currentResourceIndex].get();
+	packet.gc.cameraDir = ToVector4(viewProjInfo.viewDirection, 0.f);
+	packet.gc.cameraPos = ToVector4(viewProjInfo.viewLocation, 0.f);
+	packet.gc.view = viewProjInfo.view.Transpose();
+	packet.gc.proj = viewProjInfo.proj.Transpose();
 
-	// currentFrameResource가 초기값이 아니면서,
-	// 현재 사용하려는 리소스의 이전 명령이 아직 이행되지 않았을 경우 
-	// 완료할 때까지 기다린다.
-	if (currentFrameResource->m_currentFence != 0 &&
-		m_fence->GetCompletedValue() < currentFrameResource->m_currentFence)
+	for (size_t i = 0; i < lightInfos.size(); i++)
 	{
-		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-		m_fence->SetEventOnCompletion(currentFrameResource->m_currentFence, eventHandle);
-
-		WaitForSingleObject(eventHandle, INFINITE);
-		CloseHandle(eventHandle);
+		packet.gc.lights[i].direction = lightInfos[0].direction;
+		packet.gc.lights[i].location = lightInfos[0].location;
+		packet.gc.lights[i].brightness = lightInfos[0].brightness;
 	}
 
+	//memcpy(pPhongGCB, &phongGC, sizeof(PhongGlobalConstant));
+}
+
+void RenderEngine::UpdatePBGlobalConstantBuffer(const int& guiWidth, const MouseInputState& mouseInputState)
+{
+	packet.pbgc.mouseX = float(mouseInputState.mouseX - guiWidth);
+	packet.pbgc.mouseY = float(mouseInputState.mouseY);
+	packet.pbgc.prevMouseX = float(mouseInputState.prevMouseX - guiWidth);
+	packet.pbgc.prevMouseY = float(mouseInputState.prevMouseY);
+	packet.pbgc.lMouseClickDown = mouseInputState.lmbDown ? 1 : 0;
+
+	// 여기서 복사
+	//memcpy(pPBGCB, &pbGC, sizeof(PBGlobalConstant));
+}
+void RenderEngine::Tick(float deltaTime)
+{
 	if (world)
 	{
-		currentFrameResource->UpdateGlobalConstantBuffer(world->GetViewProjInfo(), world->GetLightInfos());
+		packet.frameId = m_frameId++;
+		UpdateGlobalConstantBuffer(world->GetViewProjInfo(), world->GetLightInfos());
 		
 		{
 			GetCursorPos(&currMousPt);
 			ScreenToClient(mainWnd, &currMousPt);
 			pMouseinputStateHelper->UpdateMousePos(currMousPt.x, currMousPt.y);
 			pMouseinputStateHelper->UpdatePrevMousePos(prevMousePt.x, prevMousePt.y);
-			currentFrameResource->UpdatePBGlobalConstantBuffer(m_guiWidth, pMouseinputStateHelper->GetInputState());
+			UpdatePBGlobalConstantBuffer(m_guiWidth, pMouseinputStateHelper->GetInputState());
 			prevMousePt = currMousPt;
 		}
 
+		m_boundedQueue->Push(packet);
 		BuildRenderProxy();
 	}
-	//std::cout << "Main Thread : " << m_currentResourceIndex << std::endl;
-
-	m_currentResourceIndex = (m_currentResourceIndex + 1) % m_frameResourceCount;
+	
 	{
 		std::lock_guard<std::mutex> lock(g_mtx);
 		frameReady = true;
 	}
-
+	// render thread 호출
 	cv.notify_one();
+
 }
 
 void RenderEngine::Render(const std::string& psoName, int idx, RenderType renderType, bool isFinal, bool clear)
@@ -523,9 +548,6 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), "test");
 
 	using namespace Renderer;
-	// N번을 update했을 때 N-1 번 프레임을 렌더링 
-	// update의 경우 m_frameResourceCount만큼 미리 업데이트 가능
-	r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
 
 	if (idx == 0)
 	{
@@ -540,10 +562,7 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 		}
 		r_currentFrameResource->m_currentFence = ++m_currentFence;
 	}
-	if (isFinal)
-	{
-		r_currentResourceIndex = (r_currentResourceIndex + 1) % m_frameResourceCount;
-	}
+
 	GraphicsPSO pso;
 	if (m_PSOs.find(psoName) != m_PSOs.end())
 	{
@@ -680,7 +699,7 @@ void RenderEngine::RenderGUI(bool isFinal)
 	ImGui::End();
 	ImGui::Render();
 
-	r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
+	//r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
 	ID3D12CommandAllocator* commandAllocator = r_currentFrameResource->GetGUIAllocator();
 	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetGUICommandList();
 
@@ -728,10 +747,6 @@ void RenderEngine::Compute(const std::string& cpsoName, int idx, bool isFinal, D
 {
 	using namespace Renderer;
 
-	// N번을 update했을 때 N-1 번 프레임을 렌더링 
-	// update의 경우 m_frameResourceCount만큼 미리 업데이트 가능
-	r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
-
 	if (idx == 0)
 	{
 		if (r_currentFrameResource->m_currentFence != 0 &&
@@ -744,10 +759,6 @@ void RenderEngine::Compute(const std::string& cpsoName, int idx, bool isFinal, D
 			CloseHandle(eventHandle);
 		}
 		r_currentFrameResource->m_currentFence = ++m_currentFence;
-	}
-	if (isFinal)
-	{
-		r_currentResourceIndex = (r_currentResourceIndex + 1) % m_frameResourceCount;
 	}
 	ComputePSO pso;
 	if (m_CPSOs.find(cpsoName) != m_CPSOs.end())
@@ -809,8 +820,6 @@ void RenderEngine::Compute(const std::string& cpsoName, int idx, bool isFinal, D
 // FrameResource의 텍스트 렌더용 텍스쳐 업데이트
 void RenderEngine::UpdateTexts()
 {
-	r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
-
 	GraphicsPSO pso = m_PSOs["defaultPSO"];
 	ID3D12CommandAllocator* commandAllocator = r_currentFrameResource->GetTextAllocator();
 	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetTextCommandList();
@@ -925,6 +934,7 @@ void RenderEngine::RenderWithCompute()
 	Compute(computePSO, 0, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	Render("phongPSO", 1/*sequence*/, RT_Default, false/*isFinal*/, true/*clear RT*/);
 	Render("pointCloudPSO", 2, RT_PointCloud, true/*isFinal*/, false/*clear RT*/);
+	
 	//RenderGUI(true);
 }
 
