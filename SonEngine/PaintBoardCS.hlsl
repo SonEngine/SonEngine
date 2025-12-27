@@ -29,10 +29,10 @@ void main( uint3 DTid : SV_DispatchThreadID )
         
     float2 p = float2(DTid.xy) + 0.5;
     
-    const float r = 3.0;
+    const float r = gGlobalCB.penRadius;
 
     float d = DistPointToSegment(p, prev, curr);
     if (d <= r)
-        gOutput[DTid.xy] = float4(1, 0, 0, 1);
+        gOutput[DTid.xy] = float4(gGlobalCB.penColor, 1.f);
    
  }

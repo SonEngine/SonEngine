@@ -1,11 +1,14 @@
-#include "RootSignature.h"
+﻿#include "RootSignature.h"
 #include <iostream>
 
 using Microsoft::WRL::ComPtr;
 
 void RootSignature::InitStaticSampler(UINT index, const D3D12_STATIC_SAMPLER_DESC& staticSamplerDesc, D3D12_SHADER_VISIBILITY visibility)
 {
+#if defined (DEBUG) || (_DEBUG)
 	ASSERT(index < m_numSamplers);
+#endif
+
 	m_samplerArray[index] = staticSamplerDesc;
 }
 

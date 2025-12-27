@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+
 #include <array>
 #include <atomic>
 #include <condition_variable>
@@ -22,6 +23,8 @@
 #include "Renderer.h"
 #include "MouseInputState.h"
 #include "BoundedQueue.h"
+#include "DLModel.h"
+
 
 enum RenderType {
 	RT_TEXT,
@@ -41,6 +44,7 @@ public:
 
 	void RequestResize(int newWidth, int newHeight);
 	void RequestCapture();
+	void RequestRunDL();
 	void OnResize();
 
 public:
@@ -81,6 +85,11 @@ public:
 	void Tick(float deltaTime);
 	void Quit();
 
+
+private:
+	void GenerateMips(ID3D12Resource* tex);
+	void ClearTexture();
+
 protected:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRtvCpuHandle() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCpuHandle() const;
@@ -90,8 +99,10 @@ private:
 	void FlushCommands();
 	void FlushResourceCommands();
 
-	void SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES state);
+	void SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES state, UINT16 miplevel = 0, bool saveCPU = true);
+
 	void SaveTextureCPU();
+	void RunDLModel();
 
 
 private:
@@ -127,6 +138,7 @@ private:
 
 private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_UAVHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_UAVCPUHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_SRVHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
@@ -191,8 +203,10 @@ private:
 	std::thread renderThread;
 	std::atomic<bool> frameReady = false;
 	std::atomic<bool> saveReady = false;
+	std::atomic<bool> runDLReady = false;
 	std::atomic<bool> resize = false;
 	std::atomic<bool> captureDirty = false;
+	std::atomic<bool> runDLDirty = false;
 
 	std::mutex r_mtx;
 	std::mutex g_mtx;
@@ -216,4 +230,15 @@ private:
 	uint64_t m_frameId = 0;
 	FramePacket packet;
 	FramePacket r_packet;
+
+	int saveMipLevel = 4;
+	FLOAT computeClearColor[4];
+	float guiPenRadius;
+	float guiPenColor[3];
+	bool clearFlag = false;
+
+private:
+	std::shared_ptr<DLModel> dlModel;
+	std::atomic<int> dlRet{ 0 };
+	bool printRet = false;
 };

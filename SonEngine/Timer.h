@@ -1,6 +1,7 @@
 ﻿#pragma once
 
-#include "Windows.h"
+#define NOMINMAX
+#include <Windows.h>
 
 namespace Core {
 	class Timer {

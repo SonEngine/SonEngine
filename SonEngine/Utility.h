@@ -113,7 +113,8 @@ namespace GraphicsUtils {
 			UINT height,
 			DXGI_FORMAT format,
 			D3D12_RESOURCE_FLAGS Flag,
-			D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_RENDER_TARGET
+			D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_RENDER_TARGET,
+			UINT16 mipLevels = 1
 		);
 
 		template<typename Data>

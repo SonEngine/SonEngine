@@ -104,14 +104,17 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;DIRECTX_TOOLKIT_IMPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(OutDir);$(VcpkgRoot)\installed\x64-windows\include\physx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir);$(VcpkgRoot)\installed\x64-windows\include\physx;$(LibTorch_DEBUG)\libtorch\include\torch\csrc\api\include;$(LibTorch_DEBUG)\libtorch\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4819</DisableSpecificWarnings>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;c10.lib;c10_cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;cuda.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(LibTorch_DEBUG)\libtorch\lib;$(CUDA_PATH)\lib\x64</AdditionalLibraryDirectories>
     </Link>
     <FxCompile>
       <ShaderModel>6.0</ShaderModel>
@@ -129,15 +132,18 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;DIRECTX_TOOLKIT_IMPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(OutDir);$(VcpkgRoot)\installed\x64-windows\include\physx</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir);$(VcpkgRoot)\installed\x64-windows\include\physx;$(LibTorch)\libtorch\include\torch\csrc\api\include;$(LibTorch)\libtorch\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4819</DisableSpecificWarnings>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;c10.lib;c10_cuda.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;cuda.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(LibTorch)\libtorch\lib;$(CUDA_PATH)\lib\x64</AdditionalLibraryDirectories>
     </Link>
     <FxCompile>
       <ShaderModel>6.0</ShaderModel>
@@ -153,6 +159,10 @@
     <ClCompile Include="BaseApp.cpp" />
     <ClCompile Include="BoundedQueue.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="DLModel.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="DotComponent.cpp" />
     <ClCompile Include="FrameResource.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
@@ -168,7 +178,10 @@
     <ClCompile Include="PointCloudComponent.cpp" />
     <ClCompile Include="PrimitiveComponent.cpp" />
     <ClCompile Include="PrimitiveProxy.cpp" />
-    <ClCompile Include="RenderEngine.cpp" />
+    <ClCompile Include="RenderEngine.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="SceneComponent.cpp" />
@@ -176,6 +189,10 @@
     <ClCompile Include="StaticMesh.cpp" />
     <ClCompile Include="StaticMeshComponent.cpp" />
     <ClCompile Include="StaticMeshProxy.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="TextureLoader.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="ATriggerBox.cpp" />
@@ -194,6 +211,7 @@
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="dds.h" />
     <ClInclude Include="Delegate.h" />
+    <ClInclude Include="DLModel.h" />
     <ClInclude Include="DotComponent.h" />
     <ClInclude Include="FramePacket.h" />
     <ClInclude Include="GeometryGenerator.h" />
@@ -228,6 +246,7 @@
     <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="StaticMeshComponent.h" />
     <ClInclude Include="StaticMeshProxy.h" />
+    <ClInclude Include="pch.h" />
     <ClInclude Include="TextureGPUResource.h" />
     <ClInclude Include="TextureLoader.h" />
     <ClInclude Include="Timer.h" />

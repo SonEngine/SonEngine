@@ -36,7 +36,10 @@ RenderEngine::~RenderEngine()
 }
 
 bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd, MouseInputStateHelper* mouseInputState)
-{	
+{
+	dlModel = std::make_shared<DLModel>();
+	dlModel->Initialize("DL/models/mlp.pt");
+
 	m_boundedQueue = std::make_shared<BoundedQueue>(m_frameResourceCount);
 	pMouseinputStateHelper = mouseInputState;
 	m_guiWidth = guiWidth;
@@ -78,12 +81,14 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 		computeTextureDIMX = m_width - m_guiWidth;
 		computeTextureDIMY = m_height;
 		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
 
 		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVCPUHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_SRVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
+		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVCPUHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
 	}
 
 	CreateSwapChain(factory, wnd);
@@ -104,6 +109,11 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 	m_textureLoader->AddTexture(m_computeBuffer, m_computeTextureName);
 	BuildFrameResources();
 
+	computeClearColor[0] = 0.f;
+	computeClearColor[1] = 0.f;
+	computeClearColor[2] = 0.f;
+	computeClearColor[3] = 1.f;
+
 	{
 		m_commandAllocator->Reset();
 		m_commandList->Reset(m_commandAllocator.Get(), nullptr);
@@ -113,12 +123,14 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 			world->Initialize(m_width, m_height, this, m_device, m_commandList.Get());
 		}
 
+
 		m_commandList->Close();
 		ID3D12CommandList* commands[] = { m_commandList.Get() };
 		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
 
 		FlushCommands();
 	}
+	ClearTexture();
 
 	saveThread = std::thread([&] {
 		if (world == nullptr)
@@ -128,16 +140,25 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 		}
 		while (world->isRunning) {
 			std::unique_lock<std::mutex> lock(capture_mtx);
-			captureCv.wait(lock, [&] {return !world->isRunning || saveReady; });
+			captureCv.wait(lock, [&] {return !world->isRunning || saveReady || runDLReady; });
 
 			if (!world->isRunning)
 			{
 				break;
 			}
-			saveReady = false;
-			lock.unlock();
 
-			SaveTextureCPU();
+			if (saveReady)
+			{
+				saveReady = false;
+				lock.unlock();
+				SaveTextureCPU();
+			}
+			else if (runDLReady)
+			{
+				runDLReady = false;
+				lock.unlock();
+				RunDLModel();
+			}
 		}
 		});
 
@@ -161,13 +182,24 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 				FlushResourceCommands();
 				OnResize();
 			}
-
+			if (clearFlag)
+			{
+				clearFlag = false;
+				FlushResourceCommands();
+				ClearTexture();
+			}
 			if (captureDirty)
 			{
 				captureDirty = false;
 				FlushResourceCommands();
-				//SaveTextureGPU(m_computeTextureName, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-				SaveTextureGPU("BackBuffer", D3D12_RESOURCE_STATE_PRESENT);
+				SaveTextureGPU(m_computeTextureName, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, saveMipLevel, true);
+				//SaveTextureGPU("BackBuffer", D3D12_RESOURCE_STATE_PRESENT);
+			}
+			if (runDLDirty)
+			{
+				runDLDirty = false;
+				FlushResourceCommands();
+				SaveTextureGPU(m_computeTextureName, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, saveMipLevel, false);
 			}
 
 			frameReady = false;
@@ -217,6 +249,10 @@ bool RenderEngine::InitGUI(HWND wnd)
 		m_guiFontHeap->GetCPUDescriptorHandleForHeapStart(),
 		m_guiFontHeap->GetGPUDescriptorHandleForHeapStart());
 
+	guiPenColor[0] = 1.f;
+	guiPenColor[1] = 1.f;
+	guiPenColor[2] = 1.f;
+	guiPenRadius = 10.f;
 
 	return true;
 }
@@ -230,13 +266,19 @@ void RenderEngine::RequestResize(int newWidth, int newHeight)
 		resize = true;
 	}
 }
+
 void RenderEngine::RequestCapture()
 {
-	{
-		std::lock_guard<std::mutex> lock(g_mtx);
-		captureDirty = true;
-	}
+	std::lock_guard<std::mutex> lock(g_mtx);
+	captureDirty = true;
 }
+
+void RenderEngine::RequestRunDL()
+{
+	std::lock_guard<std::mutex> lock(g_mtx);
+	runDLDirty = true;
+}
+
 void RenderEngine::OnResize()
 {
 	if (m_swapChain == nullptr) return;
@@ -380,7 +422,50 @@ void RenderEngine::UpdateGUI()
 	ImGui::SetWindowSize(ImVec2((float)m_guiWidth, (float)m_height), ImGuiCond_FirstUseEver);
 	ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
 
-	ImGui::Checkbox("test", &test);
+	ImGui::Checkbox("Change Mode", &test);
+
+	ImGui::NewLine();
+
+	ImGui::SliderFloat("Pen Radius", &guiPenRadius, 0.f, 10.f);
+
+	ImGui::SliderInt("miplevel", &saveMipLevel, 0, 5);
+	
+	if (ImGui::Button("Run DL")) {
+		RequestRunDL();
+		printRet = true;
+		
+	}
+	if (printRet)
+	{
+		//ImGui::SameLine();
+		int ret = dlRet.load(std::memory_order_acquire);
+		std::string retStr = "DL prediction : ";
+		retStr += std::to_string(ret);
+		ImGui::Text(retStr.c_str());
+	}
+	if (ImGui::Button("Save")) {
+		RequestCapture();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Clear")) {
+		clearFlag = true;
+	}
+
+	if (ImGui::Button("Open Picker"))
+		ImGui::OpenPopup("PickerPopup");
+
+	if (ImGui::BeginPopup("PickerPopup"))
+	{
+		// 큰 컬러 피커(휠/사각형)
+		ImGui::ColorPicker3("##Picker", (float*)&guiPenColor,
+			ImGuiColorEditFlags_Float |
+			ImGuiColorEditFlags_AlphaBar |
+			ImGuiColorEditFlags_DisplayRGB);
+
+		ImGui::EndPopup();
+	}
+
+
 }
 
 void RenderEngine::BuildFrameResources()
@@ -425,7 +510,7 @@ void RenderEngine::BuildRenderProxy()
 			}
 		}
 	}
-	
+
 }
 
 // 새로운 compoenet 추가 시 Utility.inl에 h파일 추가
@@ -511,21 +596,18 @@ void RenderEngine::UpdatePBGlobalConstantBuffer(const int& guiWidth, const Mouse
 	packet.pbgc.prevMouseY = float(mouseInputState.prevMouseY);
 	packet.pbgc.lMouseClickDown = mouseInputState.lmbDown ? 1 : 0;
 
-	// 여기서 복사
-	//memcpy(pPBGCB, &pbGC, sizeof(PBGlobalConstant));
+	packet.pbgc.penColor = Vector3(guiPenColor);
+	packet.pbgc.penRadius = guiPenRadius;
 }
+
 void RenderEngine::Tick(float deltaTime)
 {
 	if (world)
 	{
 		packet.frameId = m_frameId++;
 		UpdateGlobalConstantBuffer(world->GetViewProjInfo(), world->GetLightInfos());
-		
 		{
-			GetCursorPos(&currMousPt);
-			ScreenToClient(mainWnd, &currMousPt);
-			pMouseinputStateHelper->UpdateMousePos(currMousPt.x, currMousPt.y);
-			pMouseinputStateHelper->UpdatePrevMousePos(prevMousePt.x, prevMousePt.y);
+			UpdateMousePosition();
 			UpdatePBGlobalConstantBuffer(m_guiWidth, pMouseinputStateHelper->GetInputState());
 			prevMousePt = currMousPt;
 		}
@@ -533,7 +615,7 @@ void RenderEngine::Tick(float deltaTime)
 		m_boundedQueue->Push(packet);
 		BuildRenderProxy();
 	}
-	
+
 	{
 		std::lock_guard<std::mutex> lock(g_mtx);
 		frameReady = true;
@@ -934,14 +1016,14 @@ void RenderEngine::RenderWithCompute()
 	Compute(computePSO, 0, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	Render("phongPSO", 1/*sequence*/, RT_Default, false/*isFinal*/, true/*clear RT*/);
 	Render("pointCloudPSO", 2, RT_PointCloud, true/*isFinal*/, false/*clear RT*/);
-	
+
 	//RenderGUI(true);
 }
 
 void RenderEngine::DrawingWithMouse()
 {
 	Compute(computePSO, 0, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	if(test)
+	if (test)
 		Render("pointCloudPSO", 1, RT_PointCloud, false/*isFinal*/, true/*clear RT*/);
 	else
 		Render("renderTexturePSO", 1, RT_Dot, false/*isFinal*/, true/*clear RT*/);
@@ -994,10 +1076,11 @@ void RenderEngine::FlushResourceCommands()
 	}
 }
 
-void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES state)
+void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES state, UINT16 miplevel, bool saveCPU)
 {
 	std::cout << "SaveTextureGPU\n";
 	ID3D12Resource* t;
+
 	if (name == "BackBuffer")
 	{
 		t = GetCurrentSwapChainResource();
@@ -1005,16 +1088,26 @@ void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES
 	else
 		t = m_textureLoader->GetTexture(name);
 
+	GenerateMips(t);
+
 	D3D12_RESOURCE_DESC desc = t->GetDesc();
-	UINT64 w = desc.Width;
-	UINT64 h = desc.Height;
 
-	imageInfo.bufferPixelCount = w * h * 4;
-	UINT64 copyBufferSize = imageInfo.bufferPixelCount;
+	UINT16 mipLevels = desc.MipLevels;
 
+	UINT subresource = D3D12CalcSubresource(
+		/*MipSlice*/ miplevel,
+		/*ArraySlice*/ 0,
+		/*PlaneSlice*/ 0,
+		/*MipLevels*/ mipLevels,
+		/*ArraySize*/ 1
+	);
+
+	UINT numRows = 0;
+	UINT64 rowSize = 0;
 	UINT64 requiredSize = 0;
+
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
-	m_device->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &requiredSize);
+	m_device->GetCopyableFootprints(&desc, subresource, 1, 0, &footprint, &numRows, &rowSize, &requiredSize);
 
 	m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
@@ -1028,11 +1121,12 @@ void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES
 	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 
 	imageInfo.rowPitch = footprint.Footprint.RowPitch;
-	imageInfo.rowSize = w * 4;
-	imageInfo.numRows = h;
+	imageInfo.rowSize = rowSize;
+	imageInfo.numRows = numRows;
 	imageInfo.name = name;
-	imageInfo.width = w;
-	imageInfo.height = h;
+	imageInfo.width = footprint.Footprint.Width;
+	imageInfo.height = imageInfo.width = footprint.Footprint.Height;
+	imageInfo.bufferPixelCount = requiredSize;
 
 	m_commandList->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -1041,7 +1135,11 @@ void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES
 			D3D12_RESOURCE_STATE_COPY_SOURCE));
 
 	CD3DX12_TEXTURE_COPY_LOCATION dst(m_saveBuffer.Get(), footprint);
-	CD3DX12_TEXTURE_COPY_LOCATION src(t, 0);
+	D3D12_TEXTURE_COPY_LOCATION src{};
+	src.pResource = t;
+	src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	src.SubresourceIndex = subresource;
+
 	m_commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
 
 	m_commandList->ResourceBarrier(1,
@@ -1055,9 +1153,15 @@ void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES
 	ID3D12CommandList* commands[] = { m_commandList.Get() };
 	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
 
+	if (saveCPU)
 	{
 		std::lock_guard<std::mutex> lock(capture_mtx);
 		saveReady = true;
+	}
+	else
+	{
+		std::lock_guard<std::mutex> lock(capture_mtx);
+		runDLReady = true;
 	}
 	captureCv.notify_one();
 }
@@ -1067,7 +1171,7 @@ void RenderEngine::SaveTextureCPU()
 	std::cout << "SaveTextureCPU\n";
 
 	CD3DX12_RANGE range(0, 0);
-	std::vector<uint8_t> image(imageInfo.bufferPixelCount);
+	std::vector<uint8_t> image(imageInfo.rowSize * imageInfo.numRows);
 	uint8_t* mapped = nullptr;
 	m_saveBuffer->Map(0, &range, reinterpret_cast<void**>(&mapped));
 	//memcpy(image.data(), pSaveBuffer, copyBufferSize);
@@ -1079,13 +1183,73 @@ void RenderEngine::SaveTextureCPU()
 	}
 	m_saveBuffer->Unmap(0, nullptr);
 
+	//dlModel->Run(image);
+
 	std::string filename = imageInfo.name + utility->MakeTimestamp() + ".png";
 	std::string fileFullPath = imageFilePath + filename;
-	stbi_write_png(fileFullPath.c_str(), (int)imageInfo.width, (int)imageInfo.height, 4, image.data(), imageInfo.rowSize);
+	stbi_write_png(fileFullPath.c_str(), (int)imageInfo.width, (int)imageInfo.height, 4, image.data(), (int)imageInfo.rowSize);
 	std::cout << imageInfo.name << " 가 성공적으로 저장되었습니다.\n";
 
 	std::string cmd = "start \"\" \"" + imageFilePath + "\"";
 	system(cmd.c_str());
+}
+
+void RenderEngine::RunDLModel()
+{
+	CD3DX12_RANGE range(0, 0);
+	std::vector<uint8_t> image(imageInfo.rowSize * imageInfo.numRows);
+	uint8_t* mapped = nullptr;
+	m_saveBuffer->Map(0, &range, reinterpret_cast<void**>(&mapped));
+
+	for (UINT y = 0; y < imageInfo.numRows; y++) {
+		memcpy(image.data() + y * imageInfo.rowSize,
+			mapped + y * imageInfo.rowPitch,
+			imageInfo.rowSize);
+	}
+	m_saveBuffer->Unmap(0, nullptr);
+
+	int ret = dlModel->Run(image);
+	dlRet.store(ret, std::memory_order_release);
+}
+
+void RenderEngine::ClearTexture()
+{
+	m_commandAllocator->Reset();
+	m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+
+	m_commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_computeBuffer.Get(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+		)
+	);
+	ID3D12DescriptorHeap* heaps[] =
+	{
+		m_UAVHeap.Get()
+	};
+	m_commandList->SetDescriptorHeaps(1, heaps);
+	m_commandList->ClearUnorderedAccessViewFloat(
+		m_UAVHeap->GetGPUDescriptorHandleForHeapStart(),
+		m_UAVCPUHeap->GetCPUDescriptorHandleForHeapStart(),
+		m_computeBuffer.Get(), computeClearColor,
+		0, nullptr
+	);
+	m_commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_computeBuffer.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+
+		)
+	);
+	m_commandList->Close();
+	ID3D12CommandList* commands[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+
+	//FlushCommands();
 }
 
 void RenderEngine::Quit()
@@ -1107,4 +1271,15 @@ void RenderEngine::Quit()
 
 	FlushResourceCommands();
 
+}
+
+void RenderEngine::GenerateMips(ID3D12Resource* tex)
+{
+	DirectX::ResourceUploadBatch upload(m_device);
+	upload.Begin(D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+	upload.GenerateMips(tex);
+
+	auto finish = upload.End(m_commandQueue.Get());
+	finish.wait();
 }

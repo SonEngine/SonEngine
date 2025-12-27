@@ -13,6 +13,9 @@ struct PBGlobalConstant
     float mouseY;
     float prevMouseX;
     float prevMouseY;
+        
+    float penRadius;
+    XMFLOAT3 penColor;
 
     int lMouseClickDown;
     XMFLOAT3 dummy;

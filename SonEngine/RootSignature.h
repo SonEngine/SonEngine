@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Utility.h"
 
@@ -91,12 +91,17 @@ public:
     }
     RootParameter& operator[](size_t index)
     {
+#if defined (DEBUG) || (_DEBUG)
         ASSERT(index < m_numParameters);
+#endif
         return m_paramArray[index];
     }
     const RootParameter& operator[] (size_t entryIndex) const
     {
+#if defined (DEBUG) || (_DEBUG)
         ASSERT(entryIndex < m_numParameters);
+#endif
+
         return m_paramArray.get()[entryIndex];
 
     }

@@ -16,7 +16,7 @@ BaseApp::BaseApp()
 	if (m_appPtr != nullptr) {
 		delete m_appPtr;
 	}
-
+	LoadLibraryA("torch_cuda.dll");
 	Graphics::world = std::make_unique<World>();
 	m_appPtr = this;
 	m_timer = Timer();

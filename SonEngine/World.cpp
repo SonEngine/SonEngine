@@ -56,7 +56,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	modelLoader.Load("torus.fbx");
 
 	ModelLoader<PointCloudVertex, uint16_t> pcModelLoader;
-	auto mat = DirectX::XMMatrixRotationZ(3.141592) * DirectX::XMMatrixRotationX(-3.14f / 12.f);
+	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * DirectX::XMMatrixRotationX(-3.14f / 12.f);
 	pcModelLoader.LoadPointCloud("map.ply", mat);
 
 	int planeSize = 6;

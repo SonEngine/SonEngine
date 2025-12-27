@@ -70,7 +70,9 @@ namespace GraphicsUtils {
 		UINT height,
 		DXGI_FORMAT format,
 		D3D12_RESOURCE_FLAGS Flag,
-		D3D12_RESOURCE_STATES state
+		D3D12_RESOURCE_STATES state,
+		UINT16 mipLevels
+
 	)
 	{
 		D3D12_RESOURCE_DESC texDesc = {};
@@ -78,7 +80,7 @@ namespace GraphicsUtils {
 		texDesc.Width = width;
 		texDesc.Height = height;
 		texDesc.DepthOrArraySize = 1;
-		texDesc.MipLevels = 1;
+		texDesc.MipLevels = mipLevels;
 		texDesc.Format = format;
 		texDesc.SampleDesc.Count = 1;
 		texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -87,9 +89,9 @@ namespace GraphicsUtils {
 		D3D12_CLEAR_VALUE clearValue;
 		clearValue.Format = format;
 
-		clearValue.Color[0] = 1.f;
-		clearValue.Color[1] = 1.f;
-		clearValue.Color[2] = 1.f;
+		clearValue.Color[0] = 0.f;
+		clearValue.Color[1] = 0.f;
+		clearValue.Color[2] = 0.f;
 		clearValue.Color[3] = 1.f;
 		ThrowIfFailed(m_device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
