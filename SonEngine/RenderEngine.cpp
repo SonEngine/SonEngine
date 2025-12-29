@@ -252,7 +252,7 @@ bool RenderEngine::InitGUI(HWND wnd)
 	guiPenColor[0] = 1.f;
 	guiPenColor[1] = 1.f;
 	guiPenColor[2] = 1.f;
-	guiPenRadius = 10.f;
+	guiPenRadius = 15.f;
 
 	return true;
 }
@@ -426,7 +426,7 @@ void RenderEngine::UpdateGUI()
 
 	ImGui::NewLine();
 
-	ImGui::SliderFloat("Pen Radius", &guiPenRadius, 0.f, 10.f);
+	ImGui::SliderFloat("Pen Radius", &guiPenRadius, 0.f, 20.f);
 
 	ImGui::SliderInt("miplevel", &saveMipLevel, 0, 5);
 	
@@ -1196,6 +1196,8 @@ void RenderEngine::SaveTextureCPU()
 
 void RenderEngine::RunDLModel()
 {
+	std::cout << "RunDLModel\n";
+
 	CD3DX12_RANGE range(0, 0);
 	std::vector<uint8_t> image(imageInfo.rowSize * imageInfo.numRows);
 	uint8_t* mapped = nullptr;
@@ -1209,6 +1211,7 @@ void RenderEngine::RunDLModel()
 	m_saveBuffer->Unmap(0, nullptr);
 
 	int ret = dlModel->Run(image);
+	std::cout << "Result : " << ret << '\n';
 	dlRet.store(ret, std::memory_order_release);
 }
 
