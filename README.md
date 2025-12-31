@@ -24,3 +24,20 @@ vcpkg install boost-serialization:x64-windows
 vcpkg install physx:x64-windows
 vcpkg install physx:x64-windows
 ```
+### Libtorch 설치 후 PATH 설정
+본 프로젝트는 **빌드 구성** 에 따라 서로 다른 Libtorch 폴더를 사용합니다.
+
+#### Libtorch 다운로드
+- 공식 설치/다운로드 안내: https://pytorch.org/get-started/locally/
+
+#### PATH 설정
+- **Debug**: `Libtorch_DEBUG`
+- **Release**: `Libtorch`
+
+실행 시 필요한 DLL을 찾기 위해 환경변수 PATH에 각 구성의 `libtorch` 폴더를 추가해야 합니다.
+
+- **Debug 실행 시**: `...\thirdparty\libtorch-win-shared-with-deps-debug-2.9.0+cu130\libtorch`
+- **Release 실행 시**: `...\thirdparty\libtorch-win-shared-with-deps-2.9.0+cu130\libtorch`
+
+
+
