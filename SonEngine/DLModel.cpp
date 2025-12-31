@@ -14,7 +14,7 @@ DLModel::~DLModel() = default;
 void DLModel::Initialize(const std::string& newPath)
 {
 	modelPath = fs::absolute(newPath);
-	
+
 }
 
 int DLModel::Run(const std::vector<uint8_t>& image)
