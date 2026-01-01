@@ -15,6 +15,9 @@
 #include "CompiledShaders/PointCloudGS.h"
 #include "CompiledShaders/PointCloudPS.h"
 
+#include "CompiledShaders/CubeMapVS.h"
+#include "CompiledShaders/CubeMapPS.h"
+
 #include "CompiledShaders/RenderTextureVS.h"
 #include "CompiledShaders/RenderTextureGS.h"
 #include "CompiledShaders/RenderTexturePS.h"
@@ -46,10 +49,12 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     GraphicsPSO textPSO(L"text PSO");
     GraphicsPSO pointCloudPSO(L"pointCloud PSO");
     GraphicsPSO renderTexturePSO(L"renderTexture PSO");
+    GraphicsPSO cubeMapPSO(L"cubeMap PSO");
 
     ComputePSO defaultCPSO(L"default CPSO");
 
-    backBufferFormat  = DXGI_FORMAT_R8G8B8A8_UNORM;
+    backBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+    //backBufferFormat  = DXGI_FORMAT_R8G8B8A8_UNORM;
     dsBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
     D3D12_INPUT_ELEMENT_DESC posOnlyIL[] =
@@ -169,6 +174,21 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     renderTexturePSO.Finalize(device);
     m_PSOs["renderTexturePSO"] = renderTexturePSO;
     psoNames.push_back("renderTexturePSO");
+
+    cubeMapPSO.SetInputLayout(_countof(simpleIL), simpleIL);
+    cubeMapPSO.SetRootSignature(g_cubeMapRS);
+    cubeMapPSO.SetRasterizerState(noneCullRasterizer);
+    cubeMapPSO.SetBlendState(blendNoColorWrite);
+    cubeMapPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+    cubeMapPSO.SetVertexShader(g_pCubeMapVS, sizeof(g_pCubeMapVS));
+    cubeMapPSO.SetPixelShader(g_pCubeMapPS, sizeof(g_pCubeMapPS));
+    cubeMapPSO.SetSampleMask(UINT_MAX);
+    cubeMapPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+    cubeMapPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
+    cubeMapPSO.SetDepthStencilState(depthStateDefault);
+    cubeMapPSO.Finalize(device);
+    m_PSOs["cubeMapPSO"] = cubeMapPSO;
+    psoNames.push_back("cubeMapPSO");
 
     defaultCPSO.SetComputeShader(g_pPaintBoardCS, sizeof(g_pPaintBoardCS));
     defaultCPSO.SetRootSignature(g_U1_C1_RS);

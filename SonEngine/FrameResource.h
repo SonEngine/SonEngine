@@ -69,7 +69,7 @@ private:
 	HWND hwnd;
 
 private:
-	const static int commandCount = 3;
+	const static int commandCount = 4;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator[commandCount];
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList[commandCount];
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_textCommandAllocator;
@@ -83,6 +83,7 @@ public:
 	std::vector<Proxy> proxyBuffer;
 	std::vector<Proxy> pcProxyBuffer;
 	std::vector<Proxy> dotProxyBuffer;
+	std::vector<Proxy> cubeMapProxyBuffer;
 	std::vector<TextProxy> textProxyBuffer;
 	std::vector<TextResource> textResources;
 

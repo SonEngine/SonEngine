@@ -25,6 +25,19 @@ void StaticMesh::Render(ID3D12GraphicsCommandList* commandList, const TextureLoa
 		commandList->DrawIndexedInstanced(m_indexCounts[i], 1, 0, 0, 0);
 	}
 }
+void StaticMesh::CubeMapRender(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader)
+{
+	for (size_t i = 0; i < meshCount; i++)
+	{
+		commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
+		commandList->IASetIndexBuffer(&m_indexBufferViews[i]);
+		//->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
+
+		commandList->SetGraphicsRootDescriptorTable(0, textureLoader->GetGPUHandle(albedoTexture));
+		commandList->DrawIndexedInstanced(m_indexCounts[i], 1, 0, 0, 0);
+	}
+}
 
 void StaticMesh::Render(ID3D12GraphicsCommandList* commandList)
 {
@@ -100,6 +113,13 @@ void StaticMesh::Translate(const float& delX, const float& delY, const float& de
 
 	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
 }
+
+void StaticMesh::UpdateMipState(int newForceMip0)
+{
+	localConstant.forceMip0 = newForceMip0;
+	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
+}
+
 
 void StaticMesh::SetRotation(const DirectX::SimpleMath::Matrix& mat)
 {

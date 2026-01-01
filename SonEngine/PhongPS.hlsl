@@ -2,13 +2,27 @@
 
 Texture2D gAlbedo : register(t0);
 SamplerState gSampler : register(s0);
+ConstantBuffer<LocalConstant> gLocalCB : register(b0);
 ConstantBuffer<PhongGlobalConstant> gPhongGCB : register(b1);
 
 
 float4 main(psInput input) : SV_TARGET
 {
-    float4 albedo = gAlbedo.Sample(gSampler, input.uv);
-    albedo = pow(albedo, 1.0 / 2.2);
+    uint w, h, mipCount;
+    gAlbedo.GetDimensions(0, w, h, mipCount);
+    float4 albedo;
+    if (gLocalCB.forceMip0 == 1)
+    {
+        albedo = gAlbedo.SampleLevel(gSampler, input.uv, 0.f);
+    }
+    else
+    {
+        albedo = gAlbedo.Sample(gSampler, input.uv);
+    }
+    //float4 albedo = gAlbedo.Sample(gSampler, input.uv);
+    
+    return albedo;
+   // albedo = pow(albedo, 1.0 / 2.2);
     for (int i = 0; i < NUM_LIGHTS; i++)
     {
         LightInfo light = gPhongGCB.lights[i];

@@ -126,6 +126,9 @@
     <ClCompile Include="DLModel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="CubeMapComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseApp.h">
@@ -302,6 +305,9 @@
     <ClInclude Include="DLModel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="CubeMapComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultVS.hlsl" />
@@ -319,6 +325,8 @@
     <FxCompile Include="RenderTextureGS.hlsl" />
     <FxCompile Include="RenderTexturePS.hlsl" />
     <FxCompile Include="TestCS.hlsl" />
+    <FxCompile Include="CubeMapVS.hlsl" />
+    <FxCompile Include="CubeMapPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />
@@ -335,6 +343,7 @@
     </None>
     <None Include="PointCloud.hlsli" />
     <None Include="RT.hlsli" />
+    <None Include="CubeCommon.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\earth_Albedo.dds">

@@ -76,24 +76,28 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
 	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_fontSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
+	// Compute Shader에서 사용할 Heap생성
+	{
+		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVCPUHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_SRVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	}
+
 	// Compute Shader에서 사용할 버퍼 생성
 	{
 		computeTextureDIMX = m_width - m_guiWidth;
 		computeTextureDIMY = m_height;
 		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
-
-		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVCPUHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
-		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_SRVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 1);
 
 		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
 		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVCPUHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
+	
 	}
 
 	CreateSwapChain(factory, wnd);
-	CreateDepthBuffer();
 	CreateFonts();
+	CreateDepthBuffer();
 
 	// Create SwapChain RTVs
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart());
@@ -107,12 +111,35 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 	CreateTextures();
 	m_textureLoader->AddTexture(m_computeBuffer, m_computeTextureName);
+	clearFlag = true;
+
 	BuildFrameResources();
 
-	computeClearColor[0] = 0.f;
-	computeClearColor[1] = 0.f;
-	computeClearColor[2] = 0.f;
+	float r = 0.f;
+	float g = 0.f;
+	float b = 0.f;
+	computeClearColor[0] = r;
+	computeClearColor[1] = g;
+	computeClearColor[2] = b;
 	computeClearColor[3] = 1.f;
+
+	{
+		ThrowIfFailed(
+			m_device->CreateCommandAllocator(
+				D3D12_COMMAND_LIST_TYPE_DIRECT,
+				IID_PPV_ARGS(gui_commandAllocator.ReleaseAndGetAddressOf())
+			));
+
+		ThrowIfFailed(
+			m_device->CreateCommandList(
+				0,
+				D3D12_COMMAND_LIST_TYPE_DIRECT,
+				gui_commandAllocator.Get(),
+				nullptr,
+				IID_PPV_ARGS(gui_commandList.ReleaseAndGetAddressOf())
+			));
+		gui_commandList->Close();
+	}
 
 	{
 		m_commandAllocator->Reset();
@@ -130,8 +157,8 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 		FlushCommands();
 	}
-	ClearTexture();
 
+	
 	saveThread = std::thread([&] {
 		if (world == nullptr)
 		{
@@ -223,10 +250,11 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 bool RenderEngine::InitGUI(HWND wnd)
 {
 	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
+	m_imguiCtx = ImGui::CreateContext();
+	ImGui::SetCurrentContext(m_imguiCtx);
 	ImGuiIO& io = ImGui::GetIO();
 	io.IniFilename = nullptr;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	// io.Fonts->TexID = (ImTextureID)m_guiFont->GetSpriteSheet().ptr;
 
 	ImGui::StyleColorsLight();
@@ -308,6 +336,20 @@ void RenderEngine::OnResize()
 
 	// DepthBuffer 재생성
 	CreateDepthBuffer();
+
+	// Compute Shader에서 사용할 버퍼 생성
+	{
+		computeTextureDIMX = m_width - m_guiWidth;
+		computeTextureDIMY = m_height;
+		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 1);
+
+		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
+		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVCPUHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
+		m_textureLoader->AddTexture(m_computeBuffer, m_computeTextureName);
+		clearFlag = true;
+	}
+
 
 	m_currentBackBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
@@ -421,6 +463,7 @@ void RenderEngine::UpdateGUI()
 {
 	ImGui::SetWindowSize(ImVec2((float)m_guiWidth, (float)m_height), ImGuiCond_FirstUseEver);
 	ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
+	//ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
 
 	ImGui::Checkbox("Change Mode", &test);
 
@@ -464,8 +507,6 @@ void RenderEngine::UpdateGUI()
 
 		ImGui::EndPopup();
 	}
-
-
 }
 
 void RenderEngine::BuildFrameResources()
@@ -536,6 +577,13 @@ void RenderEngine::AddProxy(SceneComponent* component, FrameResource* fr)
 		Proxy proxy;
 		proxy.mesh = pointCloudComp->GetMesh();
 		fr->dotProxyBuffer.push_back(proxy);
+	}
+	else if (CubeMapComponent* cubeMapComp = dynamic_cast<CubeMapComponent*>(component))
+	{
+		//std::cout << "Mesh exist\n";
+		Proxy proxy;
+		proxy.mesh = cubeMapComp->GetMesh();
+		fr->cubeMapProxyBuffer.push_back(proxy);
 	}
 	/*std::vector<std::shared_ptr<SceneComponent>> child;
 	component->GetChildrenComponents(child);
@@ -627,7 +675,7 @@ void RenderEngine::Tick(float deltaTime)
 
 void RenderEngine::Render(const std::string& psoName, int idx, RenderType renderType, bool isFinal, bool clear)
 {
-	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), "test");
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), psoName.c_str());
 
 	using namespace Renderer;
 
@@ -739,6 +787,21 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 			proxy.mesh->RenderDot(commandList, m_textureLoader.get());
 		}
 	}
+	else if (renderType == RT_CubeMap)
+	{
+		commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
+
+		ID3D12DescriptorHeap* heaps[] = {
+			m_textureLoader->GetHeap()
+		};
+
+		commandList->SetDescriptorHeaps(1, heaps);
+		// Build Proxy 함수에서 등록된 메시가 PointCloud 일 경우 pcProxy에 등록됨
+		for (auto& proxy : r_currentFrameResource->cubeMapProxyBuffer)
+		{
+			proxy.mesh->CubeMapRender(commandList, m_textureLoader.get());
+		}
+	}
 	commandList->ResourceBarrier(
 		1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -768,10 +831,10 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 
 void RenderEngine::RenderGUI(bool isFinal)
 {
+	//r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
 	ImGui_ImplWin32_NewFrame();
 	ImGui_ImplDX12_NewFrame();
 	ImGui::NewFrame();
-
 
 	ImGuiWindowFlags flags = 0;
 
@@ -781,7 +844,6 @@ void RenderEngine::RenderGUI(bool isFinal)
 	ImGui::End();
 	ImGui::Render();
 
-	//r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
 	ID3D12CommandAllocator* commandAllocator = r_currentFrameResource->GetGUIAllocator();
 	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetGUICommandList();
 
@@ -798,7 +860,10 @@ void RenderEngine::RenderGUI(bool isFinal)
 	commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), false, nullptr);
 	ID3D12DescriptorHeap* pHeaps[] = { m_guiFontHeap.Get() };
 	commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+	ImGui::SetCurrentContext(m_imguiCtx);
+	ImDrawData* dd = ImGui::GetDrawData();
+	if(dd->Valid)
+		ImGui_ImplDX12_RenderDrawData(dd, commandList);
 
 	commandList->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -836,7 +901,7 @@ void RenderEngine::Compute(const std::string& cpsoName, int idx, bool isFinal, D
 		{
 			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 			m_fence->SetEventOnCompletion(r_currentFrameResource->m_currentFence, eventHandle);
-
+			
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
@@ -966,7 +1031,7 @@ void RenderEngine::CreateTextures()
 	fallbackPath = "Build/Fallback/";
 
 	DDSPath = "Textures/DDS/";
-	fallbackDDSPath = "Textures/Falback/";
+	fallbackDDSPath = "Textures/Fallback/";
 
 	m_textureLoader = std::make_shared<TextureLoader>(texturePath, m_device);
 	m_fallbackLoader = std::make_shared<TextureLoader>(fallbackPath, m_device);
@@ -1022,9 +1087,14 @@ void RenderEngine::RenderWithCompute()
 
 void RenderEngine::DrawingWithMouse()
 {
+	//Render("phongPSO", 0/*sequence*/, RT_Default, false/*isFinal*/, true/*clear RT*/);
+
 	Compute(computePSO, 0, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	if (test)
-		Render("pointCloudPSO", 1, RT_PointCloud, false/*isFinal*/, true/*clear RT*/);
+	if (test) {
+		Render("cubeMapPSO", 1, RT_CubeMap, false/*isFinal*/, true/*clear RT*/);
+		Render("pointCloudPSO",2, RT_PointCloud, false/*isFinal*/, false/*clear RT*/);
+		Render("phongPSO", 3/*sequence*/, RT_Default, false/*isFinal*/, false/*clear RT*/);
+	}
 	else
 		Render("renderTexturePSO", 1, RT_Dot, false/*isFinal*/, true/*clear RT*/);
 	RenderGUI(true);
@@ -1089,7 +1159,7 @@ void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES
 		t = m_textureLoader->GetTexture(name);
 
 	GenerateMips(t);
-
+	
 	D3D12_RESOURCE_DESC desc = t->GetDesc();
 
 	UINT16 mipLevels = desc.MipLevels;

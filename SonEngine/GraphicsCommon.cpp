@@ -16,6 +16,7 @@ namespace Graphics
 
 	RootSignature g_commonRS;
 	RootSignature g_pointCloudRS;
+	RootSignature g_cubeMapRS;
 	RootSignature g_videoRS;
 	RootSignature g_U1_C1_RS;
 	RootSignature g_R1_RS;
@@ -80,6 +81,12 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	g_R1_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
 	g_R1_RS.InitStaticSampler(0, wrapLinearSampler);
 	g_R1_RS.Finalize(device, L"R1_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	g_cubeMapRS.Reset(2, 1);
+	g_cubeMapRS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1);
+	g_cubeMapRS[1].InitCBV(0);
+	g_cubeMapRS.InitStaticSampler(0, wrapLinearSampler);
+	g_cubeMapRS.Finalize(device, L"cubeMapRS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 }
 

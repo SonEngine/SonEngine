@@ -182,7 +182,7 @@ int main()
 	std::wstring fallbackBuildFolder = L"../SonEngine/Build/Fallback/";
 	std::wstring ddsFolder = L"../SonEngine/Textures/DDS/";
 	std::wstring texturesFolder = L"../SonEngine/Textures/";
-	std::wstring fallbackFolder = L"../SonEngine/Textures/Falback/";
+	std::wstring fallbackFolder = L"../SonEngine/Textures/Fallback/";
 	std::wstring ddsExtension = L".dds";
 
 	fs::create_directories(buildFolder);

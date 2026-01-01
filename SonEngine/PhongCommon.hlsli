@@ -5,6 +5,7 @@ struct LocalConstant
 {
     row_major matrix model;
     row_major matrix modelInvTranspose;
+    int forceMip0;
 };
 
 struct vsInput

@@ -61,7 +61,7 @@ bool BaseApp::Initialize()
 	}
 
 	// Close commandList & Flush Queue
-	OnResize();
+	//OnResize();
 
 	if (!InitGUI()) {
 		std::cout << "InitGUI Failed\n";

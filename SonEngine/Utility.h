@@ -132,7 +132,8 @@ namespace GraphicsUtils {
 			const DirectX::SimpleMath::Vector3& location,
 			class World* world,
 			bool simulate = false,
-			PhysXMode mode = PhysXMode::PM_Default);
+			PhysXMode mode = PhysXMode::PM_Default,
+			int foreceMip0 = 0);
 
 		template<typename V, typename I, typename MeshType, typename RootComponentType>
 		std::shared_ptr<Actor> CreateActor2(
@@ -142,7 +143,8 @@ namespace GraphicsUtils {
 			const DirectX::SimpleMath::Vector3& location, 
 			World* world, 
 			bool simulatee = false,
-			PhysXMode physXMode = PhysXMode::PM_Default);
+			PhysXMode physXMode = PhysXMode::PM_Default,
+			int foreceMip0 = 0);
 
 		// Create Point Cloud Actor
 		template<typename V, typename I, typename MeshType = class StaticMesh>
@@ -152,7 +154,8 @@ namespace GraphicsUtils {
 			const std::string& texture, 
 			World* world, 
 			bool simulatee = false,
-			PhysXMode physXMode = PhysXMode::PM_Default);
+			PhysXMode physXMode = PhysXMode::PM_Default,
+			int foreceMip0 = 0);
 
 		template<typename A, typename V, typename I, typename MeshType = class StaticMesh>
 		std::shared_ptr<A> CreateActor(
@@ -162,7 +165,8 @@ namespace GraphicsUtils {
 			const DirectX::SimpleMath::Vector3& location,
 			class World* world,
 			bool simulate = false,
-			PhysXMode physXMode = PhysXMode::PM_Default);
+			PhysXMode physXMode = PhysXMode::PM_Default,
+			int foreceMip0 = 0);
 
 		void CreateResourceView(
 			Microsoft::WRL::ComPtr<ID3D12Resource> & buffer,

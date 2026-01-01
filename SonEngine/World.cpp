@@ -56,10 +56,10 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	modelLoader.Load("torus.fbx");
 
 	ModelLoader<PointCloudVertex, uint16_t> pcModelLoader;
-	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * DirectX::XMMatrixRotationX(-3.14f / 12.f);
+	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * DirectX::XMMatrixRotationX(-3.14f / 12.f) * DirectX::XMMatrixTranslationFromVector(Vector3(0.f,0.2f,5.f));
 	pcModelLoader.LoadPointCloud("map.ply", mat);
 
-	int planeSize = 6;
+	int planeSize = 100;
 	m_player = utility->CreateActor(
 		"player",
 		modelLoader.GetMeshes("cube"),
@@ -75,9 +75,13 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	std::shared_ptr<Actor> plane = utility->CreateActor(
 		"plane",
 		std::vector{ GeometryGenerator::MakePlane((float)planeSize, (float)planeSize, 1) },
-		"ComTex",
+		//"ComTex",
+		"8k_earth_albedo",
 		{ 0.f,0.f,0.f },
-		this
+		this,
+		false,
+		PM_Default,
+		1
 	);
 
 	std::shared_ptr<Actor> pointCloud = utility->CreatePCActor(
@@ -87,16 +91,23 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		this
 	);
 
-	std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t,StaticMesh,DotComponent>(
+	std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t,StaticMesh, DotComponent>(
 		"dot",
 		std::vector{GeometryGenerator::MakePoint()},
 		"ComTex",
 		{ 0.f,0.f,0.f },
 		this
 	);
+	std::shared_ptr<Actor> cubeMap = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, CubeMapComponent>(
+		"cubeMap",
+		std::vector{ GeometryGenerator::MakeSimpleCube(100,100,100) },
+		"CubeMap_SkyEnvHDR",
+		{ 0.f,0.f,0.f },
+		this
+	);
 
-	//std::shared_ptr<Actor> box2 = utility->CreateActor(
-	//	"box2",
+	//std::shared_ptr<Actor> dynamicBox = utility->CreateActor(
+	//	"dynamicBox",
 	//	std::vector{ GeometryGenerator::MakeCube(1, 1, 1) },
 	//	"pavement_03_albedo",
 	//	{ 2.f,2.f,0.f },
@@ -104,6 +115,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	//	true,
 	//	PM_Dynamic
 	//);
+	//dynamicBox->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 4.f));
 
 	//std::shared_ptr<Actor> torus = utility->CreateActor(
 	//	"torus",
@@ -113,27 +125,28 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	//	this
 	//);
 
-	//box2->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 4.f));
-	//std::shared_ptr<ATriggerBox> box = std::make_shared<ATriggerBox>("box", this);
+	
+	std::shared_ptr<ATriggerBox> triggerBox = std::make_shared<ATriggerBox>("triggerBox", this);
 
-	//box->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(0.f, 0.6f, 0.f));
-	////box->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 4.f));
+	triggerBox->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(0.f, 0.6f, 0.f));
+	//triggerBox->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 5.f));
 
-	//std::shared_ptr<AMovingPlatform> platform = std::make_shared<AMovingPlatform>("platform", this);
-	//platform->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(-2.f, 0.6f, 0.f));
+	std::shared_ptr<AMovingPlatform> movingPlatform = std::make_shared<AMovingPlatform>("movingPlatform", this);
+	movingPlatform->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(-2.f, 0.6f, 0.f));
 
-	//box->SetTarget(platform.get());
+	triggerBox->SetTarget(movingPlatform.get());
 
 	SpawnActor(plane);
 	SpawnActor(m_player);
 	SpawnActor(l);
 	SpawnActor(pointCloud);
 	SpawnActor(dot);
+	SpawnActor(cubeMap);
 
 	//SpawnActor(torus);
-	//SpawnActor(box);
-	//SpawnActor(box2);
-	//SpawnActor(platform);
+	//SpawnActor(dynamicBox);
+	SpawnActor(triggerBox);
+	SpawnActor(movingPlatform);
 
 	//int x = 3;
 	//int z = 3;
@@ -192,15 +205,15 @@ void World::InitCamera(int width, int height)
 	m_camera->m_height = height;
 	m_camera->SetCameraMode(CameraMode::CM_Perspective);
 	m_camera->Initialize();
-	m_camera->SetActorLocation({ 0.f, 0.f, -5.f });
-	m_camera->UpdateCameraRotation(0, 0);
+	m_camera->SetActorLocation({ 0.f, 5.f, -5.f });
+	m_camera->UpdateCameraRotation(0, 70);
 }
 
 void World::UpdateCamera(int width, int height)
 {
 	if (m_camera == nullptr)
 	{
-		std::cout << "Camera가 할당되지 않았습니다\n";
+		std::cout << "UpdateCamera() - Camera가 할당되지 않았습니다\n";
 		return;
 	}
 

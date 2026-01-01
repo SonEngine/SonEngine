@@ -47,7 +47,7 @@ public:
 	float m_fovRadians;
 	float m_fovAngle = 70.f;
 	float m_nearZ = 0.1f;
-	float m_farZ = 100.f;
+	float m_farZ = 1000.f;
 
 	DirectX::SimpleMath::Matrix projMatrix;
 

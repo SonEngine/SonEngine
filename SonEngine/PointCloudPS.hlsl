@@ -2,6 +2,7 @@
 
 float4 main(PSInput input) : SV_TARGET
 {
-    return input.color;
-    //return float4(1, 0, 0, 1);
+    float3 c = pow(input.color.rgb, 2.2f);
+    
+    return float4(c, 1);
 }

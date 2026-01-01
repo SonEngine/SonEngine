@@ -83,6 +83,9 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& com
 	for (uint32_t i = 0; i < count; i++)
 	{
 		std::string filename = nameMap[i];
+		
+		bool isCubeMap = filename.find("CubeMap") != std::string::npos;
+
 		TextureInfo info = textureMap[filename];
 		uint64_t size = info.size;
 		std::vector<uint8_t> texture(size);
@@ -108,7 +111,10 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& com
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Texture2D.MipLevels = t->GetDesc().MipLevels;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		if(isCubeMap)
+			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		else
+			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		
 		m_device->CreateShaderResourceView(t.Get(), &srvDesc, handle);
 		textures.push_back(t);

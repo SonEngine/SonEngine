@@ -6,6 +6,8 @@ __declspec(align(256)) struct LocalConstant
 {
 	DirectX::SimpleMath::Matrix model;
 	DirectX::SimpleMath::Matrix modelInvTranspose;
+	
+	int forceMip0;
 };
 
 __declspec(align(256)) struct GlobalConstant

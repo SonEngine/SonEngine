@@ -3,6 +3,7 @@
 #include "StaticMeshComponent.h"
 #include "PointCloudComponent.h"
 #include "DotComponent.h"
+#include "CubeMapComponent.h"
 #include "StaticMesh.h"
 #include "d3d12.h"
 #include "Utility.h"
@@ -215,7 +216,8 @@ namespace GraphicsUtils {
 		const DirectX::SimpleMath::Vector3& location,
 		World* world,
 		bool simulate,
-		PhysXMode physXMode
+		PhysXMode physXMode, 
+		int foreceMip0
 	)
 	{
 		std::shared_ptr<Actor> actor = std::make_shared<Actor>(actorname, world);
@@ -223,10 +225,10 @@ namespace GraphicsUtils {
 		std::shared_ptr<MeshType> mesh = std::make_shared<MeshType>();
 		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
 		{
-			mesh->Initialize(m_device, m_commandList, meshes);
-			mesh->SetAlbedoTexture(texture);
+			m->Initialize(m_device, m_commandList, meshes);
+			m->SetAlbedoTexture(texture);
 			//mesh->SetLocation(location.x, location.y, location.z);
-
+			m->UpdateMipState(foreceMip0);
 			std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
 			cmp->SetMesh(mesh);
 			cmp->SetPhysX(simulate);
@@ -244,7 +246,8 @@ namespace GraphicsUtils {
 		const DirectX::SimpleMath::Vector3& location,
 		World* world,
 		bool simulate,
-		PhysXMode physXMode
+		PhysXMode physXMode,
+		int foreceMip0
 	)
 	{
 		std::shared_ptr<Actor> actor = std::make_shared<Actor>(actorname, world);
@@ -252,11 +255,12 @@ namespace GraphicsUtils {
 		std::shared_ptr<MeshType> mesh = std::make_shared<MeshType>();
 		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
 		{
-			if constexpr (std::is_same_v<RootComponentType, StaticMeshComponent>)
+			if constexpr (std::is_same_v<RootComponentType, StaticMeshComponent> ||
+				std::is_same_v<RootComponentType, CubeMapComponent>)
 				m->Initialize(m_device, m_commandList, meshes);
 			else
 				m->InitializePC(m_device, m_commandList, meshes);
-
+			m->UpdateMipState(foreceMip0);
 			m->SetAlbedoTexture(texture);
 
 			std::shared_ptr<RootComponentType> cmp = std::make_shared<RootComponentType>(actor.get());
@@ -276,7 +280,8 @@ namespace GraphicsUtils {
 		const std::string& texture,
 		World* world,
 		bool simulate,
-		PhysXMode physXMode
+		PhysXMode physXMode,
+		int foreceMip0
 	)
 	{
 		std::shared_ptr<Actor> actor = std::make_shared<Actor>(actorname, world);
@@ -286,7 +291,7 @@ namespace GraphicsUtils {
 		{
 			m->InitializePC(m_device, m_commandList, meshes);
 			m->SetAlbedoTexture(texture);
-
+			m->UpdateMipState(foreceMip0);
 			std::shared_ptr<PointCloudComponent> cmp = std::make_shared<PointCloudComponent>(actor.get());
 			cmp->SetMesh(mesh);
 			cmp->SetPhysX(simulate);
@@ -305,7 +310,8 @@ namespace GraphicsUtils {
 		const DirectX::SimpleMath::Vector3& location,
 		World* world,
 		bool simulate,
-		PhysXMode physXMode
+		PhysXMode physXMode,
+		int foreceMip0
 	)
 	{
 		std::shared_ptr<A> actor = std::make_shared<A>(actorname, world);
@@ -313,8 +319,9 @@ namespace GraphicsUtils {
 		std::shared_ptr<MeshType> mesh = std::make_shared<MeshType>();
 		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
 		{
-			mesh->Initialize(m_device, m_commandList, meshes);
-			mesh->SetAlbedoTexture(texture);
+			m->Initialize(m_device, m_commandList, meshes);
+			m->SetAlbedoTexture(texture);
+			m->UpdateMipState(foreceMip0);
 			//mesh->SetLocation(location.x, location.y, location.z);
 
 			std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());

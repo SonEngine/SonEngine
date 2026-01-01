@@ -30,6 +30,7 @@ enum RenderType {
 	RT_TEXT,
 	RT_Default,
 	RT_PointCloud,
+	RT_CubeMap,
 	RT_Dot /*렌더타겟에 점하나 넣고 texture 그리기 용도*/
 };
 
@@ -111,6 +112,9 @@ private:
 private:
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> gui_commandAllocator;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> gui_commandList;
+
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
 
 private:
@@ -218,7 +222,7 @@ private:
 
 private:
 	std::vector<class PrimitiveComponent*> m_primitives;
-	bool test = false;
+	bool test = true;
 
 private:
 	MouseInputStateHelper* pMouseinputStateHelper = nullptr;
@@ -236,6 +240,7 @@ private:
 	float guiPenRadius;
 	float guiPenColor[3];
 	bool clearFlag = false;
+	ImGuiContext* m_imguiCtx = nullptr;
 
 private:
 	std::shared_ptr<DLModel> dlModel;

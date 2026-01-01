@@ -30,6 +30,7 @@ public:
 	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, const std::vector<Mesh<V, I>>& meshes);
 
 	void Render(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
+	void CubeMapRender(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
 	void Render(ID3D12GraphicsCommandList* commandList);
 
 	void RenderDot(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
@@ -41,6 +42,8 @@ public:
 	void SetAlbedoTexture(const std::string& filename) { albedoTexture = filename; }
 	void SetLocation(const float& x, const float& y, const float& z);
 	void Translate(const float& delX, const float& delY, const float& delZ);
+
+	void UpdateMipState(int newForceMip0);
 
 	void SetRotation(const DirectX::SimpleMath::Matrix& mat);
 
