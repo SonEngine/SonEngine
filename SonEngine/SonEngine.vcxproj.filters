@@ -99,12 +99,6 @@
     <ClCompile Include="AMovingPlatform.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="PrimitiveProxy.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="StaticMeshProxy.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="ModelLoader.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -127,6 +121,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="CubeMapComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -263,12 +260,6 @@
     <ClInclude Include="AMovingPlatform.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="PrimitiveProxy.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="StaticMeshProxy.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="ModelLoader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -306,6 +297,15 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="CubeMapComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderCommand.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UICommand.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

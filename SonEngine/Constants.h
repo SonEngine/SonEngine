@@ -2,12 +2,14 @@
 
 #include "directxtk12/SimpleMath.h"
 
-__declspec(align(256)) struct LocalConstant
+struct LocalConstant
 {
 	DirectX::SimpleMath::Matrix model;
 	DirectX::SimpleMath::Matrix modelInvTranspose;
 	
 	int forceMip0;
+	int cubeMipLevel;
+	float dummy[30];
 };
 
 __declspec(align(256)) struct GlobalConstant

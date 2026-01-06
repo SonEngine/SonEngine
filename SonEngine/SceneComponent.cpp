@@ -30,36 +30,29 @@ void SceneComponent::SetRotateSpeed(const float& newSpeed)
 void SceneComponent::SetLocation(const DirectX::SimpleMath::Vector3& newLocation)
 {
 	localTransform.location = newLocation;
-	if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(this))
-	{
-		cmp->UpdateLocation();
-	}
+	UpdateConstantLocation();
 }
 
 void SceneComponent::SetRotation(const DirectX::SimpleMath::Quaternion& newQuat)
 {
 	localTransform.quat = newQuat;
-	if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(this))
-	{
-		cmp->UpdateRotation();
-	}
+	UpdateConstantRotation();
+}
+
+void SceneComponent::SetCubeMapMipLevel(const int& newCubeMapMipLevel)
+{
+	localConstant.cubeMipLevel = newCubeMapMipLevel;
 }
 
 void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation)
 {
 	localTransform.location += delLocation;
-	if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(this))
-	{
-		cmp->UpdateLocation();
-	}
+	UpdateConstantLocation();
 }
 void SceneComponent::AddRotation(const DirectX::SimpleMath::Quaternion& delQ)
 {
 	localTransform.quat *= delQ;
-	if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(this))
-	{
-		cmp->UpdateRotation();
-	}
+	UpdateConstantRotation();
 }
 
 DirectX::SimpleMath::Matrix SceneComponent::GetViewMatrix() const
@@ -80,3 +73,30 @@ void SceneComponent::OnRegister()
 	}
 }
 
+void SceneComponent::UpdateConstantLocation()
+{
+	auto loc = GetLocation();
+	localConstant.model.m[3][0] = loc.x;
+	localConstant.model.m[3][1] = loc.y;
+	localConstant.model.m[3][2] = loc.z;
+	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();;
+}
+
+void SceneComponent::UpdateConstantRotation()
+{
+	auto q = GetRotation();
+	DirectX::SimpleMath::Matrix mat = DirectX::XMMatrixRotationQuaternion(q);
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			localConstant.model.m[i][j] = mat.m[i][j];
+		}
+	}
+	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();
+
+}
+void SceneComponent::UpdateMipState(int newForceMip0)
+{
+	localConstant.forceMip0 = newForceMip0;
+}

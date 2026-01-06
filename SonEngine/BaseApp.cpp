@@ -3,6 +3,7 @@
 using namespace Core;
 
 BaseApp* BaseApp::m_appPtr = nullptr;
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	return BaseApp::m_appPtr->MainProc(hWnd, msg, wParam, lParam);
@@ -128,9 +129,21 @@ bool Core::BaseApp::IsWindowFocused()
 
 LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-		return true;
+	if (Graphics::g_imguiCtx) // ready 플래그 대신 context 존재로도 충분
+	{
+		static thread_local bool s_inImGui = false;
+		if (!s_inImGui)
+		{
+			s_inImGui = true;
+			ImGui::SetCurrentContext(Graphics::g_imguiCtx);
+			if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+			{
+				s_inImGui = false;
+				return 1;
+			}
+			s_inImGui = false;
+		}
+	}
 
 	switch (msg) {
 	case WM_DESTROY:

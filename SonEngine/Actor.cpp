@@ -29,17 +29,6 @@ void Actor::SetActorLocation(const DirectX::SimpleMath::Vector3& newLocation)
 	}
 }
 
-void Actor::SetActorRotation(const DirectX::SimpleMath::Matrix& newMat)
-{
-	if (m_rootComponent)
-	{
-		if (StaticMeshComponent* cmp = dynamic_cast<StaticMeshComponent*>(m_rootComponent.get()))
-		{
-			cmp->SetRotation(newMat);
-		}
-	}
-}
-
 void Actor::SetActorRotation(const DirectX::SimpleMath::Quaternion& newQuat)
 {
 	if (m_rootComponent)
@@ -150,5 +139,26 @@ DirectX::SimpleMath::Matrix Actor::GetViewMatrix() const
 	}
 	else {
 		return DirectX::SimpleMath::Matrix();
+	}
+}
+
+void Actor::UpdateMipState(int newForceMip0)
+{
+	if (m_rootComponent)
+	{
+		m_rootComponent->UpdateMipState(newForceMip0);
+	}
+}
+
+
+void Actor::SetUpdateConstant(bool newState)
+{
+	if (m_rootComponent)
+	{
+		if (PrimitiveComponent* comp = dynamic_cast<PrimitiveComponent*>(m_rootComponent.get()))
+		{
+			comp->SetUpdateConstant(newState);
+		}
+		
 	}
 }

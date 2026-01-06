@@ -40,9 +40,13 @@ public:
 
     // 물리 시뮬레이션 이후 transform 동기화
     void SyncFromPhysX(const physx::PxTransform& transform);
+    void SetUpdateConstant(bool newState) { m_updateConstant = newState; }
+    bool GetUpdateConstant() { return m_updateConstant; }
 
 protected:
     bool m_visible;
     bool m_usePhysX = false;
     PhysXMode m_physXMode;
+    bool m_updateConstant = false;
+
 };

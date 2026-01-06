@@ -133,6 +133,16 @@ void Core::MultiThreadApp::Update(float deltaTime)
 {
 	if (world)
 	{
+		if (isFPSMode && world->isFocused)
+		{
+			RECT rc{};
+			GetClientRect(m_mainWnd, &rc);
+			POINT pt{};
+			pt.x = (rc.left + rc.right) / 2;
+			pt.y = (rc.top + rc.bottom) / 2;
+			ClientToScreen(m_mainWnd, &pt);
+			SetCursorPos(pt.x, pt.y);
+		}
 		world->Tick(deltaTime);
 		world->SyncKinematicToPhysX();
 	}

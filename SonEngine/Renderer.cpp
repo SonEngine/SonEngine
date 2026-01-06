@@ -114,7 +114,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     m_PSOs["videoPSO"] = videoPSO;
 
     phongPSO.SetInputLayout(_countof(phongIL), phongIL);
-    phongPSO.SetRootSignature(g_commonRS);
+    phongPSO.SetRootSignature(g_R2_C2_RS);
     phongPSO.SetRasterizerState(rasterizerDefault);
     phongPSO.SetBlendState(blendNoColorWrite);
     phongPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
@@ -195,8 +195,6 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
     defaultCPSO.Finalize(device);
     m_CPSOs["defaultCPSO"] = defaultCPSO;
     cpsoNames.push_back("defaultCPSO");
-
-
 }
 
 ID3D12PipelineState* Renderer::GetPSO(std::string psoName)

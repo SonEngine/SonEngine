@@ -26,6 +26,7 @@ using namespace Renderer;
 RenderEngine::RenderEngine(ID3D12Device5* device)
 	:m_device(device)
 {
+	m_scene = std::make_shared<Scene>(m_frameResourceCount);
 }
 
 RenderEngine::~RenderEngine()
@@ -40,7 +41,10 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 	dlModel = std::make_shared<DLModel>();
 	dlModel->Initialize("DL/models/mlp.pt");
 
-	m_boundedQueue = std::make_shared<BoundedQueue>(m_frameResourceCount);
+	m_frameQueue = std::make_shared<BoundedQueue<FramePacket>>(m_frameResourceCount);
+	m_renderCmdQueue = std::make_shared<BoundedQueue<RenderCmd>>(1024);
+	m_renderToMainCmdQueue = std::make_shared<BoundedQueue<UICmd>>(1024);
+
 	pMouseinputStateHelper = mouseInputState;
 	m_guiWidth = guiWidth;
 	m_width = width;
@@ -88,11 +92,11 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 		computeTextureDIMX = m_width - m_guiWidth;
 		computeTextureDIMY = m_height;
 		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 1);
+		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
 
 		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
 		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVCPUHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
-	
+
 	}
 
 	CreateSwapChain(factory, wnd);
@@ -158,7 +162,7 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 		FlushCommands();
 	}
 
-	
+
 	saveThread = std::thread([&] {
 		if (world == nullptr)
 		{
@@ -232,13 +236,40 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 			frameReady = false;
 			lock.unlock();
 
-			m_boundedQueue->Pop(r_packet);
+			m_frameQueue->Pop(r_packet);
 			r_currentResourceIndex = r_packet.frameId % m_frameResourceCount;
 			r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
 
 			r_currentFrameResource->UpdateGlobalConstantBuffer(r_packet.gc);
 			r_currentFrameResource->UpdatePBGlobalConstantBuffer(r_packet.pbgc);
 
+			//DrainRenderCommands
+			while (m_renderCmdQueue->TryPop(r_cmd))
+			{
+				m_scene->Apply(r_cmd);
+			}
+
+			for (auto& [type, proxies] : m_scene->m_proxies)
+			{
+				for (auto& [id, proxy] : proxies)
+				{
+					if (proxy.addDirtyFlags[r_currentResourceIndex])
+					{
+						//std::cout << "Add In RenderThread - " << id << ", Index : " << r_currentResourceIndex << '\n';
+						r_currentFrameResource->AddLocalConstantBuffer(proxy.constant, id);
+						proxy.addDirtyFlags[r_currentResourceIndex] = false;
+						r_idToName[id] = proxy.name;
+						r_nameToId[proxy.name] = id;
+						r_idMax = max(r_idMax, id);
+					}
+					if (proxy.updateDirtyFlags[r_currentResourceIndex])
+					{
+						//std::cout << "Add In RenderThread - " << id << ", Index : " << r_currentResourceIndex << '\n';
+						r_currentFrameResource->UpdateLocalConstantBuffer(proxy.constant, id);
+						proxy.updateDirtyFlags[r_currentResourceIndex] = false;
+					}
+				}
+			}
 			//RenderWithText();
 			//RenderWithCompute();
 			DrawingWithMouse();
@@ -250,8 +281,9 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 bool RenderEngine::InitGUI(HWND wnd)
 {
 	IMGUI_CHECKVERSION();
-	m_imguiCtx = ImGui::CreateContext();
-	ImGui::SetCurrentContext(m_imguiCtx);
+	g_imguiCtx = ImGui::CreateContext();
+	//ImGui::SetCurrentContext(m_imguiCtx);
+
 	ImGuiIO& io = ImGui::GetIO();
 	io.IniFilename = nullptr;
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
@@ -281,7 +313,8 @@ bool RenderEngine::InitGUI(HWND wnd)
 	guiPenColor[1] = 1.f;
 	guiPenColor[2] = 1.f;
 	guiPenRadius = 15.f;
-
+	
+	g_imguiReady.store(true, std::memory_order_release);
 	return true;
 }
 
@@ -350,7 +383,6 @@ void RenderEngine::OnResize()
 		clearFlag = true;
 	}
 
-
 	m_currentBackBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
 	m_viewport = CD3DX12_VIEWPORT((FLOAT)m_guiWidth, 0.F, (FLOAT)(m_width - m_guiWidth), (FLOAT)m_height);
@@ -362,8 +394,39 @@ void RenderEngine::OnResize()
 void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 {
 	m_primitives.push_back(primitive);
+
+	static uint32_t id = 0;
+
+	CmdAddPrimitive add;
+	add.name = primitive->GetName();
+	add.id = id++;
+	if (StaticMeshComponent* staticMeshComp = dynamic_cast<StaticMeshComponent*>(primitive)) {
+		add.mesh = staticMeshComp->GetMeshPtr();
+		add.meshType = MT_primitive;
+	}
+	else if (PointCloudComponent* pointCloudComp = dynamic_cast<PointCloudComponent*>(primitive))
+	{
+		add.mesh = pointCloudComp->GetMeshPtr();
+		add.meshType = MT_pointCloud;
+
+	}
+	else if (DotComponent* pointCloudComp = dynamic_cast<DotComponent*>(primitive))
+	{
+		add.mesh = pointCloudComp->GetMeshPtr();
+		add.meshType = MT_dot;
+	}
+	else if (CubeMapComponent* cubeMapComp = dynamic_cast<CubeMapComponent*>(primitive))
+	{
+		add.mesh = cubeMapComp->GetMeshPtr();
+		add.meshType = MT_cubeMap;
+	}
+	add.constant = primitive->GetLocalConstant();
+
+	m_renderCmdQueue->Push(std::move(add));
+
+	/*m_primitives.push_back(primitive);
 	for (auto& fr : m_frameResources)
-		fr->proxyDirty = true;
+		fr->proxyDirty = true;*/
 }
 
 void RenderEngine::CreateCommandObjects()
@@ -470,13 +533,23 @@ void RenderEngine::UpdateGUI()
 	ImGui::NewLine();
 
 	ImGui::SliderFloat("Pen Radius", &guiPenRadius, 0.f, 20.f);
+	ImGui::SliderInt("save miplevel", &saveMipLevel, 0, 5);
+	ImGui::SliderInt("id", &r_selecteId, 0, r_idMax);
+	ImGui::SameLine();
+	ImGui::Text(r_idToName[r_selecteId].c_str());
 
-	ImGui::SliderInt("miplevel", &saveMipLevel, 0, 5);
-	
+	if (ImGui::SliderInt("cubemap mipLevel", &cubemapMipLevel, 0, 5))
+	{
+		UICmd cmd;
+		cmd.id = r_selecteId;
+		cmd.cubeMapMipLevel = cubemapMipLevel;
+		m_renderToMainCmdQueue->Push(std::move(cmd));
+	}
+
 	if (ImGui::Button("Run DL")) {
 		RequestRunDL();
 		printRet = true;
-		
+
 	}
 	if (printRet)
 	{
@@ -519,79 +592,6 @@ void RenderEngine::BuildFrameResources()
 		m_frameResources[i]->Initialize(m_device, 512, 512, 0, mainWnd);
 	}
 }
-void RenderEngine::PostActorChanges()
-{
-	//	if (!m_addActors.empty())
-	//{
-	//	for (auto& pFr : m_frameResources)
-	//	{
-	//		pFr->proxyDirty = true;
-	//	}
-	//	//std::cout << m_addActors.size() << "개 추가\n";
-	//	for (auto& a : m_addActors)
-	//	{
-	//		m_actors.push_back(a);
-	//	}
-	//	m_addActors.clear();
-}
-
-void RenderEngine::BuildRenderProxy()
-{
-	for (auto& pFr : m_frameResources)
-	{
-		if (pFr->proxyDirty)
-		{
-			pFr->proxyDirty = false;
-			pFr->proxyBuffer.clear();
-			pFr->textProxyBuffer.clear();
-
-			for (auto primitive : m_primitives)
-			{
-				AddProxy(primitive, pFr.get());
-			}
-		}
-	}
-
-}
-
-// 새로운 compoenet 추가 시 Utility.inl에 h파일 추가
-void RenderEngine::AddProxy(SceneComponent* component, FrameResource* fr)
-{
-	if (StaticMeshComponent* staticMeshComp = dynamic_cast<StaticMeshComponent*>(component))
-	{
-		//std::cout << "Mesh exist\n";
-		Proxy proxy;
-		proxy.mesh = staticMeshComp->GetMesh();
-		fr->proxyBuffer.push_back(proxy);
-	}
-	else if (PointCloudComponent* pointCloudComp = dynamic_cast<PointCloudComponent*>(component))
-	{
-		//std::cout << "Mesh exist\n";
-		Proxy proxy;
-		proxy.mesh = pointCloudComp->GetMesh();
-		fr->pcProxyBuffer.push_back(proxy);
-	}
-	else if (DotComponent* pointCloudComp = dynamic_cast<DotComponent*>(component))
-	{
-		//std::cout << "Mesh exist\n";
-		Proxy proxy;
-		proxy.mesh = pointCloudComp->GetMesh();
-		fr->dotProxyBuffer.push_back(proxy);
-	}
-	else if (CubeMapComponent* cubeMapComp = dynamic_cast<CubeMapComponent*>(component))
-	{
-		//std::cout << "Mesh exist\n";
-		Proxy proxy;
-		proxy.mesh = cubeMapComp->GetMesh();
-		fr->cubeMapProxyBuffer.push_back(proxy);
-	}
-	/*std::vector<std::shared_ptr<SceneComponent>> child;
-	component->GetChildrenComponents(child);
-	for (size_t i = 0; i < child.size(); i++)
-	{
-		AddProxy(child[i].get());
-	}*/
-}
 
 void RenderEngine::AddTextProxy(SceneComponent* component)
 {
@@ -632,8 +632,6 @@ void RenderEngine::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, 
 		packet.gc.lights[i].location = lightInfos[0].location;
 		packet.gc.lights[i].brightness = lightInfos[0].brightness;
 	}
-
-	//memcpy(pPhongGCB, &phongGC, sizeof(PhongGlobalConstant));
 }
 
 void RenderEngine::UpdatePBGlobalConstantBuffer(const int& guiWidth, const MouseInputState& mouseInputState)
@@ -650,6 +648,17 @@ void RenderEngine::UpdatePBGlobalConstantBuffer(const int& guiWidth, const Mouse
 
 void RenderEngine::Tick(float deltaTime)
 {
+	// drain render input
+	while(m_renderToMainCmdQueue->TryPop(g_cmd))
+	{
+		CmdUpdatePrimitive update;
+		update.id = g_cmd.id;
+		m_primitives[g_cmd.id]->SetCubeMapMipLevel(g_cmd.cubeMapMipLevel);
+		update.constant = m_primitives[g_cmd.id]->GetLocalConstant();
+		update.meshType = MT_primitive;
+
+		m_renderCmdQueue->Push(update);
+	}
 	if (world)
 	{
 		packet.frameId = m_frameId++;
@@ -660,9 +669,24 @@ void RenderEngine::Tick(float deltaTime)
 			prevMousePt = currMousPt;
 		}
 
-		m_boundedQueue->Push(packet);
-		BuildRenderProxy();
+
+		m_frameQueue->Push(std::move(packet));
 	}
+	int i = 0;
+	for (auto& primitive : m_primitives)
+	{
+		if (primitive->GetUpdateConstant())
+		{
+			CmdUpdatePrimitive update;
+			update.id = i;
+			update.constant = m_primitives[i]->GetLocalConstant();
+			update.meshType = MT_primitive;
+
+			m_renderCmdQueue->Push(update);
+		}
+		i++;
+	}
+
 
 	{
 		std::lock_guard<std::mutex> lock(g_mtx);
@@ -673,7 +697,7 @@ void RenderEngine::Tick(float deltaTime)
 
 }
 
-void RenderEngine::Render(const std::string& psoName, int idx, RenderType renderType, bool isFinal, bool clear)
+void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType, bool isFinal, bool clear)
 {
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), psoName.c_str());
 
@@ -730,78 +754,55 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 	}
 	commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
 
-	if (renderType == RT_Default)
-	{
-		commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetGCBGPUAddress());
 
+
+	if (meshType != MT_pointCloud)
+	{
 		ID3D12DescriptorHeap* heaps[] = {
 			m_textureLoader->GetHeap()
 		};
-
 		commandList->SetDescriptorHeaps(1, heaps);
-		for (auto& proxy : r_currentFrameResource->proxyBuffer)
-		{
-			proxy.mesh->Render(commandList, m_textureLoader.get());
-		}
 	}
-	else if (renderType == RT_TEXT)
+
+	for (auto& [type, proxies] : m_scene->m_proxies)
 	{
-		commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetGCBGPUAddress());
-
-		if (r_currentFrameResource->textProxyBuffer.size() > 0)
+		if (type == meshType)
 		{
-			ID3D12DescriptorHeap* heaps[] = {
-			r_currentFrameResource->GetTextSrvHeap()
-			};
-
-			commandList->SetDescriptorHeaps(1, heaps);
-			UINT i = 0;
-			for (auto& proxy : r_currentFrameResource->textProxyBuffer)
+			for (auto& [id, proxy] : proxies)
 			{
-				commandList->SetGraphicsRootDescriptorTable(0, r_currentFrameResource->GetTextSrvGPUHandle(i));
-				proxy.mesh->Render(commandList);
-				i++;
+				auto it = r_currentFrameResource->m_localCBs.find(id);
+
+				// cubemap - 0, albedo - 1, local - 2, gobal - 3
+				if (type == MT_primitive)
+				{
+					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
+					commandList->SetGraphicsRootConstantBufferView(2, it->second->GetGPUVirtualAddress());
+
+					commandList->SetGraphicsRootConstantBufferView(3, r_currentFrameResource->GetGCBGPUAddress());
+
+					proxy.mesh->Render_(commandList, m_textureLoader.get(), 1);
+
+				}
+				else if (type == MT_pointCloud)
+				{
+					commandList->SetGraphicsRootConstantBufferView(0, it->second->GetGPUVirtualAddress());
+
+					commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
+					proxy.mesh->RenderPoints(commandList);
+				}
+				else if (type == MT_dot)
+				{
+					proxy.mesh->RenderDot(commandList, m_textureLoader.get());
+				}
+				else if (type == MT_cubeMap)
+				{
+					commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
+					proxy.mesh->CubeMapRender(commandList, m_textureLoader.get());
+				}
 			}
 		}
 	}
-	else if (renderType == RT_PointCloud)
-	{
-		commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
 
-		// Build Proxy 함수에서 등록된 메시가 PointCloud 일 경우 pcProxy에 등록됨
-		for (auto& proxy : r_currentFrameResource->pcProxyBuffer)
-		{
-			proxy.mesh->RenderPoints(commandList, 0);
-		}
-	}
-	else if (renderType == RT_Dot)
-	{
-		ID3D12DescriptorHeap* heaps[] = {
-			m_textureLoader->GetHeap()
-		};
-
-		commandList->SetDescriptorHeaps(1, heaps);
-		// Build Proxy 함수에서 등록된 메시가 PointCloud 일 경우 pcProxy에 등록됨
-		for (auto& proxy : r_currentFrameResource->dotProxyBuffer)
-		{
-			proxy.mesh->RenderDot(commandList, m_textureLoader.get());
-		}
-	}
-	else if (renderType == RT_CubeMap)
-	{
-		commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
-
-		ID3D12DescriptorHeap* heaps[] = {
-			m_textureLoader->GetHeap()
-		};
-
-		commandList->SetDescriptorHeaps(1, heaps);
-		// Build Proxy 함수에서 등록된 메시가 PointCloud 일 경우 pcProxy에 등록됨
-		for (auto& proxy : r_currentFrameResource->cubeMapProxyBuffer)
-		{
-			proxy.mesh->CubeMapRender(commandList, m_textureLoader.get());
-		}
-	}
 	commandList->ResourceBarrier(
 		1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -831,7 +832,9 @@ void RenderEngine::Render(const std::string& psoName, int idx, RenderType render
 
 void RenderEngine::RenderGUI(bool isFinal)
 {
-	//r_currentFrameResource = m_frameResources[r_currentResourceIndex].get();
+	std::lock_guard<std::mutex> lock(Graphics::g_imguiMutex);
+	ImGui::SetCurrentContext(g_imguiCtx);
+
 	ImGui_ImplWin32_NewFrame();
 	ImGui_ImplDX12_NewFrame();
 	ImGui::NewFrame();
@@ -860,9 +863,9 @@ void RenderEngine::RenderGUI(bool isFinal)
 	commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), false, nullptr);
 	ID3D12DescriptorHeap* pHeaps[] = { m_guiFontHeap.Get() };
 	commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
-	ImGui::SetCurrentContext(m_imguiCtx);
+	
 	ImDrawData* dd = ImGui::GetDrawData();
-	if(dd->Valid)
+	if (dd->Valid)
 		ImGui_ImplDX12_RenderDrawData(dd, commandList);
 
 	commandList->ResourceBarrier(1,
@@ -901,7 +904,7 @@ void RenderEngine::Compute(const std::string& cpsoName, int idx, bool isFinal, D
 		{
 			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 			m_fence->SetEventOnCompletion(r_currentFrameResource->m_currentFence, eventHandle);
-			
+
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
@@ -1079,24 +1082,25 @@ void RenderEngine::RenderWithText()
 void RenderEngine::RenderWithCompute()
 {
 	Compute(computePSO, 0, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	Render("phongPSO", 1/*sequence*/, RT_Default, false/*isFinal*/, true/*clear RT*/);
-	Render("pointCloudPSO", 2, RT_PointCloud, true/*isFinal*/, false/*clear RT*/);
+	//Render("phongPSO", 1/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
+	//Render("pointCloudPSO", 2, RT_PointCloud, true/*isFinal*/, false/*clear RT*/);
 
 	//RenderGUI(true);
 }
 
 void RenderEngine::DrawingWithMouse()
 {
+	int i = 0;
 	//Render("phongPSO", 0/*sequence*/, RT_Default, false/*isFinal*/, true/*clear RT*/);
 
-	Compute(computePSO, 0, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	if (test) {
-		Render("cubeMapPSO", 1, RT_CubeMap, false/*isFinal*/, true/*clear RT*/);
-		Render("pointCloudPSO",2, RT_PointCloud, false/*isFinal*/, false/*clear RT*/);
-		Render("phongPSO", 3/*sequence*/, RT_Default, false/*isFinal*/, false/*clear RT*/);
+		Render("cubeMapPSO", i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
+		Render("pointCloudPSO", i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
+		Render("phongPSO", i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 	}
 	else
-		Render("renderTexturePSO", 1, RT_Dot, false/*isFinal*/, true/*clear RT*/);
+		Render("renderTexturePSO", i++, MT_dot, false/*isFinal*/, true/*clear RT*/);
 	RenderGUI(true);
 }
 
@@ -1159,7 +1163,7 @@ void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES
 		t = m_textureLoader->GetTexture(name);
 
 	GenerateMips(t);
-	
+
 	D3D12_RESOURCE_DESC desc = t->GetDesc();
 
 	UINT16 mipLevels = desc.MipLevels;

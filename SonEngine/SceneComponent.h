@@ -6,6 +6,7 @@
 #include "ActorComponent.h"
 #include "directxtk12/SimpleMath.h"
 #include "Transform.h"
+#include "Constants.h"
 
 // transform
 class SceneComponent : public ActorComponent {
@@ -21,12 +22,16 @@ public:
 	void SetFrontDirection(const DirectX::SimpleMath::Vector3& newDir) { m_frontDirection = newDir; }
 	void SetUpDirection(const DirectX::SimpleMath::Vector3& newDir) {m_upDirection = newDir;}
 	void SetRightDirection(const DirectX::SimpleMath::Vector3& newDir) { m_rightDirection = newDir; }
+	void SetCubeMapMipLevel(const int& newCubeMapMipLevel);
+
 	void AddLocation(const DirectX::SimpleMath::Vector3& delLocation);
 	void AddRotation(const DirectX::SimpleMath::Quaternion& delQ);
 
 public:
 	float GetSpeed() const { return m_speed; }
 	float GetRotateSpeed() const { return m_rotateSpeed; }
+	LocalConstant GetLocalConstant() { return localConstant; }
+
 	DirectX::SimpleMath::Vector3 GetFrontDirection() const { return m_frontDirection; }
 	DirectX::SimpleMath::Vector3 GetBaseFrontDirection() const { return m_baseFrontDirection; }
 	DirectX::SimpleMath::Vector3 GetBaseUpDirection() const { return m_baseUpDirection; }
@@ -42,6 +47,10 @@ public:
 public:
 	// world->actor 호출
 	virtual void OnRegister();
+
+	void UpdateConstantLocation();
+	void UpdateConstantRotation();
+	void UpdateMipState(int newForceMip0);
 	
 protected:
 	//DirectX::SimpleMath::Vector3 m_location;
@@ -58,6 +67,7 @@ protected:
 protected:
 	float m_speed = 1.f;
 	float m_rotateSpeed = 1.f;
+	LocalConstant localConstant;
 
 protected:
 	std::shared_ptr<SceneComponent> m_parent;

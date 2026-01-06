@@ -31,18 +31,6 @@ inline void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandL
 	m_vertexBufferViews.push_back(VBV);
 	m_indexBufferViews.push_back(IBV);
 
-
-	Graphics::utility->CreateConstantBuffer(
-		sizeof(LocalConstant),
-		m_localCB,
-		reinterpret_cast<void**>(&pLocalConstant)
-	);
-
-	memcpy(
-		pLocalConstant,
-		&localConstant,
-		sizeof(LocalConstant)
-	);
 }
 
 template<typename V, typename I>
@@ -67,18 +55,6 @@ inline void StaticMesh::InitializePC(ID3D12Device5* device, ID3D12GraphicsComman
 		
 		m_vertexBufferViews.push_back(VBV);
 	}
-
-	Graphics::utility->CreateConstantBuffer(
-		sizeof(LocalConstant),
-		m_localCB,
-		reinterpret_cast<void**>(&pLocalConstant)
-	);
-
-	memcpy(
-		pLocalConstant,
-		&localConstant,
-		sizeof(LocalConstant)
-	);
 }
 
 template<typename V, typename I>
@@ -114,16 +90,4 @@ inline void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandL
 		m_indexBufferViews.push_back(IBV);
 		
 	}
-	Graphics::utility->CreateConstantBuffer(
-		sizeof(LocalConstant),
-		m_localCB,
-		reinterpret_cast<void**>(&pLocalConstant)
-	);
-
-	memcpy(
-		pLocalConstant,
-		&localConstant,
-		sizeof(LocalConstant)
-	);
-
 }

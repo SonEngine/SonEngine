@@ -1,7 +1,10 @@
 ﻿#pragma once
 
+#include <mutex>
+#include <atomic>
 #include "Utility.h"
 #include "World.h"
+#include "imgui.h"
 
 class SamplerDesc;
 class RootSignature;
@@ -11,14 +14,14 @@ class GraphicsPSO;
 namespace Graphics
 {
     // sampler, rootsignature 등을 미리 생성
-    void InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5> & device);
+    void InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>& device);
 
     extern D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
-  
+
     extern D3D12_RASTERIZER_DESC rasterizerDefault;
     extern D3D12_RASTERIZER_DESC noneCullRasterizer;
 
-    extern D3D12_BLEND_DESC blendNoColorWrite;		
+    extern D3D12_BLEND_DESC blendNoColorWrite;
 
     extern D3D12_DEPTH_STENCIL_DESC depthStateDefault;
 
@@ -28,8 +31,11 @@ namespace Graphics
     extern RootSignature g_videoRS;
     extern RootSignature g_U1_C1_RS;
     extern RootSignature g_R1_RS;
+    extern RootSignature g_R2_C2_RS;
 
     extern std::shared_ptr<GraphicsUtils::Utility> utility;
     extern std::unique_ptr<World> world;
-
+    extern std::mutex g_imguiMutex;
+    extern std::atomic<bool> g_imguiReady;
+    extern ImGuiContext* g_imguiCtx;
 }

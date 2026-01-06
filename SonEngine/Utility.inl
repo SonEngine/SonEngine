@@ -228,7 +228,7 @@ namespace GraphicsUtils {
 			m->Initialize(m_device, m_commandList, meshes);
 			m->SetAlbedoTexture(texture);
 			//mesh->SetLocation(location.x, location.y, location.z);
-			m->UpdateMipState(foreceMip0);
+			//
 			std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
 			cmp->SetMesh(mesh);
 			cmp->SetPhysX(simulate);
@@ -236,6 +236,7 @@ namespace GraphicsUtils {
 			actor->SetRootComponent(cmp);
 		}
 		actor->SetActorLocation(location);
+		actor->UpdateMipState(foreceMip0);
 		return actor;
 	}
 	template<typename V, typename I, typename MeshType, typename RootComponentType>
@@ -260,7 +261,6 @@ namespace GraphicsUtils {
 				m->Initialize(m_device, m_commandList, meshes);
 			else
 				m->InitializePC(m_device, m_commandList, meshes);
-			m->UpdateMipState(foreceMip0);
 			m->SetAlbedoTexture(texture);
 
 			std::shared_ptr<RootComponentType> cmp = std::make_shared<RootComponentType>(actor.get());
@@ -269,6 +269,7 @@ namespace GraphicsUtils {
 			cmp->SetPhysXMode(physXMode);
 			actor->SetRootComponent(cmp);
 		}
+		actor->UpdateMipState(foreceMip0);
 		actor->SetActorLocation(location);
 		return actor;
 	}
@@ -291,13 +292,13 @@ namespace GraphicsUtils {
 		{
 			m->InitializePC(m_device, m_commandList, meshes);
 			m->SetAlbedoTexture(texture);
-			m->UpdateMipState(foreceMip0);
 			std::shared_ptr<PointCloudComponent> cmp = std::make_shared<PointCloudComponent>(actor.get());
 			cmp->SetMesh(mesh);
 			cmp->SetPhysX(simulate);
 			cmp->SetPhysXMode(physXMode);
 			actor->SetRootComponent(cmp);
 		}
+		actor->UpdateMipState(foreceMip0);
 
 		return actor;
 	}
@@ -321,8 +322,6 @@ namespace GraphicsUtils {
 		{
 			m->Initialize(m_device, m_commandList, meshes);
 			m->SetAlbedoTexture(texture);
-			m->UpdateMipState(foreceMip0);
-			//mesh->SetLocation(location.x, location.y, location.z);
 
 			std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
 			cmp->SetMesh(mesh);
@@ -330,6 +329,7 @@ namespace GraphicsUtils {
 			cmp->SetPhysXMode(physXMode);
 			actor->SetRootComponent(cmp);
 		}
+		actor->UpdateMipState(foreceMip0);
 		actor->SetActorLocation(location);
 		return actor;
 	}

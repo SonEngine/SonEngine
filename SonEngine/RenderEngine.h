@@ -24,7 +24,8 @@
 #include "MouseInputState.h"
 #include "BoundedQueue.h"
 #include "DLModel.h"
-
+#include "Scene.h"
+#include "UICommand.h"
 
 enum RenderType {
 	RT_TEXT,
@@ -65,15 +66,17 @@ protected:
 	void DrawingWithMouse();
 	void BuildFrameResources();
 
-	void PostActorChanges();
-	void BuildRenderProxy();
-	void AddProxy(SceneComponent* component, FrameResource* fr);
+	//void PostActorChanges();
+	//void BuildRenderProxy();
+	//void AddProxy(SceneComponent* component, FrameResource* fr);
 	void Update(float deltaTime);
 	//void BuildRenderProxy(const std::vector<std::shared_ptr<Actor>>& actors, Actor* player);
 	//void AddProxy(SceneComponent* component);
 	void AddTextProxy(SceneComponent* component);
 	void UpdateMousePosition();
-	void Render(const std::string& psoName, int idx, RenderType renderType, bool isFinal, bool clear);
+	void Render(const std::string& psoName, int idx, MeshType meshType, bool isFinal, bool clear);
+
+	//void Render(const std::string& psoName, int idx, RenderType renderType, bool isFinal, bool clear);
 	void RenderGUI(bool isFinal);
 	void Compute(const std::string& cpsoName, int idx, bool isFinal, D3D12_RESOURCE_STATES prevState);
 
@@ -153,6 +156,7 @@ private:
 	//DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	std::string m_computeTextureName = "ComTex";
+	std::string m_cubeMapTextureName = "CubeMap_SkyEnvHDR";
 	UINT computeTextureDIM = 1024 * 4;
 	UINT computeTextureDIMX;
 	UINT computeTextureDIMY;
@@ -230,20 +234,33 @@ private:
 	POINT prevMousePt = { 0,0 };
 
 private:
-	std::shared_ptr<BoundedQueue> m_boundedQueue;
+	std::shared_ptr<BoundedQueue<FramePacket>> m_frameQueue;
+	std::shared_ptr<BoundedQueue<RenderCmd>> m_renderCmdQueue;
+	std::shared_ptr<BoundedQueue<UICmd>> m_renderToMainCmdQueue;
 	uint64_t m_frameId = 0;
 	FramePacket packet;
 	FramePacket r_packet;
+	RenderCmd r_cmd;
+	UICmd g_cmd;
+
+	std::unordered_map<uint32_t, std::string> r_idToName;
+	std::unordered_map<std::string, uint32_t> r_nameToId;
+	uint32_t r_idMax = 0;
+	int r_selecteId = 0;
 
 	int saveMipLevel = 4;
+	int cubemapMipLevel = 0;
 	FLOAT computeClearColor[4];
 	float guiPenRadius;
 	float guiPenColor[3];
 	bool clearFlag = false;
-	ImGuiContext* m_imguiCtx = nullptr;
+	//ImGuiContext* m_imguiCtx = nullptr;
 
 private:
 	std::shared_ptr<DLModel> dlModel;
 	std::atomic<int> dlRet{ 0 };
 	bool printRet = false;
+
+private:
+	std::shared_ptr<Scene> m_scene;
 };

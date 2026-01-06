@@ -25,6 +25,8 @@ public:
 
 public:
 	void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd);
+	void AddLocalConstantBuffer(const LocalConstant& lc, uint32_t id);
+	void UpdateLocalConstantBuffer(const LocalConstant& lc, uint32_t id);
 	void UpdateGlobalConstantBuffer(const PhongGlobalConstant& pgc);
 	void UpdatePBGlobalConstantBuffer(const PBGlobalConstant& pbgc);
 	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo>& lightInfos);
@@ -86,6 +88,9 @@ public:
 	std::vector<Proxy> cubeMapProxyBuffer;
 	std::vector<TextProxy> textProxyBuffer;
 	std::vector<TextResource> textResources;
+
+	std::unordered_map<uint32_t, Microsoft::WRL::ComPtr<ID3D12Resource>> m_localCBs;
+	std::unordered_map<uint32_t, void*> m_pCBs;
 
 private:
 	

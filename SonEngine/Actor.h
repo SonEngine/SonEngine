@@ -23,7 +23,7 @@ public:
 
 public:
 	void SetActorLocation(const DirectX::SimpleMath::Vector3& newLocation);
-	void SetActorRotation(const DirectX::SimpleMath::Matrix& newMat);
+	//void SetActorRotation(const DirectX::SimpleMath::Matrix& newMat);
 	void SetActorRotation(const DirectX::SimpleMath::Quaternion& newQuat);
 	void UpdateActorLocation(const DirectX::SimpleMath::Vector3& delLocation);
 	void UpdateActorRotation(const DirectX::SimpleMath::Quaternion& delQuat);
@@ -45,6 +45,9 @@ public:
 	DirectX::SimpleMath::Vector3 GetActorRightDir() const;
 	float GetActorSpeed() const;
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
+
+	void UpdateMipState(int newForceMip0);
+	void SetUpdateConstant(bool newState);
 
 protected:
 	std::shared_ptr<SceneComponent> m_rootComponent;

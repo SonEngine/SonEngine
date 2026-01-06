@@ -5,6 +5,6 @@ SamplerState gSampler : register(s0);
 
 float4 main(psInput input) : SV_TARGET
 {
-    return gCubeMap.SampleLevel(gSampler, input.worldPosition, 0.f);
+    return 3.f * gCubeMap.SampleLevel(gSampler, input.worldPosition, 0.f);
 
 }

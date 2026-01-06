@@ -12,19 +12,34 @@ StaticMesh::~StaticMesh()
 {
 }
 
-void StaticMesh::Render(ID3D12GraphicsCommandList* commandList, const TextureLoader * textureLoader)
+void StaticMesh::Render(ID3D12GraphicsCommandList* commandList, const TextureLoader * textureLoader,
+	int textureTableIdx, int lcTableIdx)
 {
 	for (size_t i = 0; i < meshCount; i++)
 	{
 		commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
 		commandList->IASetIndexBuffer(&m_indexBufferViews[i]);
-		commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
+		commandList->SetGraphicsRootDescriptorTable(textureTableIdx, textureLoader->GetGPUHandle(albedoTexture));
+		//commandList->SetGraphicsRootConstantBufferView(lcTableIdx, m_localCB->GetGPUVirtualAddress());
 
-		commandList->SetGraphicsRootDescriptorTable(0, textureLoader->GetGPUHandle(albedoTexture));
 		commandList->DrawIndexedInstanced(m_indexCounts[i], 1, 0, 0, 0);
 	}
 }
+
+
+void StaticMesh::Render_(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader, int cubemapTableIdx)
+{
+	for (size_t i = 0; i < meshCount; i++)
+	{
+		commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
+		commandList->IASetIndexBuffer(&m_indexBufferViews[i]);
+		commandList->SetGraphicsRootDescriptorTable(cubemapTableIdx, textureLoader->GetGPUHandle(albedoTexture));
+		commandList->DrawIndexedInstanced(m_indexCounts[i], 1, 0, 0, 0);
+	}
+}
+
 void StaticMesh::CubeMapRender(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader)
 {
 	for (size_t i = 0; i < meshCount; i++)
@@ -32,7 +47,6 @@ void StaticMesh::CubeMapRender(ID3D12GraphicsCommandList* commandList, const Tex
 		commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
 		commandList->IASetIndexBuffer(&m_indexBufferViews[i]);
-		//->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
 
 		commandList->SetGraphicsRootDescriptorTable(0, textureLoader->GetGPUHandle(albedoTexture));
 		commandList->DrawIndexedInstanced(m_indexCounts[i], 1, 0, 0, 0);
@@ -46,7 +60,7 @@ void StaticMesh::Render(ID3D12GraphicsCommandList* commandList)
 		commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
 		commandList->IASetIndexBuffer(&m_indexBufferViews[i]);
-		commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
+		//commandList->SetGraphicsRootConstantBufferView(1, m_localCB->GetGPUVirtualAddress());
 
 		commandList->DrawIndexedInstanced(m_indexCounts[i], 1, 0, 0, 0);
 	}
@@ -64,74 +78,58 @@ void StaticMesh::RenderDot(ID3D12GraphicsCommandList* commandList, const Texture
 }
 
 //Render Point Cloud
-void StaticMesh::RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx)
+void StaticMesh::RenderPoints(ID3D12GraphicsCommandList* commandList)
 {
 	for (size_t i = 0; i < meshCount; i++)
 	{
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
-		commandList->SetGraphicsRootConstantBufferView(cbIdx, m_localCB->GetGPUVirtualAddress());
 
 		commandList->DrawInstanced(m_vertexCounts[i], 1, 0, 0);
 	}
 }
 
-//Render Point Cloud
-void StaticMesh::RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx, const TextureLoader* textureLoader)
-{
-	for (size_t i = 0; i < meshCount; i++)
-	{
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
-		commandList->SetGraphicsRootConstantBufferView(cbIdx, m_localCB->GetGPUVirtualAddress());
-		commandList->SetGraphicsRootDescriptorTable(0, textureLoader->GetGPUHandle(albedoTexture));
-
-		commandList->DrawInstanced(m_vertexCounts[i], 1, 0, 0);
-	}
-}
-
-void StaticMesh::SetLocation(const float& x, const float& y, const float& z)
-{
-	localConstant.model.m[3][0] = x;
-	localConstant.model.m[3][1] = y;
-	localConstant.model.m[3][2] = z;
-
-	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();;
-
-	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
-}
-
-void StaticMesh::Translate(const float& delX, const float& delY, const float& delZ)
-{
-	localConstant.model.m[3][0] += delX;
-	localConstant.model.m[3][1] += delY;
-	localConstant.model.m[3][2] += delZ;
-
-	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();;
-
-	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
-}
-
-void StaticMesh::UpdateMipState(int newForceMip0)
-{
-	localConstant.forceMip0 = newForceMip0;
-	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
-}
-
-
-void StaticMesh::SetRotation(const DirectX::SimpleMath::Matrix& mat)
-{
-
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			localConstant.model.m[i][j] = mat.m[i][j];
-		}
-	}
-	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();
-
-	memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
-}
+//void StaticMesh::SetLocation(const float& x, const float& y, const float& z)
+//{
+//	localConstant.model.m[3][0] = x;
+//	localConstant.model.m[3][1] = y;
+//	localConstant.model.m[3][2] = z;
+//
+//	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();;
+//
+//	//memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
+//}
+//
+//void StaticMesh::Translate(const float& delX, const float& delY, const float& delZ)
+//{
+//	localConstant.model.m[3][0] += delX;
+//	localConstant.model.m[3][1] += delY;
+//	localConstant.model.m[3][2] += delZ;
+//
+//	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();;
+//
+//	//memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
+//}
+//
+//void StaticMesh::UpdateMipState(int newForceMip0)
+//{
+//	localConstant.forceMip0 = newForceMip0;
+//	//memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
+//}
+//
+//
+//void StaticMesh::SetRotation(const DirectX::SimpleMath::Matrix& mat)
+//{
+//
+//	for (int i = 0; i < 3; i++)
+//	{
+//		for (int j = 0; j < 3; j++)
+//		{
+//			localConstant.model.m[i][j] = mat.m[i][j];
+//		}
+//	}
+//	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();
+//
+//	//memcpy(pLocalConstant, &localConstant, sizeof(LocalConstant));
+//}

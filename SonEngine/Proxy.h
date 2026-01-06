@@ -2,9 +2,25 @@
 
 #include "StaticMesh.h"
 
+enum DirtyFlagType {
+	DFT_add,
+	DFT_update,
+	DFT_remove
+};
+
 struct Proxy {
-	StaticMesh* mesh = nullptr;
 	UINT id = 0;
+	StaticMesh* mesh = nullptr;
+	LocalConstant constant;
+};
+
+struct PrimitiveProxy {
+	UINT id = 0;
+	std::shared_ptr<StaticMesh> mesh;
+	LocalConstant constant;
+	std::vector<bool> addDirtyFlags;
+	std::vector<bool> updateDirtyFlags;
+	std::string name;
 };
 
 struct TextProxy {

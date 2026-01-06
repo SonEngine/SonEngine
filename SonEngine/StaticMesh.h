@@ -29,15 +29,15 @@ public:
 	template<typename V, typename I>
 	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, const std::vector<Mesh<V, I>>& meshes);
 
-	void Render(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
+	void Render(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader, int textureTableIdx, int lcTableIdx);
+	void Render_(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader, int cubemapTableIdx);
 	void CubeMapRender(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
 	void Render(ID3D12GraphicsCommandList* commandList);
 
 	void RenderDot(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
 
 	//Render Point Cloud
-	void RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx /* constant Buffer Index*/);
-	void RenderPoints(ID3D12GraphicsCommandList* commandList, int cbIdx, const TextureLoader* textureLoader);
+	void RenderPoints(ID3D12GraphicsCommandList* commandList);
 
 	void SetAlbedoTexture(const std::string& filename) { albedoTexture = filename; }
 	void SetLocation(const float& x, const float& y, const float& z);
@@ -51,6 +51,7 @@ public:
 	D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView(int index = 0) const { return m_vertexBufferViews[index]; }
 	D3D12_INDEX_BUFFER_VIEW GetIndexBufferView(int index = 0)const { return m_indexBufferViews[index]; }
 	UINT GetIndexCount(int index = 0)const { return m_indexCounts[index]; }
+	LocalConstant GetLocalConstant() { return localConstant; }
 
 	std::string GetAlbedoTextureName() const { return albedoTexture; }
 
@@ -73,8 +74,6 @@ protected:
 	std::string albedoTexture;
 
 protected:
-	void* pLocalConstant = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_localCB;
 	LocalConstant localConstant;
 
 	DirectX::SimpleMath::Matrix localRot;

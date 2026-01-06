@@ -26,8 +26,10 @@ physx::PxTransform PrimitiveComponent::GetPxTransform() const
 {
     // TODO : quat 변경
     DirectX::SimpleMath::Vector3 loc = GetLocation();
+    DirectX::SimpleMath::Quaternion q =  GetRotation();
     return physx::PxTransform(
-        physx::PxVec3(loc.x, loc.y, loc.z)   // 위치
+        physx::PxVec3(loc.x, loc.y, loc.z),
+        physx::PxQuat(q.x,q.y,q.z,q.w)
     );
 }
 

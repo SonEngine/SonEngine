@@ -82,6 +82,14 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		false,
 		PM_Default,
 		1
+	); 
+
+	std::shared_ptr<Actor> sphere = utility->CreateActor(
+		"plane",
+		std::vector{ GeometryGenerator::MakeSphere(30, 1.f) },
+		"8k_earth_albedo",
+		{ 0.f,3.f,0.f },
+		this
 	);
 
 	std::shared_ptr<Actor> pointCloud = utility->CreatePCActor(
@@ -106,16 +114,17 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		this
 	);
 
-	//std::shared_ptr<Actor> dynamicBox = utility->CreateActor(
-	//	"dynamicBox",
-	//	std::vector{ GeometryGenerator::MakeCube(1, 1, 1) },
-	//	"pavement_03_albedo",
-	//	{ 2.f,2.f,0.f },
-	//	this,
-	//	true,
-	//	PM_Dynamic
-	//);
-	//dynamicBox->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 4.f));
+	std::shared_ptr<Actor> dynamicBox = utility->CreateActor(
+		"dynamicBox",
+		std::vector{ GeometryGenerator::MakeCube(1, 1, 1) },
+		"pavement_03_albedo",
+		{ 2.f,2.f,0.f },
+		this,
+		true,
+		PM_Dynamic
+	);
+
+	dynamicBox->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 3.f));
 
 	//std::shared_ptr<Actor> torus = utility->CreateActor(
 	//	"torus",
@@ -135,18 +144,23 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	movingPlatform->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(-2.f, 0.6f, 0.f));
 
 	triggerBox->SetTarget(movingPlatform.get());
+	
+	m_player->SetUpdateConstant(true);
+	movingPlatform->SetUpdateConstant(true);
+	dynamicBox->SetUpdateConstant(true);
 
-	SpawnActor(plane);
 	SpawnActor(m_player);
+	SpawnActor(plane);
 	SpawnActor(l);
 	SpawnActor(pointCloud);
 	SpawnActor(dot);
 	SpawnActor(cubeMap);
 
 	//SpawnActor(torus);
-	//SpawnActor(dynamicBox);
+	SpawnActor(dynamicBox);
 	SpawnActor(triggerBox);
 	SpawnActor(movingPlatform);
+	SpawnActor(sphere);
 
 	//int x = 3;
 	//int z = 3;
@@ -207,6 +221,7 @@ void World::InitCamera(int width, int height)
 	m_camera->Initialize();
 	m_camera->SetActorLocation({ 0.f, 5.f, -5.f });
 	m_camera->UpdateCameraRotation(0, 70);
+	m_camera->SetActorSpeed(5.f);
 }
 
 void World::UpdateCamera(int width, int height)
@@ -249,6 +264,7 @@ void World::Tick(float deltaTime)
 	// view 회전 업데이트
 	if (isFocused && isFPSMode)
 	{
+
 		// update camera
 		m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY);
 		m_camera->UpdateCameraLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
@@ -256,7 +272,7 @@ void World::Tick(float deltaTime)
 		mouseDeltaX = 0;
 		mouseDeltaY = 0;
 
-		m_camera->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
+		//m_camera->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
 	}
 	else
 	{
