@@ -19,6 +19,8 @@ void Scene::ApplyImpl(const CmdAddPrimitive& c)
 	p.addDirtyFlags.resize(m_frCount, true);
 	p.updateDirtyFlags.resize(m_frCount, false);
 	p.name = c.name;
+	p.textureName = c.textureName;
+
 	m_proxies[c.meshType][c.id] = p;
 }
 

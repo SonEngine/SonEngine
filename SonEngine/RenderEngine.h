@@ -25,7 +25,7 @@
 #include "BoundedQueue.h"
 #include "DLModel.h"
 #include "Scene.h"
-#include "UICommand.h"
+#include "GameCommand.h"
 
 enum RenderType {
 	RT_TEXT,
@@ -66,12 +66,7 @@ protected:
 	void DrawingWithMouse();
 	void BuildFrameResources();
 
-	//void PostActorChanges();
-	//void BuildRenderProxy();
-	//void AddProxy(SceneComponent* component, FrameResource* fr);
 	void Update(float deltaTime);
-	//void BuildRenderProxy(const std::vector<std::shared_ptr<Actor>>& actors, Actor* player);
-	//void AddProxy(SceneComponent* component);
 	void AddTextProxy(SceneComponent* component);
 	void UpdateMousePosition();
 	void Render(const std::string& psoName, int idx, MeshType meshType, bool isFinal, bool clear);
@@ -81,7 +76,6 @@ protected:
 	void Compute(const std::string& cpsoName, int idx, bool isFinal, D3D12_RESOURCE_STATES prevState);
 
 	void UpdateTexts();
-
 
 public:
 	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo>& lightInfos);
@@ -108,6 +102,11 @@ private:
 	void SaveTextureCPU();
 	void RunDLModel();
 
+	// GameCommand Drain
+private:
+	void ApplyGameCommand(const GameCmd& cmd);
+	void ApplyImpl(const CmdAddActor& c);
+	void ApplyImpl(const CmdUpdateActorConstant& c);
 
 private:
 	ID3D12Device5* m_device;
@@ -156,7 +155,7 @@ private:
 	//DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	std::string m_computeTextureName = "ComTex";
-	std::string m_cubeMapTextureName = "CubeMap_SkyEnvHDR";
+	std::string m_cubeMapTextureName = "CubeMap_SkyDiffuseHDR";
 	UINT computeTextureDIM = 1024 * 4;
 	UINT computeTextureDIMX;
 	UINT computeTextureDIMY;
@@ -236,12 +235,12 @@ private:
 private:
 	std::shared_ptr<BoundedQueue<FramePacket>> m_frameQueue;
 	std::shared_ptr<BoundedQueue<RenderCmd>> m_renderCmdQueue;
-	std::shared_ptr<BoundedQueue<UICmd>> m_renderToMainCmdQueue;
+	std::shared_ptr<BoundedQueue<GameCmd>> m_renderToMainCmdQueue;
 	uint64_t m_frameId = 0;
 	FramePacket packet;
 	FramePacket r_packet;
 	RenderCmd r_cmd;
-	UICmd g_cmd;
+	GameCmd g_cmd;
 
 	std::unordered_map<uint32_t, std::string> r_idToName;
 	std::unordered_map<std::string, uint32_t> r_nameToId;

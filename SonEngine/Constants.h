@@ -7,8 +7,8 @@ struct LocalConstant
 	DirectX::SimpleMath::Matrix model;
 	DirectX::SimpleMath::Matrix modelInvTranspose;
 	
-	int forceMip0;
-	int cubeMipLevel;
+	int forceMip0 = 0;
+	int cubeMipLevel = 0;
 	float dummy[30];
 };
 

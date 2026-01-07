@@ -29,7 +29,6 @@ void ATriggerBox::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* c
 	{
 		std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>();
 		mesh->Initialize(device, commandList, GeometryGenerator::MakeCube(scale.x,scale.y, scale.z));
-		mesh->SetAlbedoTexture(texName);
 		
 		std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(this);
 		cmp->SetMesh(mesh);
@@ -40,6 +39,7 @@ void ATriggerBox::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* c
 
 		SetRootComponent(cmp);
 		SetActorLocation(loc);
+		SetTextureName(texName);
 	}
 }
 

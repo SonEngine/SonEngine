@@ -21,6 +21,7 @@ struct PrimitiveProxy {
 	std::vector<bool> addDirtyFlags;
 	std::vector<bool> updateDirtyFlags;
 	std::string name;
+	std::string textureName;
 };
 
 struct TextProxy {

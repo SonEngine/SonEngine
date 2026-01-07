@@ -300,7 +300,7 @@ void  Core::SimpleApp::RenderScene(const std::string& psoName)
 	};
 	m_commandList->SetDescriptorHeaps(1, heaps);
 	// Build Proxy 함수에서 등록된 메시가 PointCloud 일 경우 pcProxy에 등록됨
-	mesh->RenderDot(m_commandList.Get(), m_textureLoader.get());
+	mesh->RenderDot(m_commandList.Get());
 
 		
 	m_commandList->ResourceBarrier(
@@ -525,7 +525,7 @@ void Core::SimpleApp::BuildGeometry()
 
 	mesh = std::make_shared<StaticMesh>();
 	mesh->InitializePC<SimpleVertex,uint16_t>(m_device.Get(), m_commandList.Get(), std::vector{ GeometryGenerator::MakePoint() });
-	mesh->SetAlbedoTexture("ComTex");
+	//mesh->SetAlbedoTexture("ComTex");
 
 	m_commandList->Close();
 

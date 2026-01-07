@@ -166,6 +166,7 @@
     </ClCompile>
     <ClCompile Include="DotComponent.cpp" />
     <ClCompile Include="FrameResource.cpp" />
+    <ClCompile Include="GameCommand.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="GraphicsCommon.cpp" />
     <ClCompile Include="InputHelper.cpp" />
@@ -202,6 +203,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ActorComponent.h" />
+    <ClInclude Include="ActorData.h" />
     <ClInclude Include="AMovingPlatform.h" />
     <ClInclude Include="Asset.h" />
     <ClInclude Include="BaseApp.h" />
@@ -221,6 +223,7 @@
     <ClInclude Include="HLSLCompat.h" />
     <ClInclude Include="ImageInfo.h" />
     <ClInclude Include="InputHelper.h" />
+    <ClInclude Include="JsonHelper.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="ModelLoader.h" />
@@ -253,7 +256,7 @@
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="ATriggerBox.h" />
-    <ClInclude Include="UICommand.h" />
+    <ClInclude Include="GameCommand.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VideoApp.h" />

@@ -47,7 +47,9 @@ public:
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
 
 	void UpdateMipState(int newForceMip0);
+	
 	void SetUpdateConstant(bool newState);
+	void SetTextureName(const std::string& newName);
 
 protected:
 	std::shared_ptr<SceneComponent> m_rootComponent;

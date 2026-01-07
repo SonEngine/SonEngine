@@ -1,7 +1,10 @@
 ﻿#include "PhongCommon.hlsli"
 
-TextureCube gCubeMap : register(t0);
-Texture2D gAlbedo : register(t1);
+TextureCube gCubeMapDiffuse : register(t0);
+TextureCube gCubeMap : register(t1);
+TextureCube gCubeMapSpecular : register(t2);
+
+Texture2D gAlbedo : register(t3);
 
 SamplerState gSampler : register(s0);
 ConstantBuffer<LocalConstant> gLocalCB : register(b0);
@@ -13,23 +16,32 @@ float4 main(psInput input) : SV_TARGET
     float cubeMapExposure = 3.f;
     uint w, h, mipCount;
     gAlbedo.GetDimensions(0, w, h, mipCount);
-    float4 albedo;
+    float3 albedo;
     if (gLocalCB.forceMip0 == 1)
     {
-        albedo = gAlbedo.SampleLevel(gSampler, input.uv, 0.f);
+        albedo = gAlbedo.SampleLevel(gSampler, input.uv, 0.f).xyz;
     }
     else
     {
-        albedo = gAlbedo.Sample(gSampler, input.uv);
+        albedo = gAlbedo.Sample(gSampler, input.uv).xyz;
     }
     
-    float4 cubeMap = cubeMapExposure * gCubeMap.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel);
-    //float4 albedo = gAlbedo.Sample(gSampler, input.uv);
+    float3 cubeMap = cubeMapExposure * gCubeMap.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
+    float3 diffuse = cubeMapExposure * gCubeMapDiffuse.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
+    float3 specluar = cubeMapExposure * gCubeMapSpecular.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
     
-    return cubeMap;
+    
+    diffuse *= albedo;
+    //return float4(albedo, 1.f);
+    //return float4(1.f,1.f,1.f, 1.f);
+    return float4(diffuse + specluar, 1.f);
+    
+    //return cubeMapSpecular;
     float4 modelPos = input.modelPosition;
     
-    // albedo = pow(albedo, 1.0 / 2.2);
+    //albedo = pow(albedo, 1.0 / 2.2);
+    //return albedo;
+    
     for (int i = 0; i < NUM_LIGHTS; i++)
     {
         LightInfo light = gPhongGCB.lights[i];
@@ -47,5 +59,5 @@ float4 main(psInput input) : SV_TARGET
         float3 specular = float3(1, 1, 1) * specularStrength;
         albedo.xyz *= diffuse + specular;
     }
-    return albedo;
+    //return albedo;
 }

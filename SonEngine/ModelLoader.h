@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#include "d3d12.h"
+#include "wrl.h"
+
 #include <assimp\Importer.hpp>
 #include <assimp\postprocess.h>
 #include <assimp\scene.h>
@@ -12,7 +15,7 @@
 
 #include "Vertex.h"
 #include "Asset.h"
-
+#include "StaticMesh.h"
 
 
 template<typename V, typename I>
@@ -25,17 +28,19 @@ public:
 	~ModelLoader() {};
 
 public:
-	void Initialize();
+	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList);
 
 public:
 	std::string basePath;
-	std::vector<Mesh<V, I>> GetMeshes(const std::string& assetName) const;
+	std::vector<Mesh<V, I>> GetAsset(const std::string& assetName) const;
+	std::shared_ptr<StaticMesh> GetMeshes(const std::string& assetName) const;
 	DirectX::SimpleMath::Vector3 aiToVector3(aiVector3D vector);
 
 	DirectX::SimpleMath::Vector4 aiToVector4(aiColor4D vector);
 
 private:
-	std::unordered_map<std::string, Asset<V,I>> assets;
+	std::unordered_map<std::string, Asset<V, I>> assets;
+	std::unordered_map<std::string, std::shared_ptr<StaticMesh>> meshesMap;
 
 public:
 	void Load(std::string filename, DirectX::SimpleMath::Matrix tr = DirectX::SimpleMath::Matrix());
@@ -45,16 +50,28 @@ public:
 	void ProcessPCNode(std::vector<Mesh<V, I>>& meshes, aiNode* node, const aiScene* scene, DirectX::SimpleMath::Matrix tr);
 	void ProcessPCMesh(std::vector<Mesh<V, I>>& meshes, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr);
 
+
+
 };
 
 template<typename V, typename I>
-inline std::vector<Mesh<V, I>> ModelLoader<V, I>::GetMeshes(const std::string& assetName) const
+inline std::vector<Mesh<V, I>> ModelLoader<V, I>::GetAsset(const std::string& assetName) const
 {
 	auto it = assets.find(assetName);
 	if(it == assets.end())
 		return std::vector<Mesh<V, I>>();
 
 	return it->second.m_meshes;
+}
+
+template<typename V, typename I>
+inline std::shared_ptr<StaticMesh> ModelLoader<V, I>::GetMeshes(const std::string& assetName) const
+{
+	auto it = meshesMap.find(assetName);
+	if (it == meshesMap.end())
+		return nullptr;
+
+	return it->second;
 }
 
 template<typename V, typename I>

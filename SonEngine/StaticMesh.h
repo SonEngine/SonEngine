@@ -29,31 +29,20 @@ public:
 	template<typename V, typename I>
 	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, const std::vector<Mesh<V, I>>& meshes);
 
-	void Render(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader, int textureTableIdx, int lcTableIdx);
-	void Render_(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader, int cubemapTableIdx);
-	void CubeMapRender(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
+	void Render_(ID3D12GraphicsCommandList* commandList);
+	void CubeMapRender(ID3D12GraphicsCommandList* commandList);
 	void Render(ID3D12GraphicsCommandList* commandList);
 
-	void RenderDot(ID3D12GraphicsCommandList* commandList, const TextureLoader* textureLoader);
+	void RenderDot(ID3D12GraphicsCommandList* commandList);
 
 	//Render Point Cloud
 	void RenderPoints(ID3D12GraphicsCommandList* commandList);
-
-	void SetAlbedoTexture(const std::string& filename) { albedoTexture = filename; }
-	void SetLocation(const float& x, const float& y, const float& z);
-	void Translate(const float& delX, const float& delY, const float& delZ);
-
 	void UpdateMipState(int newForceMip0);
-
-	void SetRotation(const DirectX::SimpleMath::Matrix& mat);
 
 public:
 	D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView(int index = 0) const { return m_vertexBufferViews[index]; }
 	D3D12_INDEX_BUFFER_VIEW GetIndexBufferView(int index = 0)const { return m_indexBufferViews[index]; }
 	UINT GetIndexCount(int index = 0)const { return m_indexCounts[index]; }
-	LocalConstant GetLocalConstant() { return localConstant; }
-
-	std::string GetAlbedoTextureName() const { return albedoTexture; }
 
 protected:
 	std::vector <Microsoft::WRL::ComPtr<ID3D12Resource>> m_vertexGpu;
@@ -70,14 +59,6 @@ protected:
 	std::vector<UINT> m_indexCounts;
 	std::vector<UINT> m_vertexCounts;
 	UINT meshCount = 0;
-
-	std::string albedoTexture;
-
-protected:
-	LocalConstant localConstant;
-
-	DirectX::SimpleMath::Matrix localRot;
-	DirectX::SimpleMath::Vector3 localLocation;
 };
 
 #include "StaticMesh.inl"

@@ -104,6 +104,7 @@ namespace GraphicsUtils {
 		));
 
 	}
+
 	inline void Utility::CreateResourceView(Microsoft::WRL::ComPtr<ID3D12Resource>& buffer, DXGI_FORMAT format, bool bUseMsaa, D3D12_CPU_DESCRIPTOR_HANDLE& handle, const DescriptorType& type)
 	{
 		if (type == DescriptorType::RTV) {
@@ -206,8 +207,30 @@ namespace GraphicsUtils {
 		);
 
 		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(gpuBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON));
-
 	}
+
+	inline std::shared_ptr<Actor> Utility::CreateActor(
+		const std::string& actorname,
+		std::shared_ptr<StaticMesh> mesh,
+		const std::string& texture,
+		const DirectX::SimpleMath::Vector3& location,
+		World* world, bool simulate,
+		PhysXMode physXMode,
+		int foreceMip0
+	)
+	{
+		std::shared_ptr<Actor> actor = std::make_shared<Actor>(actorname, world);
+		std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
+		cmp->SetMesh(mesh);
+		cmp->SetPhysX(simulate);
+		cmp->SetPhysXMode(physXMode);
+		actor->SetRootComponent(cmp);
+		actor->SetActorLocation(location);
+		actor->UpdateMipState(foreceMip0);
+		actor->SetTextureName(texture);
+		return actor;
+	}
+
 	template<typename V, typename I, typename MeshType>
 	inline std::shared_ptr<Actor> Utility::CreateActor(
 		const std::string& actorname,
@@ -216,7 +239,7 @@ namespace GraphicsUtils {
 		const DirectX::SimpleMath::Vector3& location,
 		World* world,
 		bool simulate,
-		PhysXMode physXMode, 
+		PhysXMode physXMode,
 		int foreceMip0
 	)
 	{
@@ -226,9 +249,7 @@ namespace GraphicsUtils {
 		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
 		{
 			m->Initialize(m_device, m_commandList, meshes);
-			m->SetAlbedoTexture(texture);
-			//mesh->SetLocation(location.x, location.y, location.z);
-			//
+
 			std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
 			cmp->SetMesh(mesh);
 			cmp->SetPhysX(simulate);
@@ -237,8 +258,10 @@ namespace GraphicsUtils {
 		}
 		actor->SetActorLocation(location);
 		actor->UpdateMipState(foreceMip0);
+		actor->SetTextureName(texture);
 		return actor;
 	}
+
 	template<typename V, typename I, typename MeshType, typename RootComponentType>
 	inline std::shared_ptr<Actor> Utility::CreateActor2(
 		const std::string& actorname,
@@ -261,7 +284,7 @@ namespace GraphicsUtils {
 				m->Initialize(m_device, m_commandList, meshes);
 			else
 				m->InitializePC(m_device, m_commandList, meshes);
-			m->SetAlbedoTexture(texture);
+			//m->SetAlbedoTexture(texture);
 
 			std::shared_ptr<RootComponentType> cmp = std::make_shared<RootComponentType>(actor.get());
 			cmp->SetMesh(mesh);
@@ -271,6 +294,7 @@ namespace GraphicsUtils {
 		}
 		actor->UpdateMipState(foreceMip0);
 		actor->SetActorLocation(location);
+		actor->SetTextureName(texture);
 		return actor;
 	}
 
@@ -291,7 +315,6 @@ namespace GraphicsUtils {
 		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
 		{
 			m->InitializePC(m_device, m_commandList, meshes);
-			m->SetAlbedoTexture(texture);
 			std::shared_ptr<PointCloudComponent> cmp = std::make_shared<PointCloudComponent>(actor.get());
 			cmp->SetMesh(mesh);
 			cmp->SetPhysX(simulate);
@@ -299,7 +322,7 @@ namespace GraphicsUtils {
 			actor->SetRootComponent(cmp);
 		}
 		actor->UpdateMipState(foreceMip0);
-
+		actor->SetTextureName(texture);
 		return actor;
 	}
 
@@ -321,7 +344,7 @@ namespace GraphicsUtils {
 		if (StaticMesh* m = dynamic_cast<StaticMesh*>(mesh.get()))
 		{
 			m->Initialize(m_device, m_commandList, meshes);
-			m->SetAlbedoTexture(texture);
+			//m->SetAlbedoTexture(texture);
 
 			std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
 			cmp->SetMesh(mesh);
@@ -330,6 +353,7 @@ namespace GraphicsUtils {
 			actor->SetRootComponent(cmp);
 		}
 		actor->UpdateMipState(foreceMip0);
+		actor->SetTextureName(texture);
 		actor->SetActorLocation(location);
 		return actor;
 	}

@@ -12,6 +12,13 @@
 #include "PaintBoardHLSLCompat.h"
 #include "MouseInputState.h"
 
+// 각 mesh별 data
+struct LocalData {
+	// local constant buffer
+	Microsoft::WRL::ComPtr<ID3D12Resource> localCB;
+	std::string textureName;
+};
+
 struct TextResource {
 	UINT64 textureWidth;
 	UINT64 textureHeight;
@@ -25,7 +32,7 @@ public:
 
 public:
 	void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd);
-	void AddLocalConstantBuffer(const LocalConstant& lc, uint32_t id);
+	void AddLocalConstantBuffer(const LocalConstant& lc, uint32_t id, const std::string& textureName);
 	void UpdateLocalConstantBuffer(const LocalConstant& lc, uint32_t id);
 	void UpdateGlobalConstantBuffer(const PhongGlobalConstant& pgc);
 	void UpdatePBGlobalConstantBuffer(const PBGlobalConstant& pbgc);
@@ -66,7 +73,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_pbGCBuffer;
 	void* pPBGCB = nullptr;
 
-
 private:
 	HWND hwnd;
 
@@ -81,15 +87,15 @@ private:
 
 public:
 	UINT64 m_currentFence = 0;
-	bool proxyDirty = true;
-	std::vector<Proxy> proxyBuffer;
-	std::vector<Proxy> pcProxyBuffer;
-	std::vector<Proxy> dotProxyBuffer;
-	std::vector<Proxy> cubeMapProxyBuffer;
-	std::vector<TextProxy> textProxyBuffer;
-	std::vector<TextResource> textResources;
+	//bool proxyDirty = true;
+	//std::vector<Proxy> proxyBuffer;
+	//std::vector<Proxy> pcProxyBuffer;
+	//std::vector<Proxy> dotProxyBuffer;
+	//std::vector<Proxy> cubeMapProxyBuffer;
+	//std::vector<TextProxy> textProxyBuffer;
+	//std::vector<TextResource> textResources;
 
-	std::unordered_map<uint32_t, Microsoft::WRL::ComPtr<ID3D12Resource>> m_localCBs;
+	std::unordered_map<uint32_t, LocalData> m_localData;
 	std::unordered_map<uint32_t, void*> m_pCBs;
 
 private:

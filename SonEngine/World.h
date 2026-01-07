@@ -8,10 +8,12 @@
 
 #include "d3d12.h"
 #include "PhongHLSLCompat.h"
+#include "Vertex.h"
 
 class Actor;
 class Camera;
 class Light;
+template<class V, class I> class ModelLoader;
 
 class World {
 
@@ -36,6 +38,7 @@ public:
 
 public:
 	void SetInputState(size_t key, bool isKeyDown);
+	bool LoadLevel(const std::filesystem::path & levelPath);
 	void SetFPSMode(bool newFpsMode) { isFPSMode = newFpsMode; }
 	void SetFoucusMode(bool newFocusMode) { isFocused = newFocusMode; }
 
@@ -48,13 +51,13 @@ public:
 	std::vector<LightInfo> GetLightInfos() const;
 
 public:
-	const std::vector<std::shared_ptr<Actor>>& GetActors() { return m_actors; }
-	Actor* Getplayer() { return m_player.get(); }
+	//Actor* Getplayer() { return m_player.get(); }
 	class PhysXEngine* GetPhysXEngine() const { return m_physXEngine; }
 
 // actors
 protected:
-	std::vector<std::shared_ptr<Actor>> m_actors;
+	//std::vector<std::shared_ptr<Actor>> m_actors;
+	std::map<std::string, std::shared_ptr<Actor>> m_actors;
 	std::vector<std::shared_ptr<Actor>> m_textActors;
 	std::vector<std::shared_ptr<Actor>> m_addActors;
 	
@@ -90,4 +93,8 @@ public:
 private:
 	class RenderEngine* m_renderEngine;
 	class PhysXEngine* m_physXEngine;
+
+public:
+	std::unique_ptr<ModelLoader<Vertex, uint16_t>> modelLoader;
+	std::string levelPath;
 };

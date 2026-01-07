@@ -123,6 +123,16 @@ namespace GraphicsUtils {
 			Microsoft::WRL::ComPtr<ID3D12Resource>& gpuBuffer,
 			Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer
 		);
+	
+		inline std::shared_ptr<Actor> Utility::CreateActor(
+			const std::string& actorname,
+			std::shared_ptr<StaticMesh> mesh,
+			const std::string& texture,
+			const DirectX::SimpleMath::Vector3& location,
+			World* world,
+			bool simulate = false,
+			PhysXMode physXMode = PhysXMode::PM_Default,
+			int foreceMip0 = 0);
 
 		template<typename V, typename I, typename MeshType = class StaticMesh>
 		std::shared_ptr<Actor> CreateActor(

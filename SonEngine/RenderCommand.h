@@ -16,6 +16,7 @@ struct CmdAddPrimitive {
 	LocalConstant constant;
 	MeshType meshType;
 	std::string name;
+	std::string textureName;
 };
 
 struct CmdUpdatePrimitive {

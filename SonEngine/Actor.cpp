@@ -162,3 +162,14 @@ void Actor::SetUpdateConstant(bool newState)
 		
 	}
 }
+
+void Actor::SetTextureName(const std::string& newName)
+{
+	if (m_rootComponent)
+	{
+		if (PrimitiveComponent* comp = dynamic_cast<PrimitiveComponent*>(m_rootComponent.get()))
+		{
+			comp->SetTextureName(newName);
+		}
+	}
+}

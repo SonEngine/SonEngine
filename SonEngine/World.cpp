@@ -15,11 +15,18 @@
 #include "AMovingPlatform.h"
 #include "ModelLoader.h"
 
+#include "ActorData.h"
+#include "JsonHelper.h"
+#include <filesystem>
+#include <fstream>
+
 using namespace Graphics;
 
-World::World()
+World::World() 
+	: modelLoader(std::make_unique<ModelLoader<Vertex, std::uint16_t>>())
 {
 	//m_camera = std::make_shared<Camera>();
+	levelPath = "Levels/simpleLevel.json";
 }
 
 World::~World()
@@ -33,7 +40,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	m_camera = std::make_shared<Camera>();
 	InitCamera(cameraWidth, cameraHeight);
 
-	std::shared_ptr<Light> l = utility->CreateActor<Light, Vertex, uint16_t>(
+	/*std::shared_ptr<Light> l = utility->CreateActor<Light, Vertex, uint16_t>(
 		"plane",
 		std::vector{ GeometryGenerator::MakeSphere(10,0.3f) },
 		"ComTex",
@@ -41,71 +48,23 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		this
 	);
 
-	l->SetBrightness({ 0.8f,0.8f,0.8f,1.f });
+	l->SetBrightness({ 0.8f,0.8f,0.8f,1.f });*/
 
 	LightInfo lInfo;
-	lInfo.location = l->GetActorLocation();
-	lInfo.brightness = l->GetBrightness();
+	lInfo.location = { 0,5,-5 };
+	lInfo.brightness = { 0.8f,0.8f,0.8f,1.f };
 
 	m_lightInfos.push_back(lInfo);
 
+	modelLoader->Load("torus.fbx");
+	modelLoader->Initialize(device, commandList);
 
-	ModelLoader<Vertex, uint16_t> modelLoader;
-
-	modelLoader.Initialize();
-	modelLoader.Load("torus.fbx");
+	LoadLevel(levelPath);
 
 	ModelLoader<PointCloudVertex, uint16_t> pcModelLoader;
 	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * DirectX::XMMatrixRotationX(-3.14f / 12.f) * DirectX::XMMatrixTranslationFromVector(Vector3(0.f,0.2f,5.f));
 	pcModelLoader.LoadPointCloud("map.ply", mat);
 
-	int planeSize = 100;
-	m_player = utility->CreateActor(
-		"player",
-		modelLoader.GetMeshes("cube"),
-		"pavement_03_albedo",
-		{ -1.5f, 0.5f, -1.5f },
-		this,
-		true,
-		PhysXMode::PM_Kinematic
-	);
-
-	m_player->SetActorSpeed(1.f);
-
-	std::shared_ptr<Actor> plane = utility->CreateActor(
-		"plane",
-		std::vector{ GeometryGenerator::MakePlane((float)planeSize, (float)planeSize, 1) },
-		//"ComTex",
-		"8k_earth_albedo",
-		{ 0.f,0.f,0.f },
-		this,
-		false,
-		PM_Default,
-		1
-	); 
-
-	std::shared_ptr<Actor> sphere = utility->CreateActor(
-		"plane",
-		std::vector{ GeometryGenerator::MakeSphere(30, 1.f) },
-		"8k_earth_albedo",
-		{ 0.f,3.f,0.f },
-		this
-	);
-
-	std::shared_ptr<Actor> pointCloud = utility->CreatePCActor(
-		"pointCloud",
-		pcModelLoader.GetMeshes("map"),
-		"",
-		this
-	);
-
-	std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t,StaticMesh, DotComponent>(
-		"dot",
-		std::vector{GeometryGenerator::MakePoint()},
-		"ComTex",
-		{ 0.f,0.f,0.f },
-		this
-	);
 	std::shared_ptr<Actor> cubeMap = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, CubeMapComponent>(
 		"cubeMap",
 		std::vector{ GeometryGenerator::MakeSimpleCube(100,100,100) },
@@ -114,86 +73,40 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		this
 	);
 
-	std::shared_ptr<Actor> dynamicBox = utility->CreateActor(
-		"dynamicBox",
-		std::vector{ GeometryGenerator::MakeCube(1, 1, 1) },
-		"pavement_03_albedo",
-		{ 2.f,2.f,0.f },
-		this,
-		true,
-		PM_Dynamic
-	);
-
-	dynamicBox->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 3.f));
-
-	//std::shared_ptr<Actor> torus = utility->CreateActor(
-	//	"torus",
-	//	modelLoader.GetMeshes("torus"),
-	//	"pavement_03_albedo",
-	//	{ 0.f,1.f,-1.f },
+	//std::shared_ptr<Actor> pointCloud = utility->CreatePCActor(
+	//	"pointCloud",
+	//	pcModelLoader.GetAsset("map"),
+	//	"",
 	//	this
 	//);
 
+	//std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t,StaticMesh, DotComponent>(
+	//	"dot",
+	//	std::vector{GeometryGenerator::MakePoint()},
+	//	"ComTex",
+	//	{ 0.f,0.f,0.f },
+	//	this
+	//);
 	
-	std::shared_ptr<ATriggerBox> triggerBox = std::make_shared<ATriggerBox>("triggerBox", this);
+	//std::shared_ptr<AMovingPlatform> movingPlatform = std::make_shared<AMovingPlatform>("movingPlatform", this);
+	//movingPlatform->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(-2.f, 0.6f, 0.f));
 
-	triggerBox->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(0.f, 0.6f, 0.f));
-	//triggerBox->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 5.f));
-
-	std::shared_ptr<AMovingPlatform> movingPlatform = std::make_shared<AMovingPlatform>("movingPlatform", this);
-	movingPlatform->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(-2.f, 0.6f, 0.f));
-
-	triggerBox->SetTarget(movingPlatform.get());
+	//std::shared_ptr<ATriggerBox> triggerBox = std::make_shared<ATriggerBox>("triggerBox", this);
+	//triggerBox->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(0.f, 0.6f, 0.f));
+	////triggerBox->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 5.f));
+	//triggerBox->SetTarget(movingPlatform.get());
 	
-	m_player->SetUpdateConstant(true);
-	movingPlatform->SetUpdateConstant(true);
-	dynamicBox->SetUpdateConstant(true);
+	/*movingPlatform->SetUpdateConstant(true);
 
-	SpawnActor(m_player);
-	SpawnActor(plane);
-	SpawnActor(l);
-	SpawnActor(pointCloud);
+
+	/*SpawnActor(pointCloud);
 	SpawnActor(dot);
+		SpawnActor(triggerBox);
+	SpawnActor(movingPlatform);
+	*/
 	SpawnActor(cubeMap);
 
-	//SpawnActor(torus);
-	SpawnActor(dynamicBox);
-	SpawnActor(triggerBox);
-	SpawnActor(movingPlatform);
-	SpawnActor(sphere);
 
-	//int x = 3;
-	//int z = 3;
-	//float delX = (float)planeSize / x;
-	//float delZ = -(float)planeSize / z;
-	//Vector3 basePos = Vector3(-delX * (0.5f * (x - 1)), 0.1f, -delZ * (0.5f * (z - 1)));
-	//bool breakFlag = false;
-	//float margin = 0.2f;
-	//float xSize = planeSize / (float)x - margin;
-	//float zSize = planeSize / (float)z - margin;
-	//for (int i = 0; i < z; i++)
-	//{
-	//	if (breakFlag)
-	//		break;
-	//	for (int j = 0; j < x; j++)
-	//	{
-	//		int idx = x * i + j;
-	//		if (idx == textCount)
-	//		{
-	//			breakFlag = true;
-	//			break;
-	//		}
-	//		Vector3 pos = basePos + Vector3(j * delX, 0.f, i * delZ);
-	//		std::string name = "plane" + std::to_string(idx);
-	//		std::shared_ptr<Actor> textPlane = utility->CreateActor(
-	//			name,
-	//			GeometryGenerator::MakePlane(xSize, zSize, 1),
-	//			"8k_earth_albedo",
-	//			pos
-	//		);
-	//		m_textActors.push_back(textPlane);
-	//	}
-	//}
 }
 
 void World::InitializePhysics(PhysXEngine* engine)
@@ -203,7 +116,7 @@ void World::InitializePhysics(PhysXEngine* engine)
 
 void World::SpawnActor(const std::shared_ptr<Actor>& actor)
 {
-	m_actors.push_back(actor);
+	m_actors[actor->GetName()] = actor;
 	actor->OnRegister();
 }
 
@@ -276,10 +189,14 @@ void World::Tick(float deltaTime)
 	}
 	else
 	{
-		m_player->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_player.get()));
+		auto p = m_actors.find("player");
+		if (p != m_actors.end())
+		{
+			m_actors["player"]->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_actors["player"].get()));
+		}
 	}
 
-	for (auto& A : m_actors)
+	for (auto& [name, A] : m_actors)
 	{
 		A->Tick(deltaTime);
 	}
@@ -328,4 +245,72 @@ void World::SyncKinematicToPhysX()
 void World::SetInputState(size_t key, bool isKeyDown)
 {
 	m_inputHelper.SetInputState(key, isKeyDown);
+}
+
+bool World::LoadLevel(const std::filesystem::path & levelPath)
+{
+	using json = nlohmann::json;
+	std::ifstream ifs(levelPath, std::ios::binary);
+	if (!ifs.is_open()) return false;
+
+	json root;
+	try { ifs >> root; }
+	catch (const std::exception& e)
+	{
+		throw std::runtime_error("Invalid JSON: " + levelPath.string() + " (" + e.what() + ")");
+	}
+	
+	if (root.contains("actors"))
+	{
+		ActorData ad;
+		for (const auto& a : root["actors"])
+		{
+			if (a.contains("name"))
+				ad.name = a["name"].get<std::string>();
+			if (a.contains("transform"))
+			{
+				auto t = a["transform"];
+				if (t.contains("pos"))
+					ad.pos = ParseVec3(t["pos"]);
+			}
+			if (a.contains("components"))
+			{
+				auto c = a["components"];
+				for (const auto& comp : c)
+				{
+					std::string type = comp["type"].get<std::string>();
+					if (type == "StaticMesh")
+					{
+						//std::cout << comp["mesh"].get<std::string>();
+						ad.mesh = comp["mesh"].get<std::string>();
+						ad.material = comp["material"].get<std::string>();
+					}
+					else if (type == "RigidBody")
+					{
+						ad.useSimulate = comp["simulate"].get<bool>();
+						ad.mode = comp["mode"].get<PhysXMode>();
+					}
+					else if (type == "LocalConstant")
+					{
+						ad.forceMip0 = comp["forceMip0"].get<bool>();
+						ad.updateConstants = comp["updateConstants"].get<bool>();
+					}
+				}
+			}
+			std::shared_ptr<Actor> actor = utility->CreateActor(
+				ad.name,
+				modelLoader->GetMeshes(ad.mesh),
+				ad.material,
+				ad.pos,
+				this,
+				ad.useSimulate,
+				ad.mode,
+				ad.forceMip0
+			);
+
+			actor->SetUpdateConstant(ad.updateConstants);
+			SpawnActor(actor);
+		}
+	}
+	return true;
 }

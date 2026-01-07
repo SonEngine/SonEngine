@@ -93,8 +93,8 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	g_cubeMapRS.Finalize(device, L"cubeMapRS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	g_R2_C2_RS.Reset(4, 1);
-	g_R2_C2_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 1); // cubemap
-	g_R2_C2_RS[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); // albedo
+	g_R2_C2_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3); // cubemap
+	g_R2_C2_RS[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 1); // albedo
 	g_R2_C2_RS[2].InitCBV(0); // local
 	g_R2_C2_RS[3].InitCBV(1); // global
 	g_R2_C2_RS.InitStaticSampler(0, wrapLinearSampler);

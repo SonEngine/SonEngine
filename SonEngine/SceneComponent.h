@@ -23,7 +23,6 @@ public:
 	void SetUpDirection(const DirectX::SimpleMath::Vector3& newDir) {m_upDirection = newDir;}
 	void SetRightDirection(const DirectX::SimpleMath::Vector3& newDir) { m_rightDirection = newDir; }
 	void SetCubeMapMipLevel(const int& newCubeMapMipLevel);
-
 	void AddLocation(const DirectX::SimpleMath::Vector3& delLocation);
 	void AddRotation(const DirectX::SimpleMath::Quaternion& delQ);
 

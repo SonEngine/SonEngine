@@ -1,7 +1,7 @@
 ﻿#include "BoundedQueue.h"
 #include "GraphicsCommon.h"
 #include "RenderCommand.h"
-#include "UICommand.h"
+#include "GameCommand.h"
 
 using namespace Graphics;
 
@@ -86,4 +86,4 @@ bool BoundedQueue<T>::TryPop(T& packet)
 
 template class BoundedQueue<FramePacket>; 
 template class BoundedQueue<RenderCmd>; 
-template class BoundedQueue<UICmd>;
+template class BoundedQueue<GameCmd>;
