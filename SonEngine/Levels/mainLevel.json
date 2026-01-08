@@ -1,0 +1,165 @@
+﻿{
+  "version": 1,
+  "actors": [
+    {
+      "class": "Actor",
+      "name": "player",
+      "transform": {
+        "pos": [ -1.5, 0.5, -1.5 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "sphere",
+          "material": "worn-painted-metal_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": true,
+          "mode": "PM_Kinematic"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": true
+        }
+      ]
+    },
+    {
+      "class": "Actor",
+      "name": "sphere",
+      "transform": {
+        "pos": [ 0, 3, 0 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "sphere",
+          "material": "8k_earth_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Default"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": false
+        }
+      ]
+    },
+    {
+      "class": "Actor",
+      "name": "dynamicBox",
+      "transform": {
+        "pos": [ 3, 3, 0 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "cube",
+          "material": "8k_earth_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": true,
+          "mode": "PM_Dynamic"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": true
+        }
+      ]
+    },
+    {
+      "class": "Actor",
+      "name": "plane",
+      "transform": {
+        "pos": [ 0, 0, 0 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "plane",
+          "material": "8k_earth_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Default"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": false
+        }
+      ]
+    },
+    {
+      "class": "AMovingPlatform",
+      "name": "movingPlatform",
+      "transform": {
+        "pos": [ -2, 0.6, 0 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "cube",
+          "material": "worn-painted-metal_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Dynamic"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": true
+        }
+      ]
+    },
+    {
+      "class": "ATriggerBox",
+      "name": "triggerBox",
+      "transform": {
+        "pos": [ 0, 0.6, 0 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "cube",
+          "material": "worn-painted-metal_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": true,
+          "mode": "PM_Trigger"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": false
+        },
+        {
+          "type": "trigger",
+          "target": "movingPlatform"
+        }
+      ]
+    }
+  ]
+}

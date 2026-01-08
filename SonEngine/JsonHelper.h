@@ -4,6 +4,18 @@
 #include "PhysXMode.h"
 #include "directxtk12\SimpleMath.h"
 
+enum  ActorType {
+    AT_Actor,
+    AT_ATriggerBox,
+    AT_AMovingPlatform
+};
+
+NLOHMANN_JSON_SERIALIZE_ENUM(ActorType, {
+    {ActorType::AT_Actor, "Actor"},
+    {ActorType::AT_ATriggerBox, "ATriggerBox"},
+    {ActorType::AT_AMovingPlatform, "AMovingPlatform"},
+    })
+
 NLOHMANN_JSON_SERIALIZE_ENUM(PhysXMode, {
     {PhysXMode::PM_Default,    "PM_Default"},
     {PhysXMode::PM_Dynamic,   "PM_Dynamic"},

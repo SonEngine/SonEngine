@@ -8,7 +8,7 @@ void ModelLoader<Vertex, uint16_t>::Initialize(ID3D12Device5* device,
 	cube.m_meshes.push_back({ GeometryGenerator::MakeCube(1.f, 1.f, 1.f) });
 	assets["cube"] = cube;
 
-	float sphereRadius = 1.f;
+	float sphereRadius = 0.5f;
 	int sphereDetail = 30;
 	Asset<Vertex, uint16_t> sphere;
 	sphere.m_meshes.push_back({ GeometryGenerator::MakeSphere(sphereDetail, sphereRadius) });

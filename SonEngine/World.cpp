@@ -4,7 +4,7 @@
 #include "StaticMesh.h"
 #include "GeometryGenerator.h"
 
-#include "Actor.h"
+//#include "Actor.h"
 #include "Camera.h"
 #include "Light.h"
 
@@ -22,7 +22,7 @@
 
 using namespace Graphics;
 
-World::World() 
+World::World()
 	: modelLoader(std::make_unique<ModelLoader<Vertex, std::uint16_t>>())
 {
 	//m_camera = std::make_shared<Camera>();
@@ -40,16 +40,6 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	m_camera = std::make_shared<Camera>();
 	InitCamera(cameraWidth, cameraHeight);
 
-	/*std::shared_ptr<Light> l = utility->CreateActor<Light, Vertex, uint16_t>(
-		"plane",
-		std::vector{ GeometryGenerator::MakeSphere(10,0.3f) },
-		"ComTex",
-		{ 0,5,-5 },
-		this
-	);
-
-	l->SetBrightness({ 0.8f,0.8f,0.8f,1.f });*/
-
 	LightInfo lInfo;
 	lInfo.location = { 0,5,-5 };
 	lInfo.brightness = { 0.8f,0.8f,0.8f,1.f };
@@ -62,7 +52,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	LoadLevel(levelPath);
 
 	ModelLoader<PointCloudVertex, uint16_t> pcModelLoader;
-	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * DirectX::XMMatrixRotationX(-3.14f / 12.f) * DirectX::XMMatrixTranslationFromVector(Vector3(0.f,0.2f,5.f));
+	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * DirectX::XMMatrixRotationX(-3.14f / 12.f) * DirectX::XMMatrixTranslationFromVector(Vector3(0.f, 0.2f, 5.f));
 	pcModelLoader.LoadPointCloud("map.ply", mat);
 
 	std::shared_ptr<Actor> cubeMap = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, CubeMapComponent>(
@@ -72,7 +62,6 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		{ 0.f,0.f,0.f },
 		this
 	);
-
 	//std::shared_ptr<Actor> pointCloud = utility->CreatePCActor(
 	//	"pointCloud",
 	//	pcModelLoader.GetAsset("map"),
@@ -80,32 +69,17 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	//	this
 	//);
 
-	//std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t,StaticMesh, DotComponent>(
+	//std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, DotComponent>(
 	//	"dot",
-	//	std::vector{GeometryGenerator::MakePoint()},
+	//	std::vector{ GeometryGenerator::MakePoint() },
 	//	"ComTex",
 	//	{ 0.f,0.f,0.f },
 	//	this
 	//);
-	
-	//std::shared_ptr<AMovingPlatform> movingPlatform = std::make_shared<AMovingPlatform>("movingPlatform", this);
-	//movingPlatform->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(-2.f, 0.6f, 0.f));
+	//SpawnActor(pointCloud);
+	//SpawnActor(dot);
 
-	//std::shared_ptr<ATriggerBox> triggerBox = std::make_shared<ATriggerBox>("triggerBox", this);
-	//triggerBox->Initialize(device, commandList, "pavement_03_albedo", DirectX::XMMatrixTranslation(0.f, 0.6f, 0.f));
-	////triggerBox->UpdateActorRotation(DirectX::SimpleMath::Quaternion::CreateFromAxisAngle(Vector3(1, 0, 0), DirectX::XM_PI / 5.f));
-	//triggerBox->SetTarget(movingPlatform.get());
-	
-	/*movingPlatform->SetUpdateConstant(true);
-
-
-	/*SpawnActor(pointCloud);
-	SpawnActor(dot);
-		SpawnActor(triggerBox);
-	SpawnActor(movingPlatform);
-	*/
 	SpawnActor(cubeMap);
-
 
 }
 
@@ -247,7 +221,7 @@ void World::SetInputState(size_t key, bool isKeyDown)
 	m_inputHelper.SetInputState(key, isKeyDown);
 }
 
-bool World::LoadLevel(const std::filesystem::path & levelPath)
+bool World::LoadLevel(const std::filesystem::path& levelPath)
 {
 	using json = nlohmann::json;
 	std::ifstream ifs(levelPath, std::ios::binary);
@@ -259,12 +233,14 @@ bool World::LoadLevel(const std::filesystem::path & levelPath)
 	{
 		throw std::runtime_error("Invalid JSON: " + levelPath.string() + " (" + e.what() + ")");
 	}
-	
+
 	if (root.contains("actors"))
 	{
-		ActorData ad;
 		for (const auto& a : root["actors"])
 		{
+			ActorData ad;
+			std::string targetName;
+
 			if (a.contains("name"))
 				ad.name = a["name"].get<std::string>();
 			if (a.contains("transform"))
@@ -295,21 +271,49 @@ bool World::LoadLevel(const std::filesystem::path & levelPath)
 						ad.forceMip0 = comp["forceMip0"].get<bool>();
 						ad.updateConstants = comp["updateConstants"].get<bool>();
 					}
+					else if (type == "trigger")
+					{
+						targetName = comp["target"].get<std::string>();
+					}
 				}
 			}
-			std::shared_ptr<Actor> actor = utility->CreateActor(
-				ad.name,
-				modelLoader->GetMeshes(ad.mesh),
-				ad.material,
-				ad.pos,
-				this,
-				ad.useSimulate,
-				ad.mode,
-				ad.forceMip0
-			);
 
-			actor->SetUpdateConstant(ad.updateConstants);
-			SpawnActor(actor);
+			if (a.contains("class"))
+			{
+				const ActorType at = a["class"].get<ActorType>();
+				switch (at)
+				{
+				case ActorType::AT_Actor:
+				{
+					std::shared_ptr<Actor> actor = std::make_shared<Actor>(ad.name, this);
+					actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
+					SpawnActor(actor);
+				}
+				break;
+				case ActorType::AT_ATriggerBox:
+				{
+					std::shared_ptr<ATriggerBox> actor = std::make_shared<ATriggerBox>(ad.name, this);
+					actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
+					SpawnActor(actor);
+					auto target = m_actors.find(targetName);
+					if (target != m_actors.end())
+						actor->SetTarget(target->second.get());
+					else
+					{
+						std::cout << "target not founded\n";
+					}
+				}
+				break;
+				case ActorType::AT_AMovingPlatform:
+				{
+					std::shared_ptr<AMovingPlatform> actor = std::make_shared<AMovingPlatform>(ad.name, this);
+					actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
+
+					SpawnActor(actor);
+				}
+				break;
+				}
+			}
 		}
 	}
 	return true;

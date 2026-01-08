@@ -1,6 +1,10 @@
 ﻿#pragma once
 
 #include "Actor.h"
+#include "ActorData.h"
+//#include "StaticMesh.h"
+
+class StaticMesh;
 
 class AMovingPlatform : public Actor {
 public:
@@ -10,6 +14,7 @@ public:
 
 public:
 	void Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* commandList, const std::string& texName, DirectX::SimpleMath::Matrix transform);
+	void Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad) override;
 
 public:
 	void Tick(const float& deltaTime) override;

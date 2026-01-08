@@ -388,6 +388,7 @@
   <ItemGroup>
     <None Include="CubeCommon.hlsli" />
     <None Include="Delegate.inl" />
+    <None Include="Levels\simpleLevel.json" />
     <None Include="packages.config" />
     <None Include="PhongCommon.hlsli" />
     <None Include="PointCloud.hlsli" />

@@ -13,6 +13,7 @@
 #include "PhysXMode.h"
 #include "Actor.h"
 #include "Light.h"
+#include "ActorData.h"
 
 //#include "StaticMesh.h"
 class StaticMesh;
@@ -133,6 +134,11 @@ namespace GraphicsUtils {
 			bool simulate = false,
 			PhysXMode physXMode = PhysXMode::PM_Default,
 			int foreceMip0 = 0);
+
+		inline std::shared_ptr<Actor> Utility::CreateActor(
+			std::shared_ptr<StaticMesh> mesh,
+			World* world,
+			const ActorData & ad);
 
 		template<typename V, typename I, typename MeshType = class StaticMesh>
 		std::shared_ptr<Actor> CreateActor(

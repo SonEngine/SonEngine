@@ -39,6 +39,18 @@ void AMovingPlatform::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandLis
 	}
 }
 
+void AMovingPlatform::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
+{
+	std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(this);
+	cmp->SetMesh(mesh);
+	cmp->SetPhysX(ad.useSimulate);
+	cmp->SetPhysXMode(ad.mode);
+	SetRootComponent(cmp);
+	SetActorLocation(ad.pos);
+	SetTextureName(ad.material);
+	SetUpdateConstant(ad.updateConstants);
+}
+
 void AMovingPlatform::Tick(const float& deltaTime)
 {
 	if (isTriggered)

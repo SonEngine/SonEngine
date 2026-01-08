@@ -353,6 +353,9 @@
     <None Include="PointCloud.hlsli" />
     <None Include="RT.hlsli" />
     <None Include="CubeCommon.hlsli" />
+    <None Include="Levels\simpleLevel.json">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\earth_Albedo.dds">

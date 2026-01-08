@@ -6,8 +6,10 @@
 
 #include "TextureLoader.h"
 #include "SceneComponent.h"
+#include "ActorData.h"
 
 class World;
+class StaticMesh;
 
 class Actor
 {
@@ -15,8 +17,8 @@ public:
 	Actor();
 	Actor(std::string actorName, World* world);
 
-protected:
-	virtual void Initialize();
+public:
+	virtual void Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad);
 
 public:
 	virtual void Tick(const float& deltaTime);

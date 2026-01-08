@@ -43,6 +43,20 @@ void ATriggerBox::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandList* c
 	}
 }
 
+void ATriggerBox::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
+{
+	std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(this);
+	cmp->SetMesh(mesh);
+	cmp->SetPhysX(ad.useSimulate);
+	cmp->SetPhysXMode(ad.mode);
+	cmp->OnComponentBeginOverlap.Bind(this, &ATriggerBox::OnBeginTrigger);
+	cmp->OnComponentEndOverlap.Bind(this, &ATriggerBox::OnEndTrigger);
+
+	SetRootComponent(cmp);
+	SetActorLocation(ad.pos);
+	SetTextureName(ad.material);
+	SetUpdateConstant(ad.updateConstants);
+}
 
 void ATriggerBox::OnBeginTrigger(PrimitiveComponent* primitive)
 {

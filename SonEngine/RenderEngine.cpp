@@ -695,7 +695,6 @@ void RenderEngine::Tick(float deltaTime)
 
 			m_renderCmdQueue->Push(update);
 		}
-
 	}
 	{
 		std::lock_guard<std::mutex> lock(g_mtx);

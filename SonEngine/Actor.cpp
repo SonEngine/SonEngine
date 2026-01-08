@@ -1,6 +1,7 @@
 ﻿#include "Actor.h"
 #include "StaticMeshComponent.h"
 #include "World.h"
+#include "StaticMesh.h"
 
 using DirectX::SimpleMath::Vector3;
 
@@ -13,8 +14,18 @@ Actor::Actor(std::string actorName, World* world)
 	m_world(world)
 {
 }
-void Actor::Initialize()
+
+void Actor::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
 {
+	std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(this);
+	cmp->SetMesh(mesh);
+	cmp->SetPhysX(ad.useSimulate);
+	cmp->SetPhysXMode(ad.mode);
+	SetRootComponent(cmp);
+	SetActorLocation(ad.pos);
+	UpdateMipState(ad.forceMip0);
+	SetTextureName(ad.material);
+	SetUpdateConstant(ad.updateConstants);
 }
 
 void Actor::Tick(const float& deltaTime)

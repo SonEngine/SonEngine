@@ -5,6 +5,11 @@ TextureCube gCubeMap : register(t1);
 TextureCube gCubeMapSpecular : register(t2);
 
 Texture2D gAlbedo : register(t3);
+Texture2D gAo : register(t4);
+Texture2D gHeight : register(t5);
+Texture2D gMetal : register(t6);
+Texture2D gNormal : register(t7);
+Texture2D gRoughness : register(t8);
 
 SamplerState gSampler : register(s0);
 ConstantBuffer<LocalConstant> gLocalCB : register(b0);
@@ -30,10 +35,12 @@ float4 main(psInput input) : SV_TARGET
     float3 diffuse = cubeMapExposure * gCubeMapDiffuse.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
     float3 specluar = cubeMapExposure * gCubeMapSpecular.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
     
+    float3 normal = gNormal.Sample(gSampler, input.uv);
     
     diffuse *= albedo;
     //return float4(albedo, 1.f);
     //return float4(1.f,1.f,1.f, 1.f);
+    return float4(normal, 1.f);
     return float4(diffuse + specluar, 1.f);
     
     //return cubeMapSpecular;
