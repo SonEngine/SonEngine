@@ -108,6 +108,10 @@ void World::InitCamera(int width, int height)
 	m_camera->Initialize();
 	m_camera->SetActorLocation({ 0.f, 5.f, -5.f });
 	m_camera->UpdateCameraRotation(0, 70);
+	/*
+	m_camera->SetActorLocation({ -1.5, 0.8, -1.5 });
+	m_camera->UpdateCameraRotation(0, 0);*/
+
 	m_camera->SetActorSpeed(5.f);
 }
 
@@ -270,6 +274,7 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 					{
 						ad.forceMip0 = comp["forceMip0"].get<bool>();
 						ad.updateConstants = comp["updateConstants"].get<bool>();
+						ad.useReflect = comp["useReflect"].get<bool>();
 					}
 					else if (type == "trigger")
 					{

@@ -125,18 +125,37 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& com
 	uploadResourcesFinished.wait();
 }
 
-void TextureLoader::AddTexture(Microsoft::WRL::ComPtr<ID3D12Resource> & texture, std::string & filename)
+void TextureLoader::AddTexture(Microsoft::WRL::ComPtr<ID3D12Resource> & texture, std::string & filename, bool isCubeMap)
 {
-	if (count <= m_heapSize)
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = texture->GetDesc().Format;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	if (isCubeMap)
 	{
-		
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = texture->GetDesc().Format;
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.TextureCube.MipLevels = texture->GetDesc().MipLevels;
+		srvDesc.TextureCube.MostDetailedMip = 0;
+		srvDesc.TextureCube.ResourceMinLODClamp = 0.f;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+	}
+	else
+	{
 		srvDesc.Texture2D.MipLevels = texture->GetDesc().MipLevels;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	}	
 
+	auto it = idxMap.find(filename);
+	if (it != idxMap.end())
+	{
+		int idx = it->second;
+	
+		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart(), idx, srvOffset);
+		m_device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
+
+		textures[idx] = texture;
+	}
+	else if (count <= m_heapSize)
+	{
 		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart(), count, srvOffset);
 		m_device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
 		idxMap[filename] = count;

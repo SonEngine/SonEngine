@@ -7,11 +7,8 @@ psInput main(vsInput input )
     psInput output;
     output.worldPosition = input.pos;
         
-    float4 posW = float4(input.pos, 1.f);
-    posW.xyz += gPhongGCB.cameraPos.xyz;
-    
-    posW = mul(posW, gPhongGCB.view);
-    posW = mul(posW, gPhongGCB.proj);
+    float4 posW = mul(float4(input.pos, 0.f), gPhongGCB.view);
+    posW = mul(float4(posW.xyz, 1.f), gPhongGCB.proj);
     
     output.svPosition = posW.xyzw;
     

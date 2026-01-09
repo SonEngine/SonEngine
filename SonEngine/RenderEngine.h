@@ -59,6 +59,7 @@ protected:
 	void CreateDepthBuffer();
 	void UpdateGUI();
 	void CreateTextures();
+	void CreateCubeMap();
 	void CreateFonts();
 
 	void RenderWithText();
@@ -75,6 +76,9 @@ protected:
 	void RenderGUI(bool isFinal);
 	void Compute(const std::string& cpsoName, int idx, bool isFinal, D3D12_RESOURCE_STATES prevState);
 
+	void RenderCube(const std::string& psoName, int idx, MeshType meshType, bool isFinal, bool clear);
+
+
 	void UpdateTexts();
 
 public:
@@ -90,6 +94,7 @@ private:
 
 protected:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRtvCpuHandle() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCubeMapRtvCpuHandle(int i) const;
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCpuHandle() const;
 	ID3D12Resource* GetCurrentSwapChainResource() const;
 
@@ -149,6 +154,31 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_DSVHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_guiFontHeap;
 
+	//cubemap
+private:
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_cubeMap;
+	DXGI_FORMAT cubeFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cubeMapRtvHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cubeMapSrvHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cubeMapDSVHeap;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_cubeDepthBuffer;
+
+	PhongGlobalConstant m_cubePhongGC[6];
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_cubeMapGCB[6];
+	std::vector<void*> m_pCubeGC;
+
+	D3D12_VIEWPORT m_cubeViewport;
+	D3D12_RECT m_cubeScissorRect;
+
+	UINT cubeWidth = 512;
+	UINT cubeHeight = 512;
+	Vector3 cubeMapPos;
+	//UINT cubeWidth = 1280;
+	//UINT cubeHeight = 720;
+	std::array<float, 4> cubeRtvClearColor;
+	std::string playerCubeMapTextureName = "cubeMapPlayer";
+
 	// Compute Shader 용
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_computeBuffer;
@@ -171,8 +201,12 @@ private:
 
 private:
 	std::string renderPSO = "phongPSO";
+	std::string phongPSO = "phongPSO";
 	std::string textPSO = "textPSO";
 	std::string computePSO = "defaultCPSO";
+	std::string genCubeMapPSO = "genCubeMapPSO";
+	std::string cubeMapPSO = "cubeMapPSO";
+	//std::string cubeMapPSO = "cubeMapPSO";
 
 	//FrameResource
 private:
@@ -204,6 +238,7 @@ private:
 	void* pSaveBuffer;
 	std::string imageFilePath = "images\\";
 	ImageInfo imageInfo;
+	std::string saveTextureName = "BackBuffer";
 
 private:
 	std::thread saveThread;

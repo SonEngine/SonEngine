@@ -32,6 +32,7 @@ namespace Graphics
     extern RootSignature g_U1_C1_RS;
     extern RootSignature g_R1_RS;
     extern RootSignature g_R2_C2_RS;
+    extern RootSignature g_R3_C2_RS;
 
     extern std::shared_ptr<GraphicsUtils::Utility> utility;
     extern std::unique_ptr<World> world;

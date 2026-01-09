@@ -49,7 +49,8 @@ public:
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
 
 	void UpdateMipState(int newForceMip0);
-	
+
+	void UpdateUseReflect(int newUseReflect);
 	void SetUpdateConstant(bool newState);
 	void SetTextureName(const std::string& newName);
 

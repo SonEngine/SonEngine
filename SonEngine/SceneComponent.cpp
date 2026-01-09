@@ -100,3 +100,7 @@ void SceneComponent::UpdateMipState(int newForceMip0)
 {
 	localConstant.forceMip0 = newForceMip0;
 }
+void SceneComponent::UpdateUseReflect(int newUseReflect)
+{
+	localConstant.useReflect = newUseReflect;
+}

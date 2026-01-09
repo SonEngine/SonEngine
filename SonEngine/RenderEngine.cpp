@@ -17,6 +17,7 @@
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
 
+#include <fp16.h>
 #include <pix3.h>
 
 using Microsoft::WRL::ComPtr;
@@ -118,6 +119,8 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 	m_textureLoader->AddTexture(m_computeBuffer, m_computeTextureName);
 	clearFlag = true;
 
+	CreateCubeMap();
+
 	BuildFrameResources();
 
 	float r = 0.f;
@@ -152,7 +155,7 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 		if (world)
 		{
-			world->Initialize(m_width, m_height, this, m_device, m_commandList.Get());
+			world->Initialize(m_width - guiWidth, m_height, this, m_device, m_commandList.Get());
 		}
 
 
@@ -162,7 +165,6 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 		FlushCommands();
 	}
-
 
 	saveThread = std::thread([&] {
 		if (world == nullptr)
@@ -224,8 +226,8 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 			{
 				captureDirty = false;
 				FlushResourceCommands();
-				SaveTextureGPU(m_computeTextureName, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, saveMipLevel, true);
-				//SaveTextureGPU("BackBuffer", D3D12_RESOURCE_STATE_PRESENT);
+				//SaveTextureGPU(saveTextureName, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, saveMipLevel, true);
+				SaveTextureGPU("BackBuffer", D3D12_RESOURCE_STATE_PRESENT);
 			}
 			if (runDLDirty)
 			{
@@ -314,7 +316,7 @@ bool RenderEngine::InitGUI(HWND wnd)
 	guiPenColor[1] = 1.f;
 	guiPenColor[2] = 1.f;
 	guiPenRadius = 15.f;
-	
+
 	g_imguiReady.store(true, std::memory_order_release);
 	return true;
 }
@@ -530,7 +532,7 @@ void RenderEngine::UpdateGUI()
 	ImGui::SetWindowSize(ImVec2((float)m_guiWidth, (float)m_height), ImGuiCond_FirstUseEver);
 	ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
 	//ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
-	int fps = 1 / r_packet.deltaTime;
+	int fps = int(1 / r_packet.deltaTime);
 	std::string fpsStr = "FPS : " + std::to_string(fps);
 	ImGui::Text(fpsStr.c_str());
 
@@ -661,7 +663,7 @@ void RenderEngine::UpdatePBGlobalConstantBuffer(const int& guiWidth, const Mouse
 void RenderEngine::Tick(float deltaTime)
 {
 	// drain render input
-	while(m_renderToMainCmdQueue->TryPop(g_cmd))
+	while (m_renderToMainCmdQueue->TryPop(g_cmd))
 	{
 		ApplyGameCommand(g_cmd);
 	}
@@ -681,8 +683,8 @@ void RenderEngine::Tick(float deltaTime)
 	}
 
 	// Local Constants
-	
-	for (int i= 0 ; i<m_primitives.size(); i++)
+
+	for (int i = 0; i < m_primitives.size(); i++)
 	{
 		PrimitiveComponent* prim = m_primitives[i];
 		if (prim->GetUpdateConstant())
@@ -754,7 +756,13 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_RENDER_TARGET
 		));
-
+	/*commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_cubeMap.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+		));*/
 	if (clear)
 	{
 		commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
@@ -779,15 +787,17 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 			for (auto& [id, proxy] : proxies)
 			{
 				auto it = r_currentFrameResource->m_localData.find(id);
-				auto & [cb, textureName] = it->second;
-				// cubemap - 0, albedo - 1, local - 2, gobal - 3
+				auto& [cb, textureName] = it->second;
+				// cubemap - 0, albedo - 1, player cubemap - 2, local - 3, gobal - 4
 				if (type == MT_primitive)
 				{
 					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
-					commandList->SetGraphicsRootConstantBufferView(2, cb->GetGPUVirtualAddress());
-
-					commandList->SetGraphicsRootConstantBufferView(3, r_currentFrameResource->GetGCBGPUAddress());
 					commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(textureName));
+					commandList->SetGraphicsRootDescriptorTable(2, m_textureLoader->GetGPUHandle(playerCubeMapTextureName));
+
+					commandList->SetGraphicsRootConstantBufferView(3, cb->GetGPUVirtualAddress());
+
+					commandList->SetGraphicsRootConstantBufferView(4, r_currentFrameResource->GetGCBGPUAddress());
 					proxy.mesh->Render_(commandList);
 
 				}
@@ -820,6 +830,7 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
 			D3D12_RESOURCE_STATE_PRESENT
 		));
+	
 
 	commandList->Close();
 
@@ -873,7 +884,7 @@ void RenderEngine::RenderGUI(bool isFinal)
 	commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), false, nullptr);
 	ID3D12DescriptorHeap* pHeaps[] = { m_guiFontHeap.Get() };
 	commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(pHeaps)), pHeaps);
-	
+
 	ImDrawData* dd = ImGui::GetDrawData();
 	if (dd->Valid)
 		ImGui_ImplDX12_RenderDrawData(dd, commandList);
@@ -977,65 +988,182 @@ void RenderEngine::Compute(const std::string& cpsoName, int idx, bool isFinal, D
 	}
 }
 
+void RenderEngine::RenderCube(const std::string& psoName, int idx, MeshType meshType, bool isFinal, bool clear)
+{
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), psoName.c_str());
+
+	using namespace Renderer;
+
+	if (idx == 0)
+	{
+		if (r_currentFrameResource->m_currentFence != 0 &&
+			m_fence->GetCompletedValue() < r_currentFrameResource->m_currentFence)
+		{
+			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			m_fence->SetEventOnCompletion(r_currentFrameResource->m_currentFence, eventHandle);
+
+			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
+		}
+		r_currentFrameResource->m_currentFence = ++m_currentFence;
+	}
+
+	GraphicsPSO pso;
+	if (m_PSOs.find(psoName) != m_PSOs.end())
+	{
+		pso = m_PSOs[psoName];
+	}
+	else
+	{
+		pso = m_PSOs["defaultPSO"];
+	}
+	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetCommandList(idx);
+	r_currentFrameResource->ResetAllocator(idx);
+
+	ThrowIfFailed(commandList->Reset(r_currentFrameResource->GetAllocator(idx), pso.GetPSO()));
+
+	commandList->RSSetScissorRects(1, &m_cubeScissorRect);
+	commandList->RSSetViewports(1, &m_cubeViewport);
+
+	commandList->SetPipelineState(pso.GetPSO());
+	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
+
+	ID3D12DescriptorHeap* heaps[] = {
+		m_textureLoader->GetHeap()
+	};
+	commandList->SetDescriptorHeaps(1, heaps);
+
+	commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_cubeMap.Get(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_RENDER_TARGET
+		));
+
+	for (int i = 0; i < 6; i++)
+	{
+		if (clear)
+		{
+			commandList->ClearRenderTargetView(GetCubeMapRtvCpuHandle(i), cubeRtvClearColor.data(), 0, nullptr);
+		}
+		commandList->ClearDepthStencilView(m_cubeMapDSVHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
+		commandList->OMSetRenderTargets(1, &GetCubeMapRtvCpuHandle(i), TRUE, &m_cubeMapDSVHeap->GetCPUDescriptorHandleForHeapStart());
+
+		for (auto& [type, proxies] : m_scene->m_proxies)
+		{
+			if (type == meshType)
+			{
+				for (auto& [id, proxy] : proxies)
+				{
+					auto it = r_currentFrameResource->m_localData.find(id);
+					auto& [cb, textureName] = it->second;
+					// cubemap - 0, albedo - 1, local - 2, gobal - 3
+					if (type == MT_primitive)
+					{
+						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
+						commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(textureName));
+						commandList->SetGraphicsRootConstantBufferView(2, cb->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootConstantBufferView(3, m_cubeMapGCB[i]->GetGPUVirtualAddress());
+
+						proxy.mesh->Render_(commandList);
+
+					}
+					else if (type == MT_cubeMap)
+					{
+						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(textureName));
+						commandList->SetGraphicsRootConstantBufferView(1, m_cubeMapGCB[i]->GetGPUVirtualAddress());
+
+						proxy.mesh->CubeMapRender(commandList);
+					}
+				}
+			}
+		}
+
+	}
+	commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_cubeMap.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+		));
+
+	commandList->Close();
+
+	ID3D12CommandList* commands[] = { commandList };
+	{
+		std::lock_guard<std::mutex> lock(queue_mtx);
+		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+
+		if (isFinal)
+		{
+			ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), m_currentFence));
+			// text 업데이트를 위해 graphcics memory 사용 시 commit 해줘야 Graphics 메모리를 재사용한다
+			m_graphicsMemory->Commit(m_commandQueue.Get());
+			ThrowIfFailed(m_swapChain->Present(1, 0));
+			m_currentBackBufferIndex = (m_currentBackBufferIndex + 1) % m_swapChainBufferCount;
+		}
+	}
+	PIXEndEvent(m_commandQueue.Get());
+}
+
 // FrameResource의 텍스트 렌더용 텍스쳐 업데이트
 void RenderEngine::UpdateTexts()
 {
-	//GraphicsPSO pso = m_PSOs["defaultPSO"];
-	//ID3D12CommandAllocator* commandAllocator = r_currentFrameResource->GetTextAllocator();
-	//ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetTextCommandList();
-	//ID3D12DescriptorHeap* m_textRtvHeap = r_currentFrameResource->GetTextRtvHeap();
+	/*GraphicsPSO pso = m_PSOs["defaultPSO"];
+	ID3D12CommandAllocator* commandAllocator = r_currentFrameResource->GetTextAllocator();
+	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetTextCommandList();
+	ID3D12DescriptorHeap* m_textRtvHeap = r_currentFrameResource->GetTextRtvHeap();
+	commandAllocator->Reset();
+	commandList->Reset(commandAllocator, pso.GetPSO());
+	commandList->SetPipelineState(pso.GetPSO());
+	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
+	UINT i = 0;
+	for (auto& tr : r_currentFrameResource->textResources)
+	{
+		UINT64 width = tr.textureWidth;
+		UINT64 height = tr.textureHeight;
+		D3D12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)width, (FLOAT)height);
+		D3D12_RECT scissorRect = CD3DX12_RECT(0, 0, (LONG)width, (LONG)height);
+		commandList->RSSetScissorRects(1, &scissorRect);
+		commandList->RSSetViewports(1, &viewport);
 
-	//commandAllocator->Reset();
-	//commandList->Reset(commandAllocator, pso.GetPSO());
+		commandList->ClearRenderTargetView(r_currentFrameResource->GetTextRrvCPUHandle(i), DirectX::Colors::White, 0, nullptr);
+		commandList->OMSetRenderTargets(
+			1,
+			&r_currentFrameResource->GetTextRrvCPUHandle(i),
+			FALSE,
+			nullptr);
 
-	//commandList->SetPipelineState(pso.GetPSO());
-	//commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
+		ID3D12DescriptorHeap* heaps[] = { m_fontSrvHeap.Get() };
+		commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
+		spriteBatch->Begin(commandList);
 
-	//UINT i = 0;
-	//for (auto& tr : r_currentFrameResource->textResources)
-	//{
-	//	UINT64 width = tr.textureWidth;
-	//	UINT64 height = tr.textureHeight;
+		spriteBatch->SetViewport(viewport);
+		std::wstring output = r_currentFrameResource->textProxyBuffer[i].str;
+		DirectX::SimpleMath::Vector2 textSize = font->MeasureString(output.c_str());
 
-	//	D3D12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.F, 0.F, (FLOAT)width, (FLOAT)height);
-	//	D3D12_RECT scissorRect = CD3DX12_RECT(0, 0, (LONG)width, (LONG)height);
-	//	commandList->RSSetScissorRects(1, &scissorRect);
-	//	commandList->RSSetViewports(1, &viewport);
+		// 중앙 정렬을 위해 origin을 텍스트의 중앙으로 설정
+		DirectX::SimpleMath::Vector2 origin = textSize / 2.f;
+		DirectX::SimpleMath::Vector2 m_fontPos = DirectX::SimpleMath::Vector2(width / 2.f, height / 2.f);
 
-	//	commandList->ClearRenderTargetView(r_currentFrameResource->GetTextRrvCPUHandle(i), DirectX::Colors::White, 0, nullptr);
-	//	commandList->OMSetRenderTargets(
-	//		1,
-	//		&r_currentFrameResource->GetTextRrvCPUHandle(i),
-	//		FALSE,
-	//		nullptr);
+		DirectX::XMVECTORF32 color = DirectX::Colors::Black;
 
-	//	ID3D12DescriptorHeap* heaps[] = { m_fontSrvHeap.Get() };
-	//	commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
-	//	spriteBatch->Begin(commandList);
+		font->DrawString(spriteBatch.get(), output.c_str(),
+			m_fontPos, color, 0.f, origin, 1);
 
-	//	spriteBatch->SetViewport(viewport);
-	//	std::wstring output = r_currentFrameResource->textProxyBuffer[i].str;
-	//	DirectX::SimpleMath::Vector2 textSize = font->MeasureString(output.c_str());
+		spriteBatch->End();
+		i++;
+	}
 
-	//	// 중앙 정렬을 위해 origin을 텍스트의 중앙으로 설정
-	//	DirectX::SimpleMath::Vector2 origin = textSize / 2.f;
-	//	DirectX::SimpleMath::Vector2 m_fontPos = DirectX::SimpleMath::Vector2(width / 2.f, height / 2.f);
-
-	//	DirectX::XMVECTORF32 color = DirectX::Colors::Black;
-
-	//	font->DrawString(spriteBatch.get(), output.c_str(),
-	//		m_fontPos, color, 0.f, origin, 1);
-
-	//	spriteBatch->End();
-	//	i++;
-	//}
-
-	//commandList->Close();
-	//ID3D12CommandList* commands[] = { commandList };
-	//{
-	//	std::lock_guard<std::mutex> lock(queue_mtx);
-	//	m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
-	//}
+	commandList->Close();
+	ID3D12CommandList* commands[] = { commandList };
+	{
+		std::lock_guard<std::mutex> lock(queue_mtx);
+		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+	}
+	*/
 }
 
 void RenderEngine::CreateTextures()
@@ -1049,11 +1177,151 @@ void RenderEngine::CreateTextures()
 	m_textureLoader = std::make_shared<TextureLoader>(texturePath, m_device);
 	m_fallbackLoader = std::make_shared<TextureLoader>(fallbackPath, m_device);
 
-	m_textureLoader->InitHeap(20);
+	m_textureLoader->InitHeap(30);
 	m_textureLoader->LoadIdx();
-	m_fallbackLoader->InitHeap(20);
+	m_fallbackLoader->InitHeap(30);
 	m_fallbackLoader->LoadIdx();
 	m_textureLoader->LoadTextures(m_commandQueue);
+}
+
+
+void RenderEngine::CreateCubeMap()
+{
+	cubeMapPos = Vector3(-1.5f, 0.8f, -1.5f);
+
+	D3D12_RESOURCE_DESC cubeRD = {};
+	cubeRD.Width = cubeWidth;
+	cubeRD.Height = cubeHeight;
+	cubeRD.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	cubeRD.DepthOrArraySize = 6;
+	cubeRD.MipLevels = 1;
+	cubeRD.SampleDesc = { 1,0 };
+	cubeRD.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	cubeRD.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	cubeRD.Format = cubeFormat;
+
+	D3D12_CLEAR_VALUE cv = {};
+	cv.Color[0] = 0.f;
+	cv.Color[1] = 0.f;
+	cv.Color[2] = 0.f;
+	cv.Color[3] = 1.f;
+	cv.Format = cubeFormat;
+
+	ThrowIfFailed(m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES::CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&cubeRD,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		&cv,
+		IID_PPV_ARGS(m_cubeMap.ReleaseAndGetAddressOf())
+	));
+
+	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	rtvHeapDesc.NumDescriptors = 6;
+	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	rtvHeapDesc.NodeMask = 0;
+
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
+	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	dsvHeapDesc.NodeMask = 0;
+
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(m_cubeMapRtvHeap.ReleaseAndGetAddressOf())));
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(m_cubeMapDSVHeap.ReleaseAndGetAddressOf())));
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_cubeMapRtvHeap->GetCPUDescriptorHandleForHeapStart());
+	for (int i = 0; i < 6; i++)
+	{
+		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+		rtvDesc.Format = cubeFormat;
+		rtvDesc.Texture2DArray.ArraySize = 1;
+		rtvDesc.Texture2DArray.FirstArraySlice = i;
+		rtvDesc.Texture2DArray.MipSlice = 0;
+		rtvDesc.Texture2DArray.PlaneSlice = 0;
+		m_device->CreateRenderTargetView(m_cubeMap.Get(), &rtvDesc, handle);
+		if (i != 5)
+			handle.Offset(1, m_rtvDescriptorSize);
+	}
+
+	D3D12_RESOURCE_DESC dDesc = {};
+	dDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	dDesc.Format = Renderer::dsBufferFormat;
+	dDesc.MipLevels = 0;
+	dDesc.DepthOrArraySize = 1;
+	dDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	dDesc.Width = cubeWidth;
+	dDesc.Height = cubeHeight;
+	dDesc.SampleDesc = { 1,0 };
+
+	D3D12_CLEAR_VALUE cValue = {};
+	cValue.DepthStencil.Depth = 1.f;
+	cValue.DepthStencil.Stencil = 0;
+	cValue.Format = Renderer::dsBufferFormat;
+
+	m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&dDesc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&cValue,
+		IID_PPV_ARGS(m_cubeDepthBuffer.ReleaseAndGetAddressOf())
+	);
+
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Texture2D.MipSlice = 0;
+	dsvDesc.Format = Renderer::dsBufferFormat;
+	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+	m_device->CreateDepthStencilView(m_cubeDepthBuffer.Get(), &dsvDesc, m_cubeMapDSVHeap->GetCPUDescriptorHandleForHeapStart());
+	Vector4 kEyeDir[6] =
+	{
+		{ 1, 0, 0, 0 }, { -1, 0, 0, 0 },
+		{ 0, 1, 0, 0 }, { 0, -1, 0, 0 },
+		{ 0, 0, 1, 0 }, { 0, 0, -1, 0 }
+	};
+	Vector4 kUpDir[6] =
+	{
+		{ 0, 1, 0, 0 }, { 0, 1, 0, 0 },
+		{ 0, 0, -1, 0 }, { 0, 0,  1, 0 },
+		{ 0, 1, 0, 0 }, { 0, 1,  0, 0 }
+	};
+	//Vector4 kUpDir[6] =
+	//{
+	//	{ 0, 1, 0, 0 }, { 0, 1, 0, 0 },
+	//	{ 0, 1, 0, 0 }, { 0, 1, 0, 0 },
+	//	{ 0, 1, 0, 0 }, { 0, 1, 0, 0 }
+	//};
+	m_pCubeGC.resize(6);
+
+	float fov = DirectX::XM_PIDIV2;
+	DirectX::SimpleMath::Matrix projMatrix = DirectX::XMMatrixPerspectiveFovLH(
+		fov, (float)cubeWidth / cubeHeight, 0.1f, 1000.f);
+
+	for (int i = 0; i < 6; i++)
+	{
+		utility->CreateConstantBuffer(
+			sizeof(PhongGlobalConstant),
+			m_cubeMapGCB[i],
+			reinterpret_cast<void**>(&m_pCubeGC[i])
+		);
+		
+		DirectX::SimpleMath::Matrix viewMatrix = XMMatrixLookToLH(cubeMapPos, kEyeDir[i], kUpDir[i]);
+
+		m_cubePhongGC[i].proj = projMatrix.Transpose();
+		m_cubePhongGC[i].view = viewMatrix.Transpose();
+
+		m_cubePhongGC[i].proj;
+		memcpy(m_pCubeGC[i], &m_cubePhongGC[i], sizeof(PhongGlobalConstant));
+	}
+	m_cubeViewport = CD3DX12_VIEWPORT((FLOAT)0.F, 0.F, (FLOAT)(cubeWidth), (FLOAT)cubeHeight);
+	m_cubeScissorRect = CD3DX12_RECT((LONG)0, 0, (LONG)(cubeWidth), (LONG)cubeHeight);
+	cubeRtvClearColor = { 0.F, 0.F, 0.F, 1.F };
+
+	m_textureLoader->AddTexture(m_cubeMap, playerCubeMapTextureName, true);
+
 }
 
 void RenderEngine::CreateFonts()
@@ -1101,12 +1369,15 @@ void RenderEngine::RenderWithCompute()
 void RenderEngine::DrawingWithMouse()
 {
 	int i = 0;
+	RenderCube(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
+	RenderCube(genCubeMapPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 
-	Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	//Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	if (test) {
-		Render("cubeMapPSO", i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
-		Render("pointCloudPSO", i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
-		Render("phongPSO", i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+		//Render("pointCloudPSO", i++, MT_pointCloud, false/*isFinal*/, true/*clear RT*/);
+		Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
+		Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
+
 	}
 	else
 		Render("renderTexturePSO", i++, MT_dot, false/*isFinal*/, true/*clear RT*/);
@@ -1116,6 +1387,11 @@ void RenderEngine::DrawingWithMouse()
 D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetCurrentRtvCpuHandle() const
 {
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart(), m_currentBackBufferIndex, m_rtvDescriptorSize);
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetCubeMapRtvCpuHandle(int i) const
+{
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cubeMapRtvHeap->GetCPUDescriptorHandleForHeapStart(), i, m_rtvDescriptorSize);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetDSVCpuHandle() const
@@ -1171,20 +1447,24 @@ void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES
 	else
 		t = m_textureLoader->GetTexture(name);
 
-	GenerateMips(t);
-
 	D3D12_RESOURCE_DESC desc = t->GetDesc();
+	
+	UINT subresource = 0;
 
-	UINT16 mipLevels = desc.MipLevels;
+	if (miplevel != 0)
+	{
+		GenerateMips(t);
+		UINT16 mipLevels = desc.MipLevels;
 
-	UINT subresource = D3D12CalcSubresource(
-		/*MipSlice*/ miplevel,
-		/*ArraySlice*/ 0,
-		/*PlaneSlice*/ 0,
-		/*MipLevels*/ mipLevels,
-		/*ArraySize*/ 1
-	);
-
+		subresource = D3D12CalcSubresource(
+			/*MipSlice*/ miplevel,
+			/*ArraySlice*/ 0,
+			/*PlaneSlice*/ 0,
+			/*MipLevels*/ mipLevels,
+			/*ArraySize*/ 1
+		);
+	}
+	
 	UINT numRows = 0;
 	UINT64 rowSize = 0;
 	UINT64 requiredSize = 0;
@@ -1208,8 +1488,9 @@ void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES
 	imageInfo.numRows = numRows;
 	imageInfo.name = name;
 	imageInfo.width = footprint.Footprint.Width;
-	imageInfo.height = imageInfo.width = footprint.Footprint.Height;
+	imageInfo.height = footprint.Footprint.Height;
 	imageInfo.bufferPixelCount = requiredSize;
+	imageInfo.format = desc.Format;
 
 	m_commandList->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -1254,27 +1535,60 @@ void RenderEngine::SaveTextureCPU()
 	std::cout << "SaveTextureCPU\n";
 
 	CD3DX12_RANGE range(0, 0);
-	std::vector<uint8_t> image(imageInfo.rowSize * imageInfo.numRows);
-	uint8_t* mapped = nullptr;
-	if (m_saveBuffer == nullptr)
+
+	uint32_t pixelSize = imageInfo.rowSize * imageInfo.numRows;
+	uint32_t pixelCount = pixelSize;
+	if (imageInfo.format == DXGI_FORMAT_R16G16B16A16_FLOAT)
 	{
-		return;
+		pixelCount /= 2;
 	}
-	m_saveBuffer->Map(0, &range, reinterpret_cast<void**>(&mapped));
+	std::vector<uint16_t> imagef16(pixelCount);
+	std::vector<uint8_t> image(pixelCount);
+
+	if (imageInfo.format == DXGI_FORMAT_R16G16B16A16_FLOAT)
+	{
+		uint16_t* mapped = nullptr;
+		m_saveBuffer->Map(0, &range, reinterpret_cast<void**>(&mapped));
+		/*for (UINT y = 0; y < imageInfo.numRows / 2; y++) {
+			memcpy(imagef16.data() + y * imageInfo.rowSize,
+				mapped + y * imageInfo.rowPitch,
+				imageInfo.rowSize);
+		}*/
+		memcpy(imagef16.data() , mapped, imagef16.size()*2);
+		for (size_t i = 0; i < image.size(); i++)
+		{
+			double c = std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f);
+			if ((i + 1) % 4 != 0)
+			{
+				c = std::pow(c, 1 / 2.2);
+			}
+			image[i] = std::clamp((int)(c * 255.f), 0,255);
+		}
+	}
+	else
+	{
+		uint8_t* mapped = nullptr;
+		if (m_saveBuffer == nullptr)
+		{
+			return;
+		}
+		m_saveBuffer->Map(0, &range, reinterpret_cast<void**>(&mapped));
+		for (UINT y = 0; y < imageInfo.numRows; y++) {
+			memcpy(image.data() + y * imageInfo.rowSize,
+				mapped + y * imageInfo.rowPitch,
+				imageInfo.rowSize);
+		}
+	}
 	//memcpy(image.data(), pSaveBuffer, copyBufferSize);
 
-	for (UINT y = 0; y < imageInfo.numRows; y++) {
-		memcpy(image.data() + y * imageInfo.rowSize,
-			mapped + y * imageInfo.rowPitch,
-			imageInfo.rowSize);
-	}
 	m_saveBuffer->Unmap(0, nullptr);
-
-	//dlModel->Run(image);
 
 	std::string filename = imageInfo.name + utility->MakeTimestamp() + ".png";
 	std::string fileFullPath = imageFilePath + filename;
-	stbi_write_png(fileFullPath.c_str(), (int)imageInfo.width, (int)imageInfo.height, 4, image.data(), (int)imageInfo.rowSize);
+	if(imageInfo.format == DXGI_FORMAT_R16G16B16A16_FLOAT)
+		stbi_write_png(fileFullPath.c_str(), (int)imageInfo.width, (int)imageInfo.height, 4, image.data(), (int)(imageInfo.rowSize / 2));
+	else
+		stbi_write_png(fileFullPath.c_str(), (int)imageInfo.width, (int)imageInfo.height, 4, image.data(), (int)imageInfo.rowSize);
 	std::cout << imageInfo.name << " 가 성공적으로 저장되었습니다.\n";
 
 	std::string cmd = "start \"\" \"" + imageFilePath + "\"";
@@ -1320,7 +1634,7 @@ void RenderEngine::ApplyImpl(const CmdAddActor& c)
 		std::cout << "Main Spawn Actor\n";
 		world->SpawnActor(testActor);
 	}
-	
+
 }
 
 void RenderEngine::ApplyImpl(const CmdUpdateActorConstant& c)

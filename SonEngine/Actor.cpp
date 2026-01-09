@@ -21,11 +21,14 @@ void Actor::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
 	cmp->SetMesh(mesh);
 	cmp->SetPhysX(ad.useSimulate);
 	cmp->SetPhysXMode(ad.mode);
+	
 	SetRootComponent(cmp);
 	SetActorLocation(ad.pos);
-	UpdateMipState(ad.forceMip0);
 	SetTextureName(ad.material);
 	SetUpdateConstant(ad.updateConstants);
+	
+	UpdateMipState(ad.forceMip0);
+	UpdateUseReflect(ad.useReflect);
 }
 
 void Actor::Tick(const float& deltaTime)
@@ -158,6 +161,13 @@ void Actor::UpdateMipState(int newForceMip0)
 	if (m_rootComponent)
 	{
 		m_rootComponent->UpdateMipState(newForceMip0);
+	}
+}
+void Actor::UpdateUseReflect(int newUseReflect)
+{
+	if (m_rootComponent)
+	{
+		m_rootComponent->UpdateUseReflect(newUseReflect);
 	}
 }
 

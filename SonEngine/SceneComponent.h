@@ -50,6 +50,7 @@ public:
 	void UpdateConstantLocation();
 	void UpdateConstantRotation();
 	void UpdateMipState(int newForceMip0);
+	void UpdateUseReflect(int newUseReflect);
 	
 protected:
 	//DirectX::SimpleMath::Vector3 m_location;

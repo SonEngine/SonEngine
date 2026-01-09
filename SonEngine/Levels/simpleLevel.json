@@ -5,7 +5,7 @@
       "class": "Actor",
       "name": "player",
       "transform": {
-        "pos": [ -1.5, 0.5, -1.5 ],
+        "pos": [ -1.5, 0.8, -1.5 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -23,7 +23,8 @@
         {
           "type": "LocalConstant",
           "forceMip0": false,
-          "updateConstants": true
+          "updateConstants": true,
+          "useReflect": true
         }
       ]
     },
@@ -39,6 +40,33 @@
         {
           "type": "StaticMesh",
           "mesh": "plane",
+          "material": "worn-painted-metal_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Default"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": false,
+          "useReflect": false
+        }
+      ]
+    },
+    {
+      "class": "Actor",
+      "name": "sphere0",
+      "transform": {
+        "pos": [ -1.5, 0.8, -3.5 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "sphere",
           "material": "8k_earth_albedo"
         },
         {
@@ -49,7 +77,35 @@
         {
           "type": "LocalConstant",
           "forceMip0": false,
-          "updateConstants": false
+          "updateConstants": false,
+          "useReflect" :  false
+        }
+      ]
+    },
+    {
+      "class": "Actor",
+      "name": "sphere1",
+      "transform": {
+        "pos": [ -1.5, 0.8, 0.5 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "sphere",
+          "material": "8k_earth_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Default"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": false,
+          "useReflect": false
         }
       ]
     }

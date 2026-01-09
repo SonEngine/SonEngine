@@ -26,7 +26,7 @@ public:
 
 	void LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue);
 
-	void AddTexture(Microsoft::WRL::ComPtr<ID3D12Resource>& texture, std::string& filename);
+	void AddTexture(Microsoft::WRL::ComPtr<ID3D12Resource>& texture, std::string& filename, bool isCubeMap = false);
 
 	//void InitHeap(Microsoft::WRL::ComPtr<ID3D12Device5>& device, UINT heapSize);
 	//void LoadIdx(Microsoft::WRL::ComPtr<ID3D12Device5>& device);

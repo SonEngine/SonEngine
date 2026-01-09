@@ -77,7 +77,7 @@ private:
 	HWND hwnd;
 
 private:
-	const static int commandCount = 4;
+	const static int commandCount = 8;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator[commandCount];
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList[commandCount];
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_textCommandAllocator;

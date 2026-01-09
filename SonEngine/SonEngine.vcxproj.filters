@@ -336,6 +336,8 @@
     <FxCompile Include="TestCS.hlsl" />
     <FxCompile Include="CubeMapVS.hlsl" />
     <FxCompile Include="CubeMapPS.hlsl" />
+    <FxCompile Include="BoxCubeMapVS.hlsl" />
+    <FxCompile Include="BoxCubeMapPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />
@@ -354,6 +356,9 @@
     <None Include="RT.hlsli" />
     <None Include="CubeCommon.hlsli" />
     <None Include="Levels\simpleLevel.json">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Levels\mainLevel.json">
       <Filter>리소스 파일</Filter>
     </None>
   </ItemGroup>

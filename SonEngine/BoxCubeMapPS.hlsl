@@ -4,8 +4,6 @@ TextureCube gCubeMapDiffuse : register(t0);
 TextureCube gCubeMap : register(t1);
 TextureCube gCubeMapSpecular : register(t2);
 
-TextureCube gCubeMapReflect : register(t9);
-
 Texture2D gAlbedo : register(t3);
 Texture2D gAo : register(t4);
 Texture2D gHeight : register(t5);
@@ -37,25 +35,10 @@ float4 main(psInput input) : SV_TARGET
     float3 diffuse = cubeMapExposure * gCubeMapDiffuse.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
     float3 specluar = cubeMapExposure * gCubeMapSpecular.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
     
-    float3 normal = gNormal.Sample(gSampler, input.uv);
+    float3 normal = gNormal.Sample(gSampler, input.uv).xyz;
     
-    diffuse *= albedo;
-    //return float4(albedo, 1.f);
-    //return float4(1.f,1.f,1.f, 1.f);
-    if(gLocalCB.useReflect)
-    {
-        float4 modelPos = input.modelPosition;
-        float3 v = normalize((modelPos - gPhongGCB.cameraPos).xyz);
-        float3 r = normalize(reflect(v, input.normal));
-        return gCubeMapReflect.SampleLevel(gSampler, r, 0.f);
-        
-    }
-    else
-    {
-        return float4(albedo, 1.f);
-    }
-    //return float4(diffuse + specluar, 1.f);
-    
+    return float4(albedo, 1.f);
+   
     //return cubeMapSpecular;
     float4 modelPos = input.modelPosition;
     

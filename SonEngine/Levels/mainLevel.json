@@ -23,7 +23,8 @@
         {
           "type": "LocalConstant",
           "forceMip0": false,
-          "updateConstants": true
+          "updateConstants": true,
+          "useReflect": true
         }
       ]
     },
@@ -49,7 +50,8 @@
         {
           "type": "LocalConstant",
           "forceMip0": false,
-          "updateConstants": false
+          "updateConstants": false,
+          "useReflect": false
         }
       ]
     },
@@ -75,7 +77,8 @@
         {
           "type": "LocalConstant",
           "forceMip0": false,
-          "updateConstants": true
+          "updateConstants": true,
+          "useReflect": false
         }
       ]
     },
@@ -101,7 +104,8 @@
         {
           "type": "LocalConstant",
           "forceMip0": false,
-          "updateConstants": false
+          "updateConstants": false,
+          "useReflect": false
         }
       ]
     },
@@ -127,7 +131,8 @@
         {
           "type": "LocalConstant",
           "forceMip0": false,
-          "updateConstants": true
+          "updateConstants": true,
+          "useReflect": false
         }
       ]
     },
@@ -153,7 +158,8 @@
         {
           "type": "LocalConstant",
           "forceMip0": false,
-          "updateConstants": false
+          "updateConstants": false,
+          "useReflect": false
         },
         {
           "type": "trigger",

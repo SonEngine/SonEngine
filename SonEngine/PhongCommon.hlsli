@@ -7,6 +7,8 @@ struct LocalConstant
     row_major matrix modelInvTranspose;
     int forceMip0;
     int cubeMapMipLevel;
+    
+    int useReflect;
 };
 
 struct vsInput

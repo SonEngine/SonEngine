@@ -21,6 +21,7 @@ namespace Graphics
 	RootSignature g_U1_C1_RS;
 	RootSignature g_R1_RS;
 	RootSignature g_R2_C2_RS;
+	RootSignature g_R3_C2_RS;
 
 	std::shared_ptr<GraphicsUtils::Utility> utility;
 	std::unique_ptr<World> world;
@@ -99,6 +100,16 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	g_R2_C2_RS[3].InitCBV(1); // global
 	g_R2_C2_RS.InitStaticSampler(0, wrapLinearSampler);
 	g_R2_C2_RS.Finalize(device, L"R2_C2_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	
+	g_R3_C2_RS.Reset(5, 1);
+	g_R3_C2_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3); // cubemap
+	g_R3_C2_RS[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 6); // albedo
+	g_R3_C2_RS[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 9, 1); // 반사용 cubemap
+	g_R3_C2_RS[3].InitCBV(0); // local
+	g_R3_C2_RS[4].InitCBV(1); // global
+	g_R3_C2_RS.InitStaticSampler(0, wrapLinearSampler);
+	g_R3_C2_RS.Finalize(device, L"R3_C2_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 }
 

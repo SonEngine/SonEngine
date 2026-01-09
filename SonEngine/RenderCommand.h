@@ -11,7 +11,7 @@ enum MeshType {
 };
 
 struct CmdAddPrimitive {
-	long long id;
+	UINT id;
 	std::shared_ptr<StaticMesh> mesh;
 	LocalConstant constant;
 	MeshType meshType;
@@ -20,7 +20,7 @@ struct CmdAddPrimitive {
 };
 
 struct CmdUpdatePrimitive {
-	long long id;
+	UINT id;
 	LocalConstant constant;
 	MeshType meshType;
 };

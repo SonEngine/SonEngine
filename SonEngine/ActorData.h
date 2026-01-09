@@ -14,4 +14,5 @@ struct ActorData
 	PhysXMode mode;
 	bool forceMip0;
 	bool updateConstants;
+	bool useReflect;
 };

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <string>
+#include "d3d12.h"
 
 struct ImageInfo {
 	std::string name = "";
@@ -10,4 +11,5 @@ struct ImageInfo {
 	long long rowPitch = 0;
 	long long width = 0;
 	long long height = 0;
+	DXGI_FORMAT format;
 };

@@ -9,7 +9,8 @@ struct LocalConstant
 	
 	int forceMip0 = 0;
 	int cubeMipLevel = 0;
-	float dummy[30];
+	int useReflect = 0;
+	float dummy[29];
 };
 
 __declspec(align(256)) struct GlobalConstant
