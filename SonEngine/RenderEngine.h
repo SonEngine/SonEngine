@@ -284,7 +284,9 @@ private:
 	int r_selecteId = 0;
 
 	int saveMipLevel = 4;
-	int cubemapMipLevel = 0;
+	
+	LocalConstant guiLocalConstant;
+	int gui_cubemapMipLevel = 0;
 	FLOAT computeClearColor[4];
 	float guiPenRadius;
 	float guiPenColor[3];

@@ -5,10 +5,11 @@ struct LocalConstant
 {
     row_major matrix model;
     row_major matrix modelInvTranspose;
+    
     int forceMip0;
     int cubeMapMipLevel;
-    
     int useReflect;
+    float heightScale;
 };
 
 TextureCube gCubeMapDiffuse : register(t0);

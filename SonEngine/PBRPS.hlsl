@@ -13,10 +13,9 @@ float4 main(psInput input) : SV_TARGET
     
     float3x3 TBN = float3x3(T, B, N);
     float3 n = normalize(mul(TBN, normalT));
-    
-    
+        
     float4 modelPos = input.modelPosition;
-    float4 albedo = float4(1, 1, 1, 1);
+    float4 albedo = gAlbedo.Sample(gSampler, input.uv);
     //return float4(normal, 1.f);
     //return gAlbedo.Sample(gSampler, input.uv);
     for (int i = 0; i < NUM_LIGHTS; i++)

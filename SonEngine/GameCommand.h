@@ -2,10 +2,11 @@
 
 #include <variant>
 #include "RenderCommand.h"
+#include "Constants.h"
 
 struct CmdUpdateActorConstant {
 	long long id = 0;
-	int cubeMapMipLevel = 0;
+	LocalConstant lc;
 };
 
 struct CmdAddActor {

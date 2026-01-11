@@ -41,7 +41,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	InitCamera(cameraWidth, cameraHeight);
 
 	LightInfo lInfo;
-	lInfo.location = { 0,5,-5 };
+	lInfo.location = { -5,5,0 };
 	lInfo.brightness = { 0.8f,0.8f,0.8f,1.f };
 
 	m_lightInfos.push_back(lInfo);

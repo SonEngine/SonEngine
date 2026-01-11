@@ -548,15 +548,22 @@ void RenderEngine::UpdateGUI()
 
 	ImGui::SliderFloat("Pen Radius", &guiPenRadius, 0.f, 20.f);
 	ImGui::SliderInt("save miplevel", &saveMipLevel, 0, 5);
-	ImGui::SliderInt("id", &r_selecteId, 0, r_idMax);
+	ImGui::SliderInt("name : ", &r_selecteId, 0, r_idMax);
 	ImGui::SameLine();
 	ImGui::Text(r_idToName[r_selecteId].c_str());
 
-	if (ImGui::SliderInt("cubemap mipLevel", &cubemapMipLevel, 0, 5))
+	if (ImGui::SliderFloat("Height Scale", &guiLocalConstant.heightScale, 0.f, 1.f))
 	{
 		CmdUpdateActorConstant cmd;
 		cmd.id = r_selecteId;
-		cmd.cubeMapMipLevel = cubemapMipLevel;
+		cmd.lc = guiLocalConstant;
+		m_renderToMainCmdQueue->Push(std::move(cmd));
+	}
+	if (ImGui::SliderInt("Cubemap MipLevel", &guiLocalConstant.cubeMipLevel, 0, 5))
+	{
+		CmdUpdateActorConstant cmd;
+		cmd.id = r_selecteId;
+		cmd.lc = guiLocalConstant;
 		m_renderToMainCmdQueue->Push(std::move(cmd));
 	}
 	if (ImGui::Button("Spawn Actor")) {
@@ -1599,7 +1606,8 @@ void RenderEngine::ApplyImpl(const CmdUpdateActorConstant& c)
 {
 	CmdUpdatePrimitive update;
 	update.id = c.id;
-	m_primitives[c.id]->SetCubeMapMipLevel(c.cubeMapMipLevel);
+	m_primitives[c.id]->SetCubeMapMipLevel(c.lc.cubeMipLevel);
+	m_primitives[c.id]->SetHeightScale(c.lc.heightScale);
 	update.constant = m_primitives[c.id]->GetLocalConstant();
 	update.meshType = MT_primitive;
 

@@ -41,7 +41,7 @@ void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	ID3D12GraphicsCommandList* commandList)
 {
 	float sphereRadius = 0.5f;
-	int sphereDetail = 30;
+	int sphereDetail = 100;
 	Asset<PBRVertex, uint16_t> sphere;
 	sphere.m_meshes.push_back({ GeometryGenerator::MakePBRSphere(sphereDetail, sphereRadius) });
 
