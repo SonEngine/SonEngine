@@ -229,6 +229,7 @@
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="MouseInputState.h" />
     <ClInclude Include="MultiThreadApp.h" />
+    <ClInclude Include="PBRHLSLCompat.h" />
     <ClInclude Include="PhongHLSLCompat.h" />
     <ClInclude Include="PhysXEngine.h" />
     <ClInclude Include="PhysXEvent.h" />
@@ -307,6 +308,18 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="DefaultVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="PBRPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="PBRVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
@@ -403,6 +416,7 @@
     <None Include="Levels\mainLevel.json" />
     <None Include="Levels\simpleLevel.json" />
     <None Include="packages.config" />
+    <None Include="PBRCommon.hlsli" />
     <None Include="PhongCommon.hlsli" />
     <None Include="PointCloud.hlsli" />
     <None Include="RT.hlsli" />

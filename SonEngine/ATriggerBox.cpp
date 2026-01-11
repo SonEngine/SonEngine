@@ -53,9 +53,7 @@ void ATriggerBox::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& 
 	cmp->OnComponentEndOverlap.Bind(this, &ATriggerBox::OnEndTrigger);
 
 	SetRootComponent(cmp);
-	SetActorLocation(ad.pos);
-	SetTextureName(ad.material);
-	SetUpdateConstant(ad.updateConstants);
+	SetActorData(ad);
 }
 
 void ATriggerBox::OnBeginTrigger(PrimitiveComponent* primitive)

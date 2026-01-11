@@ -96,5 +96,6 @@ private:
 
 public:
 	std::unique_ptr<ModelLoader<Vertex, uint16_t>> modelLoader;
+	std::unique_ptr<ModelLoader<PBRVertex, uint16_t>> pbrModelLoader;
 	std::string levelPath;
 };

@@ -52,7 +52,10 @@ public:
 
 	void UpdateUseReflect(int newUseReflect);
 	void SetUpdateConstant(bool newState);
+	void SetActorData(const ActorData& ad);
 	void SetTextureName(const std::string& newName);
+
+	void SetPSOName(const std::string& newName);
 
 protected:
 	std::shared_ptr<SceneComponent> m_rootComponent;

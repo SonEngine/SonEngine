@@ -4,7 +4,6 @@
 #include "StaticMesh.h"
 #include "GeometryGenerator.h"
 
-//#include "Actor.h"
 #include "Camera.h"
 #include "Light.h"
 
@@ -23,7 +22,8 @@
 using namespace Graphics;
 
 World::World()
-	: modelLoader(std::make_unique<ModelLoader<Vertex, std::uint16_t>>())
+	: modelLoader(std::make_unique<ModelLoader<Vertex, std::uint16_t>>()),
+	pbrModelLoader(std::make_unique<ModelLoader<PBRVertex, std::uint16_t>>())
 {
 	//m_camera = std::make_shared<Camera>();
 	levelPath = "Levels/simpleLevel.json";
@@ -48,13 +48,14 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 
 	modelLoader->Load("torus.fbx");
 	modelLoader->Initialize(device, commandList);
+	pbrModelLoader->Initialize(device, commandList);
 
 	LoadLevel(levelPath);
 
 	ModelLoader<PointCloudVertex, uint16_t> pcModelLoader;
 	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * DirectX::XMMatrixRotationX(-3.14f / 12.f) * DirectX::XMMatrixTranslationFromVector(Vector3(0.f, 0.2f, 5.f));
 	pcModelLoader.LoadPointCloud("map.ply", mat);
-
+	
 	std::shared_ptr<Actor> cubeMap = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, CubeMapComponent>(
 		"cubeMap",
 		std::vector{ GeometryGenerator::MakeSimpleCube(100,100,100) },
@@ -108,8 +109,8 @@ void World::InitCamera(int width, int height)
 	m_camera->Initialize();
 	m_camera->SetActorLocation({ 0.f, 5.f, -5.f });
 	m_camera->UpdateCameraRotation(0, 70);
-	/*
-	m_camera->SetActorLocation({ -1.5, 0.8, -1.5 });
+	
+	/*m_camera->SetActorLocation({ -1.5, 0.8, -1.5 });
 	m_camera->UpdateCameraRotation(0, 0);*/
 
 	m_camera->SetActorSpeed(5.f);
@@ -276,6 +277,10 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 						ad.updateConstants = comp["updateConstants"].get<bool>();
 						ad.useReflect = comp["useReflect"].get<bool>();
 					}
+					else if (type == "RenderMode")
+					{
+						ad.psoName = comp["psoName"].get<std::string>();
+					}
 					else if (type == "trigger")
 					{
 						targetName = comp["target"].get<std::string>();
@@ -291,7 +296,11 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 				case ActorType::AT_Actor:
 				{
 					std::shared_ptr<Actor> actor = std::make_shared<Actor>(ad.name, this);
-					actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
+					if(ad.psoName == "phongPSO")
+						actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
+					else if (ad.psoName == "pbrPSO")
+						actor->Initialize(pbrModelLoader->GetMeshes(ad.mesh), ad);
+
 					SpawnActor(actor);
 				}
 				break;

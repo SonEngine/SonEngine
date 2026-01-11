@@ -21,6 +21,13 @@ struct Vertex {
 	Vector2 uv;
 };
 
+struct PBRVertex {
+	Vector3 position;
+	Vector3 normal;
+	Vector3 tangent = Vector3::Zero;
+	Vector2 uv;
+};
+
 struct PointCloudVertex {
 	Vector3 position;
 	Vector4 color;

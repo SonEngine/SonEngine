@@ -23,10 +23,8 @@ void Actor::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
 	cmp->SetPhysXMode(ad.mode);
 	
 	SetRootComponent(cmp);
-	SetActorLocation(ad.pos);
-	SetTextureName(ad.material);
-	SetUpdateConstant(ad.updateConstants);
-	
+	SetActorData(ad);
+
 	UpdateMipState(ad.forceMip0);
 	UpdateUseReflect(ad.useReflect);
 }
@@ -184,6 +182,14 @@ void Actor::SetUpdateConstant(bool newState)
 	}
 }
 
+void Actor::SetActorData(const ActorData& ad)
+{
+	SetActorLocation(ad.pos);
+	SetUpdateConstant(ad.updateConstants);
+	SetTextureName(ad.material);
+	SetPSOName(ad.psoName);
+}
+
 void Actor::SetTextureName(const std::string& newName)
 {
 	if (m_rootComponent)
@@ -191,6 +197,16 @@ void Actor::SetTextureName(const std::string& newName)
 		if (PrimitiveComponent* comp = dynamic_cast<PrimitiveComponent*>(m_rootComponent.get()))
 		{
 			comp->SetTextureName(newName);
+		}
+	}
+}
+void Actor::SetPSOName(const std::string& newName)
+{
+	if (m_rootComponent)
+	{
+		if (PrimitiveComponent* comp = dynamic_cast<PrimitiveComponent*>(m_rootComponent.get()))
+		{
+			comp->SetPSOName(newName);
 		}
 	}
 }

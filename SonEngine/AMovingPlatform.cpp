@@ -45,10 +45,9 @@ void AMovingPlatform::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorDa
 	cmp->SetMesh(mesh);
 	cmp->SetPhysX(ad.useSimulate);
 	cmp->SetPhysXMode(ad.mode);
+
 	SetRootComponent(cmp);
-	SetActorLocation(ad.pos);
-	SetTextureName(ad.material);
-	SetUpdateConstant(ad.updateConstants);
+	SetActorData(ad);
 }
 
 void AMovingPlatform::Tick(const float& deltaTime)

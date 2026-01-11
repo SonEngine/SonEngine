@@ -3,6 +3,23 @@
 #include "DirectXColors.h"
 #include <iostream>
 
+FrameResource::FrameResource()
+{
+	kEyeDir =
+	{
+		Vector4{  1,  0,  0, 0 }, Vector4{ -1,  0,  0, 0 },
+		Vector4{  0,  1,  0, 0 }, Vector4{  0, -1,  0, 0 },
+		Vector4{  0,  0,  1, 0 }, Vector4{  0,  0, -1, 0 }
+	};
+	kUpDir =
+	{
+		Vector4{ 0, 1, 0, 0 }, Vector4{ 0, 1, 0, 0 },
+		Vector4{ 0, 0, -1, 0 }, Vector4{ 0, 0,  1, 0 },
+		Vector4{ 0, 1, 0, 0 }, Vector4{ 0, 1,  0, 0 }
+	};
+
+}
+
 void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd)
 {
 	hwnd = mainHwnd;
@@ -34,68 +51,32 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 	CreateCommand(device, m_textCommandAllocator, m_textCommandList);
 	CreateCommand(device, m_guiCommandAllocator, m_guiCommandList);
 
-	//if (textCount == 0)
-	//{
-	//	return;
-	//}
 
-	//Graphics::utility->CreateDescriptorHeap(textCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_textRtvHeap, 0);
-	//Graphics::utility->CreateDescriptorHeap(textCount, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_textSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	//CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_textSrvHeap->GetCPUDescriptorHandleForHeapStart());
-	//CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_textRtvHeap->GetCPUDescriptorHandleForHeapStart());
+	float fov = DirectX::XM_PIDIV2;
+	DirectX::SimpleMath::Matrix projMatrix = DirectX::XMMatrixPerspectiveFovLH(
+		fov, 1.f, 0.1f, 1000.f);
 
-	//for (UINT i = 0; i < textCount; i++)
-	//{
-	//	TextResource resource;
-	//	resource.textureWidth = width;
-	//	resource.textureHeight = height;
+	m_pCubeGC.resize(6);
+	for (int i = 0; i < 6; i++)
+	{
 
+		Graphics::utility->CreateConstantBuffer(
+			sizeof(PhongGlobalConstant),
+			m_cubeMapGCB[i],
+			reinterpret_cast<void**>(&m_pCubeGC[i])
+		);
 
-	//	D3D12_RESOURCE_DESC texDesc = {};
-	//	texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	//	texDesc.Width = width;
-	//	texDesc.Height = height;
-	//	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	//	texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-	//	texDesc.MipLevels = 1;
-	//	texDesc.SampleDesc.Count = 1;
-	//	texDesc.DepthOrArraySize = 1;
-	//	texDesc.SampleDesc = { 1,0 };
+		DirectX::SimpleMath::Matrix viewMatrix = XMMatrixLookToLH(Vector3(0, 0, 0), kEyeDir[i], kUpDir[i]);
 
-	//	D3D12_CLEAR_VALUE clearValue;
-	//	clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	//	clearValue.Color[0] = 1.0f;
-	//	clearValue.Color[1] = 1.0f;
-	//	clearValue.Color[2] = 1.0f;
-	//	clearValue.Color[3] = 1.0f;
+		m_cubePhongGC[i].proj = projMatrix.Transpose();
+		m_cubePhongGC[i].view = viewMatrix.Transpose();
 
-	//	ThrowIfFailed(device->CreateCommittedResource(
-	//		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-	//		D3D12_HEAP_FLAG_NONE,
-	//		&texDesc,
-	//		D3D12_RESOURCE_STATE_RENDER_TARGET,
-	//		&clearValue,
-	//		IID_PPV_ARGS(resource.text.ReleaseAndGetAddressOf())
-	//	));
-
-	//	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	//	srvDesc.Format = resource.text->GetDesc().Format;
-	//	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	//	srvDesc.Texture2D.MipLevels = resource.text->GetDesc().MipLevels;
-	//	srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
-	//	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-
-	//	device->CreateShaderResourceView(resource.text.Get(), &srvDesc, srvHandle);
-	//	device->CreateRenderTargetView(resource.text.Get(), nullptr, rtvHandle);
-
-	//	textResources.push_back(resource);
-
-	//	srvHandle.Offset(1, srvIncrementSize);
-	//	rtvHandle.Offset(1, rtvIncrementSize);
-	//}
+		m_cubePhongGC[i].proj;
+		memcpy(m_pCubeGC[i], &m_cubePhongGC[i], sizeof(PhongGlobalConstant));
+	}
 }
 
-void FrameResource::AddLocalConstantBuffer(const LocalConstant& lc, uint32_t id, const std::string& textureName)
+void FrameResource::AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy)
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> buffer;
 	void* pLB;
@@ -107,17 +88,29 @@ void FrameResource::AddLocalConstantBuffer(const LocalConstant& lc, uint32_t id,
 
 	LocalData ld;
 	ld.localCB = buffer;
-	ld.textureName = textureName;
+	ld.textureName = proxy.textureName;
+	ld.psoName = proxy.psoName;
 	m_localData[id] = ld;
 	m_pCBs[id] = pLB;
 
-	memcpy(pLB, &lc, sizeof(LocalConstant));
+	memcpy(pLB, &proxy.constant, sizeof(LocalConstant));
 }
 
 void FrameResource::UpdateLocalConstantBuffer(const LocalConstant& lc, uint32_t id)
 {
 	auto pLB = m_pCBs[id];
 	memcpy(pLB, &lc, sizeof(LocalConstant));
+}
+
+void FrameResource::UpdateCubeGCView(const DirectX::SimpleMath::Vector3& loc)
+{
+	for (int i = 0; i < 6; i++)
+	{
+		DirectX::SimpleMath::Matrix viewMatrix = XMMatrixLookToLH(loc, kEyeDir[i], kUpDir[i]);
+		m_cubePhongGC[i].view = viewMatrix.Transpose();
+
+		memcpy(m_pCubeGC[i], &m_cubePhongGC[i], sizeof(PhongGlobalConstant));
+	}
 }
 
 void FrameResource::UpdateGlobalConstantBuffer(const PhongGlobalConstant& pgc)

@@ -23,14 +23,14 @@ float4 main(psInput input) : SV_TARGET
     float cubeMapExposure = 3.f;
     uint w, h, mipCount;
     gAlbedo.GetDimensions(0, w, h, mipCount);
-    float3 albedo;
+    float4 albedo;
     if (gLocalCB.forceMip0 == 1)
     {
-        albedo = gAlbedo.SampleLevel(gSampler, input.uv, 0.f).xyz;
+        albedo = gAlbedo.SampleLevel(gSampler, input.uv, 0.f);
     }
     else
     {
-        albedo = gAlbedo.Sample(gSampler, input.uv).xyz;
+        albedo = gAlbedo.Sample(gSampler, input.uv);
     }
     
     float3 cubeMap = cubeMapExposure * gCubeMap.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
@@ -39,9 +39,7 @@ float4 main(psInput input) : SV_TARGET
     
     float3 normal = gNormal.Sample(gSampler, input.uv);
     
-    diffuse *= albedo;
-    //return float4(albedo, 1.f);
-    //return float4(1.f,1.f,1.f, 1.f);
+
     if(gLocalCB.useReflect)
     {
         float4 modelPos = input.modelPosition;
@@ -50,18 +48,10 @@ float4 main(psInput input) : SV_TARGET
         return gCubeMapReflect.SampleLevel(gSampler, r, 0.f);
         
     }
-    else
-    {
-        return float4(albedo, 1.f);
-    }
-    //return float4(diffuse + specluar, 1.f);
     
-    //return cubeMapSpecular;
     float4 modelPos = input.modelPosition;
     
-    //albedo = pow(albedo, 1.0 / 2.2);
-    //return albedo;
-    
+   
     for (int i = 0; i < NUM_LIGHTS; i++)
     {
         LightInfo light = gPhongGCB.lights[i];
@@ -79,5 +69,5 @@ float4 main(psInput input) : SV_TARGET
         float3 specular = float3(1, 1, 1) * specularStrength;
         albedo.xyz *= diffuse + specular;
     }
-    //return albedo;
+    return albedo;
 }

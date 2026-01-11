@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-
 #include <array>
 #include <atomic>
 #include <condition_variable>
@@ -76,7 +75,9 @@ protected:
 	void RenderGUI(bool isFinal);
 	void Compute(const std::string& cpsoName, int idx, bool isFinal, D3D12_RESOURCE_STATES prevState);
 
-	void RenderCube(const std::string& psoName, int idx, MeshType meshType, bool isFinal, bool clear);
+	void RenderCube(const std::string& psoName, const std::string& proxyPsoName, int idx, MeshType meshType, bool isFinal, bool clear);
+
+	//void RenderCube(const std::string& psoName, int idx, MeshType meshType, bool isFinal, bool clear);
 
 
 	void UpdateTexts();
@@ -206,7 +207,7 @@ private:
 	std::string computePSO = "defaultCPSO";
 	std::string genCubeMapPSO = "genCubeMapPSO";
 	std::string cubeMapPSO = "cubeMapPSO";
-	//std::string cubeMapPSO = "cubeMapPSO";
+	std::string pbrPSO = "pbrPSO";
 
 	//FrameResource
 private:

@@ -12,10 +12,15 @@ struct GeometryGenerator
 
 	static Mesh<Vertex, uint16_t> MakePlane(float x, float z, int c);
 
-	static Mesh<Vertex, uint16_t> GeometryGenerator::MakeSphere(int c, float r);
+	static Mesh<Vertex, uint16_t> MakeSphere(int c, float r);
+	static Mesh<Vertex, uint16_t> MakeSphereTest(int c, float r);
+	static Mesh<PBRVertex, uint16_t> MakePBRSphere(int c, float r);
 
 	static Mesh<PointCloudVertex, uint16_t> MakePointCube(float x, float y, float z);
 
 	static Mesh<SimpleVertex, uint16_t> MakePoint();
+
+
+	static Vector3 CalculateTangent(const std::vector<PBRVertex>& vertices, int i0, int i1, int i2);
 
 };

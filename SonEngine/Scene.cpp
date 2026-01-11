@@ -20,6 +20,7 @@ void Scene::ApplyImpl(const CmdAddPrimitive& c)
 	p.updateDirtyFlags.resize(m_frCount, false);
 	p.name = c.name;
 	p.textureName = c.textureName;
+	p.psoName = c.psoName;
 
 	m_proxies[c.meshType][c.id] = p;
 }

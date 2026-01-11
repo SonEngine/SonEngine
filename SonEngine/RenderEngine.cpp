@@ -259,7 +259,7 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 					if (proxy.addDirtyFlags[r_currentResourceIndex])
 					{
 						//std::cout << "Add In RenderThread - " << id << ", Index : " << r_currentResourceIndex << '\n';
-						r_currentFrameResource->AddLocalConstantBuffer(proxy.constant, id, proxy.textureName);
+						r_currentFrameResource->AddLocalConstantBuffer(id, proxy);
 						proxy.addDirtyFlags[r_currentResourceIndex] = false;
 						r_idToName[id] = proxy.name;
 						r_nameToId[proxy.name] = id;
@@ -270,6 +270,11 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 						//std::cout << "Add In RenderThread - " << id << ", Index : " << r_currentResourceIndex << '\n';
 						r_currentFrameResource->UpdateLocalConstantBuffer(proxy.constant, id);
 						proxy.updateDirtyFlags[r_currentResourceIndex] = false;
+						if (id == 0)
+						{
+							auto position = proxy.constant.model.Translation();
+							r_currentFrameResource->UpdateCubeGCView(position);
+						}
 					}
 				}
 			}
@@ -404,6 +409,7 @@ void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 	add.name = primitive->GetName();
 	add.id = id++;
 	add.textureName = primitive->GetTextureName();
+	add.psoName = primitive->GetPSOName();
 
 	if (StaticMeshComponent* staticMeshComp = dynamic_cast<StaticMeshComponent*>(primitive)) {
 		add.mesh = staticMeshComp->GetMeshPtr();
@@ -738,16 +744,14 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 	}
 	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetCommandList(idx);
 	r_currentFrameResource->ResetAllocator(idx);
-
 	ThrowIfFailed(commandList->Reset(r_currentFrameResource->GetAllocator(idx), pso.GetPSO()));
-
-	//m_viewport = CD3DX12_VIEWPORT((FLOAT)m_guiWidth, 0.F, (FLOAT)(m_width- m_guiWidth), (FLOAT)m_height);
+	commandList->SetPipelineState(pso.GetPSO());
+	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
+	
 
 	commandList->RSSetScissorRects(1, &m_scissorRect);
 	commandList->RSSetViewports(1, &m_viewport);
-
-	commandList->SetPipelineState(pso.GetPSO());
-	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
+	
 
 	commandList->ResourceBarrier(
 		1,
@@ -756,13 +760,7 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_RENDER_TARGET
 		));
-	/*commandList->ResourceBarrier(
-		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(
-			m_cubeMap.Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
-		));*/
+
 	if (clear)
 	{
 		commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
@@ -787,36 +785,33 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 			for (auto& [id, proxy] : proxies)
 			{
 				auto it = r_currentFrameResource->m_localData.find(id);
-				auto& [cb, textureName] = it->second;
+				auto& ld = it->second;
+
 				// cubemap - 0, albedo - 1, player cubemap - 2, local - 3, gobal - 4
-				if (type == MT_primitive)
+				if (type == MT_primitive && ld.psoName == psoName)
 				{
 					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
-					commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(textureName));
+					commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(ld.textureName));
 					commandList->SetGraphicsRootDescriptorTable(2, m_textureLoader->GetGPUHandle(playerCubeMapTextureName));
-
-					commandList->SetGraphicsRootConstantBufferView(3, cb->GetGPUVirtualAddress());
-
+					commandList->SetGraphicsRootConstantBufferView(3, ld.localCB->GetGPUVirtualAddress());
 					commandList->SetGraphicsRootConstantBufferView(4, r_currentFrameResource->GetGCBGPUAddress());
 					proxy.mesh->Render_(commandList);
-
 				}
 				else if (type == MT_pointCloud)
 				{
-					commandList->SetGraphicsRootConstantBufferView(0, cb->GetGPUVirtualAddress());
-
+					commandList->SetGraphicsRootConstantBufferView(0, ld.localCB->GetGPUVirtualAddress());
 					commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
 					proxy.mesh->RenderPoints(commandList);
 				}
 				else if (type == MT_dot)
 				{
-					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(textureName));
+					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
 					proxy.mesh->RenderDot(commandList);
 				}
 				else if (type == MT_cubeMap)
 				{
 					commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
-					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(textureName));
+					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
 					proxy.mesh->CubeMapRender(commandList);
 				}
 			}
@@ -988,7 +983,7 @@ void RenderEngine::Compute(const std::string& cpsoName, int idx, bool isFinal, D
 	}
 }
 
-void RenderEngine::RenderCube(const std::string& psoName, int idx, MeshType meshType, bool isFinal, bool clear)
+void RenderEngine::RenderCube(const std::string& psoName, const std::string& proxyPsoName, int idx, MeshType meshType, bool isFinal, bool clear)
 {
 	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), psoName.c_str());
 
@@ -1019,14 +1014,14 @@ void RenderEngine::RenderCube(const std::string& psoName, int idx, MeshType mesh
 	}
 	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetCommandList(idx);
 	r_currentFrameResource->ResetAllocator(idx);
-
 	ThrowIfFailed(commandList->Reset(r_currentFrameResource->GetAllocator(idx), pso.GetPSO()));
+
+	commandList->SetPipelineState(pso.GetPSO());
+	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
 
 	commandList->RSSetScissorRects(1, &m_cubeScissorRect);
 	commandList->RSSetViewports(1, &m_cubeViewport);
 
-	commandList->SetPipelineState(pso.GetPSO());
-	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
 
 	ID3D12DescriptorHeap* heaps[] = {
 		m_textureLoader->GetHeap()
@@ -1057,22 +1052,23 @@ void RenderEngine::RenderCube(const std::string& psoName, int idx, MeshType mesh
 				for (auto& [id, proxy] : proxies)
 				{
 					auto it = r_currentFrameResource->m_localData.find(id);
-					auto& [cb, textureName] = it->second;
+					auto& ld = it->second;
 					// cubemap - 0, albedo - 1, local - 2, gobal - 3
-					if (type == MT_primitive)
+					
+					if (type == MT_primitive && proxyPsoName == ld.psoName)
 					{
 						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
-						commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(textureName));
-						commandList->SetGraphicsRootConstantBufferView(2, cb->GetGPUVirtualAddress());
-						commandList->SetGraphicsRootConstantBufferView(3, m_cubeMapGCB[i]->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(ld.textureName));
+						commandList->SetGraphicsRootConstantBufferView(2, ld.localCB->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootConstantBufferView(3, r_currentFrameResource->GetCubeGCBGPUAddress(i));
 
 						proxy.mesh->Render_(commandList);
 
 					}
 					else if (type == MT_cubeMap)
 					{
-						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(textureName));
-						commandList->SetGraphicsRootConstantBufferView(1, m_cubeMapGCB[i]->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
+						commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetCubeGCBGPUAddress(i));
 
 						proxy.mesh->CubeMapRender(commandList);
 					}
@@ -1276,46 +1272,7 @@ void RenderEngine::CreateCubeMap()
 	dsvDesc.Format = Renderer::dsBufferFormat;
 	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 	m_device->CreateDepthStencilView(m_cubeDepthBuffer.Get(), &dsvDesc, m_cubeMapDSVHeap->GetCPUDescriptorHandleForHeapStart());
-	Vector4 kEyeDir[6] =
-	{
-		{ 1, 0, 0, 0 }, { -1, 0, 0, 0 },
-		{ 0, 1, 0, 0 }, { 0, -1, 0, 0 },
-		{ 0, 0, 1, 0 }, { 0, 0, -1, 0 }
-	};
-	Vector4 kUpDir[6] =
-	{
-		{ 0, 1, 0, 0 }, { 0, 1, 0, 0 },
-		{ 0, 0, -1, 0 }, { 0, 0,  1, 0 },
-		{ 0, 1, 0, 0 }, { 0, 1,  0, 0 }
-	};
-	//Vector4 kUpDir[6] =
-	//{
-	//	{ 0, 1, 0, 0 }, { 0, 1, 0, 0 },
-	//	{ 0, 1, 0, 0 }, { 0, 1, 0, 0 },
-	//	{ 0, 1, 0, 0 }, { 0, 1, 0, 0 }
-	//};
-	m_pCubeGC.resize(6);
 
-	float fov = DirectX::XM_PIDIV2;
-	DirectX::SimpleMath::Matrix projMatrix = DirectX::XMMatrixPerspectiveFovLH(
-		fov, (float)cubeWidth / cubeHeight, 0.1f, 1000.f);
-
-	for (int i = 0; i < 6; i++)
-	{
-		utility->CreateConstantBuffer(
-			sizeof(PhongGlobalConstant),
-			m_cubeMapGCB[i],
-			reinterpret_cast<void**>(&m_pCubeGC[i])
-		);
-		
-		DirectX::SimpleMath::Matrix viewMatrix = XMMatrixLookToLH(cubeMapPos, kEyeDir[i], kUpDir[i]);
-
-		m_cubePhongGC[i].proj = projMatrix.Transpose();
-		m_cubePhongGC[i].view = viewMatrix.Transpose();
-
-		m_cubePhongGC[i].proj;
-		memcpy(m_pCubeGC[i], &m_cubePhongGC[i], sizeof(PhongGlobalConstant));
-	}
 	m_cubeViewport = CD3DX12_VIEWPORT((FLOAT)0.F, 0.F, (FLOAT)(cubeWidth), (FLOAT)cubeHeight);
 	m_cubeScissorRect = CD3DX12_RECT((LONG)0, 0, (LONG)(cubeWidth), (LONG)cubeHeight);
 	cubeRtvClearColor = { 0.F, 0.F, 0.F, 1.F };
@@ -1369,13 +1326,14 @@ void RenderEngine::RenderWithCompute()
 void RenderEngine::DrawingWithMouse()
 {
 	int i = 0;
-	RenderCube(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
-	RenderCube(genCubeMapPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+	RenderCube(cubeMapPSO, phongPSO, i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
+	RenderCube(genCubeMapPSO, phongPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 
 	//Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	if (test) {
 		//Render("pointCloudPSO", i++, MT_pointCloud, false/*isFinal*/, true/*clear RT*/);
 		Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
+		Render(pbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 		Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
 
 	}

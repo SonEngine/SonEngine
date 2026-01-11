@@ -11,6 +11,9 @@
 #include "CompiledShaders/PhongVS.h"
 #include "CompiledShaders/PhongPS.h"
 
+#include "CompiledShaders/PBRVS.h"
+#include "CompiledShaders/PBRPS.h"
+
 #include "CompiledShaders/PointCloudVS.h"
 #include "CompiledShaders/PointCloudGS.h"
 #include "CompiledShaders/PointCloudPS.h"
@@ -48,6 +51,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	GraphicsPSO defaultPSO(L"default PSO");
 	GraphicsPSO videoPSO(L"video PSO");
 	GraphicsPSO phongPSO(L"phong PSO");
+	GraphicsPSO pbrPSO(L"pbr PSO");
 	GraphicsPSO textPSO(L"text PSO");
 	GraphicsPSO pointCloudPSO(L"pointCloud PSO");
 	GraphicsPSO renderTexturePSO(L"renderTexture PSO");
@@ -85,6 +89,15 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 	};
+
+	D3D12_INPUT_ELEMENT_DESC pbrIL[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+	};
+
 
 	D3D12_INPUT_ELEMENT_DESC pointCloudIL[] =
 	{
@@ -131,6 +144,21 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	phongPSO.Finalize(device);
 	m_PSOs["phongPSO"] = phongPSO;
 	psoNames.push_back("phongPSO");
+
+	pbrPSO.SetInputLayout(_countof(pbrIL), pbrIL);
+	pbrPSO.SetRootSignature(g_R3_C2_RS);
+	pbrPSO.SetRasterizerState(rasterizerDefault);
+	pbrPSO.SetBlendState(blendNoColorWrite);
+	pbrPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+	pbrPSO.SetVertexShader(g_pPBRVS, sizeof(g_pPBRVS));
+	pbrPSO.SetPixelShader(g_pPBRPS, sizeof(g_pPBRPS));
+	pbrPSO.SetSampleMask(UINT_MAX);
+	pbrPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+	pbrPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
+	pbrPSO.SetDepthStencilState(depthStateDefault);
+	pbrPSO.Finalize(device);
+	m_PSOs["pbrPSO"] = pbrPSO;
+	psoNames.push_back("pbrPSO");
 
 	textPSO.SetInputLayout(_countof(textIL), textIL);
 	textPSO.SetRootSignature(g_commonRS);

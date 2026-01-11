@@ -22,6 +22,7 @@ public:
 	void SetPhysX(bool usePhysX) { m_usePhysX = usePhysX; }
 	void SetPhysXMode(PhysXMode newMode) { m_physXMode = newMode; }
 	void SetTextureName(const std::string& newName) { m_textureName = newName; }
+	void SetPSOName(const std::string& newName) { m_psoName = newName; }
 
 	bool IsVisible() const { return m_visible; }
 	bool IsKinematic() const { return m_physXMode == PhysXMode::PM_Kinematic; }
@@ -34,6 +35,7 @@ public:
 	class World* GetWorld() const;
 	std::string GetName() const;
 	std::string GetTextureName() const { return m_textureName; };
+	std::string GetPSOName() const { return m_psoName; };
 	PhysXMode GetPhysXMode() const { return m_physXMode; }
 	physx::PxTransform GetPxTransform() const;
 
@@ -51,4 +53,5 @@ protected:
 	PhysXMode m_physXMode;
 	bool m_updateConstant = false;
 	std::string m_textureName;
+	std::string m_psoName;
 };

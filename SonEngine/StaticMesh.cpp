@@ -29,7 +29,6 @@ void StaticMesh::CubeMapRender(ID3D12GraphicsCommandList* commandList)
 		commandList->IASetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		commandList->IASetVertexBuffers(0, 1, &m_vertexBufferViews[i]);
 		commandList->IASetIndexBuffer(&m_indexBufferViews[i]);
-
 	
 		commandList->DrawIndexedInstanced(m_indexCounts[i], 1, 0, 0, 0);
 	}

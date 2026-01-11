@@ -17,6 +17,7 @@ struct CmdAddPrimitive {
 	MeshType meshType;
 	std::string name;
 	std::string textureName;
+	std::string psoName;
 };
 
 struct CmdUpdatePrimitive {

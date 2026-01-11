@@ -1,4 +1,5 @@
 ﻿#include "GeometryGenerator.h"
+#include <iostream>
 
 Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakeSimpleRect(float x, float y)
 {
@@ -66,7 +67,7 @@ Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakeSimpleCube(float x, float y,
 		indices.push_back(uint16_t(base + 0));
 		indices.push_back(uint16_t(base + 2));
 		indices.push_back(uint16_t(base + 3));
-	}										
+	}
 
 	Mesh<SimpleVertex, uint16_t> mesh;
 
@@ -123,7 +124,7 @@ Mesh<Vertex, uint16_t> GeometryGenerator::MakeCube(float x, float y, float z)
 		vertices.push_back({ v[v2], nSet[i], Vector2(1,0) });
 		vertices.push_back({ v[v3], nSet[i], Vector2(1,1) });
 
-		size_t base = i * 4;
+		uint16_t base = i * 4;
 		indices.push_back(base + 0);
 		indices.push_back(base + 1);
 		indices.push_back(base + 2);
@@ -164,10 +165,10 @@ Mesh<Vertex, uint16_t> GeometryGenerator::MakePlane(float x, float z, int c)
 			vertices.push_back({ v, Vector3(0, 1, 0), Vector2(deluv * j, deluv * i) });
 			if (j != c && i != c)
 			{
-				int a = (c + 1) * i + j;
-				int b = a + c + 1;
-				int c = a + 1;
-				int d = b + 1;
+				uint16_t a = (c + 1) * i + j;
+				uint16_t b = a + c + 1;
+				uint16_t c = a + 1;
+				uint16_t d = b + 1;
 				indices.push_back(b);
 				indices.push_back(a);
 				indices.push_back(c);
@@ -187,6 +188,7 @@ Mesh<Vertex, uint16_t> GeometryGenerator::MakePlane(float x, float z, int c)
 
 	return mesh;
 }
+
 Mesh<Vertex, uint16_t> GeometryGenerator::MakeSphere(int c, float r)
 {
 	float pi = (float)std::acos(-1);
@@ -214,17 +216,17 @@ Mesh<Vertex, uint16_t> GeometryGenerator::MakeSphere(int c, float r)
 			vertices.push_back({ v,n, Vector2(deluv * j, deluv * i) });
 			if (j != c && i != c)
 			{
-				int a = (c + 1) * i + j;
-				int b = a + c + 1;
-				int c = a + 1;
-				int d = b + 1;
-				indices.push_back(b);
-				indices.push_back(a);
-				indices.push_back(c);
+				uint16_t i0 = (c + 1) * i + j;
+				uint16_t i1 = i0 + c + 1;
+				uint16_t i2 = i0 + 1;
+				uint16_t i3 = i1 + 1;
+				indices.push_back(i1);
+				indices.push_back(i0);
+				indices.push_back(i2);
 
-				indices.push_back(b);
-				indices.push_back(c);
-				indices.push_back(d);
+				indices.push_back(i1);
+				indices.push_back(i2);
+				indices.push_back(i3);
 			}
 		}
 	}
@@ -237,6 +239,110 @@ Mesh<Vertex, uint16_t> GeometryGenerator::MakeSphere(int c, float r)
 
 	return mesh;
 }
+
+
+Mesh<PBRVertex, uint16_t> GeometryGenerator::MakePBRSphere(int c, float r)
+{
+	float pi = (float)std::acos(-1);
+	float thetaZ = pi / c;
+	float thetaY = pi * 2.f / c;
+
+	std::vector<PBRVertex> vertices;
+	std::vector<uint16_t> indices;
+
+
+	Vector3 baseZ = Vector3(0, r, 0);
+
+	float deluv = 1.f / c;
+	for (int i = 0; i <= c; i++)
+	{
+		DirectX::SimpleMath::Matrix zMat = DirectX::XMMatrixRotationZ(thetaZ * i);
+		Vector3 baseY = Vector3::Transform(baseZ, zMat);
+		for (int j = 0; j <= c; j++)
+		{
+			DirectX::SimpleMath::Matrix yMat = DirectX::XMMatrixRotationY(-thetaY * j);
+			Vector3 pos = Vector3::Transform(baseY, yMat);
+			Vector3 n = pos;
+			n.Normalize();
+
+			PBRVertex vertex;
+			vertex.position = pos;
+			vertex.normal = n;
+			vertex.uv = Vector2(deluv * j, deluv * i);
+			if (i == 0 || i == c)
+			{
+				//vertex.tangent = Vector3::Transform(Vector3(0, 0, -1), yMat);
+				vertex.tangent = Vector3(0, 0, -1);
+			}
+			else
+			{
+				vertex.tangent = Vector3(0, 0, 0);
+			}
+
+			vertices.push_back(vertex);
+			if (j != c && i != c)
+			{
+				uint16_t i0 = (c + 1) * i + j;
+				uint16_t i1 = i0 + c + 1;
+				uint16_t i2 = i0 + 1;
+				uint16_t i3 = i1 + 1;
+				indices.push_back(i1);
+				indices.push_back(i0);
+				indices.push_back(i2);
+
+				indices.push_back(i1);
+				indices.push_back(i2);
+				indices.push_back(i3);
+			}
+		}
+	}
+
+	for (size_t i = 0; i < indices.size(); i += 3)
+	{
+		uint16_t i0 = indices[i];
+		uint16_t i1 = indices[i + 1];
+		uint16_t i2 = indices[i + 2];
+
+		Vector3 t = CalculateTangent(vertices, i0, i1, i2);
+		vertices[i0].tangent += t;
+		vertices[i1].tangent += t;
+		vertices[i2].tangent += t;
+
+	}
+
+
+	for (int i = 0; i <= c; i++)
+	{
+		for (int j = 0; j <= c; j++)
+		{
+			int idx = i * (c+1) + j;
+			PBRVertex& v = vertices[idx];
+			if (v.tangent == Vector3(0, 0, 0)/* || i == 0 || i == c*/)
+			{
+				v.tangent = Vector3(1, 0, 0);
+			}
+
+			if (j == 0)
+			{
+				Vector3 t = v.tangent;
+				int lastIdx = idx + c;
+				t += vertices[lastIdx].tangent;
+
+				vertices[lastIdx].tangent = t;
+				v.tangent = t;
+			}
+			v.tangent.Normalize();
+		}
+	}
+
+	Mesh<PBRVertex, uint16_t> mesh;
+
+	mesh.m_vertices = vertices;
+	mesh.m_indices = indices;
+
+	return mesh;
+}
+
 
 Mesh<PointCloudVertex, uint16_t> GeometryGenerator::MakePointCube(float x, float y, float z)
 {
@@ -254,7 +360,7 @@ Mesh<PointCloudVertex, uint16_t> GeometryGenerator::MakePointCube(float x, float
 		Vector3(halfX, -halfY,  halfZ)
 	};
 
-	
+
 	std::vector<PointCloudVertex> vertices;
 	std::vector<uint16_t> indices;
 
@@ -273,7 +379,7 @@ Mesh<PointCloudVertex, uint16_t> GeometryGenerator::MakePointCube(float x, float
 
 Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakePoint()
 {
-	
+
 	Mesh<SimpleVertex, uint16_t> mesh;
 	std::vector< SimpleVertex> vertices;
 	std::vector< uint16_t> indices;
@@ -283,4 +389,42 @@ Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakePoint()
 	mesh.m_indices = indices;
 
 	return mesh;
+}
+
+Vector3 GeometryGenerator::CalculateTangent(const std::vector<PBRVertex>& vertices, int i0, int i1, int i2)
+{
+	Vector3 p0 = vertices[i0].position;
+	Vector3 p1 = vertices[i1].position;
+	Vector3 p2 = vertices[i2].position;
+
+	Vector2 uv0 = vertices[i0].uv;
+	Vector2 uv1 = vertices[i1].uv;
+	Vector2 uv2 = vertices[i2].uv;
+
+	Vector3 e0 = p1 - p0;
+	Vector3 e1 = p2 - p0;
+	
+
+	if(e0.Cross(e1).LengthSquared() < 1e-5f)
+		return Vector3(0.f, 0.f, 0.f);
+
+	Vector2 delUV0 = uv1 - uv0;
+	Vector2 delUV1 = uv2 - uv0;
+
+	float a = delUV0.x;
+	float b = delUV0.y;
+
+	float c = delUV1.x;
+	float d = delUV1.y;
+
+	float det = a * d - b * c;
+	if (std::abs(det) < 1e-8)
+	{
+		return Vector3(0.f, 0.f, 0.f);
+	}
+
+	const float r = 1.0f / det;
+
+	Vector3 t = (e0 * d - e1 * b) * r;
+	return t;
 }

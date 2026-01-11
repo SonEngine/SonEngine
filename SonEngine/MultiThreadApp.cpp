@@ -111,10 +111,10 @@ bool Core::MultiThreadApp::InitDirectX()
 	m_renderEngine = std::make_shared<RenderEngine>(m_device.Get());
 	m_renderEngine->Initialize(m_width, m_height, m_guiWidth, m_dxgiFactory.Get(), m_mainWnd, &mouseInputStateHelper);
 
-	if (world)
-	{
-		world->UpdateCamera(m_width - m_guiWidth, m_height);
-	}
+	//if (world)
+	//{
+	//	world->UpdateCamera(m_width - m_guiWidth, m_height);
+	//}
 
 	return true;
 }
