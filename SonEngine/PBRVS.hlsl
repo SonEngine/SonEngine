@@ -4,7 +4,7 @@ psInput main(vsInput input)
 {
     psInput output;
     float2 uv = input.uv * 2.f;
-    float height = gHeight.SampleLevel(gSampler, uv, 0.f).x;
+    float height = gHeight.SampleLevel(gWrapLinearSampler, uv, 0.f).x;
     height = height * 2.0 - 1.0;
     
     height *= gLocalCB.heightScale;
@@ -25,7 +25,7 @@ psInput main(vsInput input)
     output.uv = uv;
     
     float3 normal = mul(float4(input.normal, 0.f), gLocalCB.modelInvTranspose).xyz;
-    float3 tangent = mul(float4(input.tangent, 0.f), gLocalCB.model).xyz;
+    float3 tangent = mul(float4(input.tangent, 0.f), gLocalCB.modelInvTranspose).xyz;
     
     output.normal = normalize(normal);
     output.tangent = tangent;

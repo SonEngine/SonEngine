@@ -1,8 +1,4 @@
-﻿#include "PhongCommon.hlsli"
-
-ConstantBuffer<LocalConstant> gLocalCB : register(b0);
-ConstantBuffer<PhongGlobalConstant> gPhongGCB : register(b1);
-
+﻿#include "BoxCubeMap.hlsli"
 
 psInput main(vsInput input)
 {

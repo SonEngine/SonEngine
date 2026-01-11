@@ -6,7 +6,6 @@
 
 #include "BaseApp.h"
 #include "Renderer.h"
-#include "Constants.h"
 #include "RenderEngine.h"
 #include "PhysXEngine.h"
 

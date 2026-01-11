@@ -1,13 +1,13 @@
 ﻿#pragma once
 
-#include "Constants.h"
+#include "directxtk12\SimpleMath.h"
 #include "PaintBoardHLSLCompat.h"
-#include "PhongHLSLCompat.h"
+#include "PBRHLSLCompat.h"
 
 struct FramePacket
 {
 	uint64_t frameId = 0;
-	PhongGlobalConstant gc;
+	PBRGlobalConstant gc;
 	PBGlobalConstant pbgc;
 	float deltaTime;
 };

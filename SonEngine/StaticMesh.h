@@ -8,7 +8,6 @@
 #include "GraphicsCommon.h"
 #include "Mesh.h"
 #include "TextureGPUResource.h"
-#include "Constants.h"
 
 class TextureLoader;
 

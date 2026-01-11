@@ -6,7 +6,7 @@
 #include "ActorComponent.h"
 #include "directxtk12/SimpleMath.h"
 #include "Transform.h"
-#include "Constants.h"
+#include "PBRHLSLCompat.h"
 
 // transform
 class SceneComponent : public ActorComponent {

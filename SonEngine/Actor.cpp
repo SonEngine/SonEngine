@@ -21,12 +21,10 @@ void Actor::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
 	cmp->SetMesh(mesh);
 	cmp->SetPhysX(ad.useSimulate);
 	cmp->SetPhysXMode(ad.mode);
+	cmp->SetHeightScale(ad.heightScale);
 	
 	SetRootComponent(cmp);
 	SetActorData(ad);
-
-	UpdateMipState(ad.forceMip0);
-	UpdateUseReflect(ad.useReflect);
 }
 
 void Actor::Tick(const float& deltaTime)
@@ -188,6 +186,9 @@ void Actor::SetActorData(const ActorData& ad)
 	SetUpdateConstant(ad.updateConstants);
 	SetTextureName(ad.material);
 	SetPSOName(ad.psoName);
+
+	UpdateMipState(ad.forceMip0);
+	UpdateUseReflect(ad.useReflect);
 }
 
 void Actor::SetTextureName(const std::string& newName)
@@ -207,6 +208,17 @@ void Actor::SetPSOName(const std::string& newName)
 		if (PrimitiveComponent* comp = dynamic_cast<PrimitiveComponent*>(m_rootComponent.get()))
 		{
 			comp->SetPSOName(newName);
+		}
+	}
+}
+
+void Actor::SetHeightScale(const float& heightScale)
+{
+	if (m_rootComponent)
+	{
+		if (PrimitiveComponent* comp = dynamic_cast<PrimitiveComponent*>(m_rootComponent.get()))
+		{
+			comp->SetHeightScale(heightScale);
 		}
 	}
 }

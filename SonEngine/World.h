@@ -7,7 +7,7 @@
 #include "ViewProjInfo.h"
 
 #include "d3d12.h"
-#include "PhongHLSLCompat.h"
+#include "PBRHLSLCompat.h"
 #include "Vertex.h"
 
 class Actor;
@@ -48,7 +48,7 @@ public:
 
 public:
 	ViewProjInfo GetViewProjInfo();
-	std::vector<LightInfo> GetLightInfos() const;
+	std::vector<PBRLightInfo> GetLightInfos() const;
 
 public:
 	//Actor* Getplayer() { return m_player.get(); }
@@ -66,7 +66,7 @@ protected:
 	
 protected:
 	std::vector<std::shared_ptr<Light>> m_light;
-	std::vector<LightInfo> m_lightInfos;
+	std::vector<PBRLightInfo> m_lightInfos;
 
 public:
 	void RegisterPrimitive(class PrimitiveComponent* primitive, bool usePhysX);

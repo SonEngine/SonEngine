@@ -1,9 +1,5 @@
 ﻿#include "PhongCommon.hlsli"
 
-ConstantBuffer<LocalConstant> gLocalCB : register(b0);
-ConstantBuffer<PhongGlobalConstant> gPhongGCB : register(b1);
-
-
 psInput main(vsInput input)
 {
     psInput output;

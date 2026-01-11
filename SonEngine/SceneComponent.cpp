@@ -41,7 +41,7 @@ void SceneComponent::SetRotation(const DirectX::SimpleMath::Quaternion& newQuat)
 
 void SceneComponent::SetCubeMapMipLevel(const int& newCubeMapMipLevel)
 {
-	localConstant.cubeMipLevel = newCubeMapMipLevel;
+	localConstant.cubeMapMipLevel = newCubeMapMipLevel;
 }
 
 void SceneComponent::SetHeightScale(const float& newHeightScale)
@@ -81,15 +81,20 @@ void SceneComponent::OnRegister()
 void SceneComponent::UpdateConstantLocation()
 {
 	auto loc = GetLocation();
+	localConstant.model = localConstant.model.Transpose();
+
 	localConstant.model.m[3][0] = loc.x;
 	localConstant.model.m[3][1] = loc.y;
 	localConstant.model.m[3][2] = loc.z;
-	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();;
+
+	localConstant.modelInvTranspose = localConstant.model.Invert();
+	localConstant.model = localConstant.model.Transpose();
 }
 
 void SceneComponent::UpdateConstantRotation()
 {
 	auto q = GetRotation();
+	localConstant.model = localConstant.model.Transpose();
 	DirectX::SimpleMath::Matrix mat = DirectX::XMMatrixRotationQuaternion(q);
 	for (int i = 0; i < 3; i++)
 	{
@@ -98,7 +103,8 @@ void SceneComponent::UpdateConstantRotation()
 			localConstant.model.m[i][j] = mat.m[i][j];
 		}
 	}
-	localConstant.modelInvTranspose = localConstant.model.Invert().Transpose();
+	localConstant.modelInvTranspose = localConstant.model.Invert();
+	localConstant.model = localConstant.model.Transpose();
 
 }
 void SceneComponent::UpdateMipState(int newForceMip0)

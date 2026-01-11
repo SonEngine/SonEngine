@@ -12,8 +12,7 @@ Texture2D gNormal : register(t7);
 Texture2D gRoughness : register(t8);
 
 SamplerState gSampler : register(s0);
-ConstantBuffer<LocalConstant> gLocalCB : register(b0);
-ConstantBuffer<PhongGlobalConstant> gPhongGCB : register(b1);
+SamplerState gClampSampler : register(s1);
 
 
 float4 main(psInput input) : SV_TARGET
@@ -21,33 +20,26 @@ float4 main(psInput input) : SV_TARGET
     float cubeMapExposure = 3.f;
     uint w, h, mipCount;
     gAlbedo.GetDimensions(0, w, h, mipCount);
-    float3 albedo;
+    float4 albedo;
     if (gLocalCB.forceMip0 == 1)
     {
-        albedo = gAlbedo.SampleLevel(gSampler, input.uv, 0.f).xyz;
+        albedo = gAlbedo.SampleLevel(gSampler, input.uv, 0.f);
     }
     else
     {
-        albedo = gAlbedo.Sample(gSampler, input.uv).xyz;
+        albedo = gAlbedo.Sample(gSampler, input.uv);
     }
-    
+   
     float3 cubeMap = cubeMapExposure * gCubeMap.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
     float3 diffuse = cubeMapExposure * gCubeMapDiffuse.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
-    float3 specluar = cubeMapExposure * gCubeMapSpecular.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
+    //float3 specluar = cubeMapExposure * gCubeMapSpecular.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
     
-    float3 normal = gNormal.Sample(gSampler, input.uv).xyz;
-    
-    return float4(albedo, 1.f);
-   
-    //return cubeMapSpecular;
+    float3 normal = gNormal.Sample(gSampler, input.uv).xyz;  
     float4 modelPos = input.modelPosition;
-    
-    //albedo = pow(albedo, 1.0 / 2.2);
-    //return albedo;
     
     for (int i = 0; i < NUM_LIGHTS; i++)
     {
-        LightInfo light = gPhongGCB.lights[i];
+        PBRLightInfo light = gPhongGCB.lights[i];
         //float3 L = normalize(float3(-1, 1, -1));
         float3 L = normalize((light.location - modelPos).xyz);
         float3 I = -L;
@@ -62,5 +54,5 @@ float4 main(psInput input) : SV_TARGET
         float3 specular = float3(1, 1, 1) * specularStrength;
         albedo.xyz *= diffuse + specular;
     }
-    //return albedo;
+    return albedo;
 }

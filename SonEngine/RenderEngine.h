@@ -83,7 +83,7 @@ protected:
 	void UpdateTexts();
 
 public:
-	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo>& lightInfos);
+	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<PBRLightInfo>& lightInfos);
 	void UpdatePBGlobalConstantBuffer(const int& guiWidth, const MouseInputState& mouseInputState);
 	void Tick(float deltaTime);
 	void Quit();
@@ -165,7 +165,7 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_cubeDepthBuffer;
 
-	PhongGlobalConstant m_cubePhongGC[6];
+	PBRGlobalConstant m_cubePhongGC[6];
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_cubeMapGCB[6];
 	std::vector<void*> m_pCubeGC;
 

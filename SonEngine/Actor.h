@@ -54,7 +54,7 @@ public:
 	void SetUpdateConstant(bool newState);
 	void SetActorData(const ActorData& ad);
 	void SetTextureName(const std::string& newName);
-
+	void SetHeightScale(const float& heightScale);
 	void SetPSOName(const std::string& newName);
 
 protected:

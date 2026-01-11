@@ -8,9 +8,9 @@
 #include "directxtk12/SimpleMath.h"
 
 #include "Proxy.h"
-#include "Constants.h"
+
 #include "ViewProjInfo.h"
-#include "PhongHLSLCompat.h"
+#include "PBRHLSLCompat.h"
 #include "PaintBoardHLSLCompat.h"
 #include "MouseInputState.h"
 
@@ -38,9 +38,9 @@ public:
 	void AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy);
 	void UpdateLocalConstantBuffer(const LocalConstant& lc, uint32_t id);
 	void UpdateCubeGCView(const DirectX::SimpleMath::Vector3& loc);
-	void UpdateGlobalConstantBuffer(const PhongGlobalConstant& pgc);
+	void UpdateGlobalConstantBuffer(const PBRGlobalConstant& pgc);
 	void UpdatePBGlobalConstantBuffer(const PBGlobalConstant& pbgc);
-	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo>& lightInfos);
+	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<PBRLightInfo>& lightInfos);
 	void UpdatePBGlobalConstantBuffer(const int& guiWidth, const MouseInputState& mouseInputState);
 	
 	
@@ -69,7 +69,7 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetTextRrvCPUHandle(int idx) const {return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_textRtvHeap->GetCPUDescriptorHandleForHeapStart(), idx, rtvIncrementSize);}
 
 private:
-	PhongGlobalConstant phongGC;
+	PBRGlobalConstant phongGC;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_phongGCBuffer;
 	void* pPhongGCB = nullptr;
 
@@ -78,7 +78,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_pbGCBuffer;
 	void* pPBGCB = nullptr;
 
-	PhongGlobalConstant m_cubePhongGC[6];
+	PBRGlobalConstant m_cubePhongGC[6];
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_cubeMapGCB[6];
 	std::vector<void*> m_pCubeGC;
 

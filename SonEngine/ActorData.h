@@ -13,7 +13,9 @@ struct ActorData
 	DirectX::SimpleMath::Vector3 pos;
 	bool useSimulate;
 	PhysXMode mode;
+	
 	bool forceMip0;
 	bool updateConstants;
 	bool useReflect;
+	float heightScale = 0.f;
 };

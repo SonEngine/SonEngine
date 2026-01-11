@@ -40,7 +40,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	m_camera = std::make_shared<Camera>();
 	InitCamera(cameraWidth, cameraHeight);
 
-	LightInfo lInfo;
+	PBRLightInfo lInfo;
 	lInfo.location = { -5,5,0 };
 	lInfo.brightness = { 0.8f,0.8f,0.8f,1.f };
 
@@ -196,7 +196,7 @@ ViewProjInfo World::GetViewProjInfo()
 	return info;
 }
 
-std::vector<LightInfo> World::GetLightInfos() const
+std::vector<PBRLightInfo> World::GetLightInfos() const
 {
 	return m_lightInfos;
 }
@@ -276,6 +276,8 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 						ad.forceMip0 = comp["forceMip0"].get<bool>();
 						ad.updateConstants = comp["updateConstants"].get<bool>();
 						ad.useReflect = comp["useReflect"].get<bool>();
+						if(comp.contains("heightScale"))
+							ad.heightScale = comp["heightScale"].get<float>();
 					}
 					else if (type == "RenderMode")
 					{

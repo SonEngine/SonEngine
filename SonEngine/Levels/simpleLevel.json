@@ -67,7 +67,7 @@
       "class": "Actor",
       "name": "sphere0",
       "transform": {
-        "pos": [ 0.0, 0.8, 0.0 ],
+        "pos": [ 0, 0.8, 0.0 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -117,7 +117,8 @@
           "type": "LocalConstant",
           "forceMip0": false,
           "updateConstants": false,
-          "useReflect": false
+          "useReflect": false,
+          "heightScale": 0.02
         },
         {
           "type": "RenderMode",

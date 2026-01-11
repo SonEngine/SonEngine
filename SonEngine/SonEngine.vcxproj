@@ -209,7 +209,6 @@
     <ClInclude Include="BaseApp.h" />
     <ClInclude Include="BoundedQueue.h" />
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="Constants.h" />
     <ClInclude Include="CubeMapComponent.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="dds.h" />
@@ -230,7 +229,6 @@
     <ClInclude Include="MouseInputState.h" />
     <ClInclude Include="MultiThreadApp.h" />
     <ClInclude Include="PBRHLSLCompat.h" />
-    <ClInclude Include="PhongHLSLCompat.h" />
     <ClInclude Include="PhysXEngine.h" />
     <ClInclude Include="PhysXEvent.h" />
     <ClInclude Include="PhysXMode.h" />
@@ -411,6 +409,7 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="BoxCubeMap.hlsli" />
     <None Include="CubeCommon.hlsli" />
     <None Include="Delegate.inl" />
     <None Include="Levels\mainLevel.json" />

@@ -429,7 +429,7 @@ void Core::VideoApp::BuildConstantBuffers()
 {
 
 	utility->CreateConstantBuffer(sizeof(LocalConstant), m_localCB, reinterpret_cast<void**>(&pLocalConstant));
-	utility->CreateConstantBuffer(sizeof(GlobalConstant), m_globalCB, reinterpret_cast<void**>(&pGlobalConstant));
+	utility->CreateConstantBuffer(sizeof(PBRGlobalConstant), m_globalCB, reinterpret_cast<void**>(&pGlobalConstant));
 
 	//localConstant.model.m[3][0] = 1 / 60.f;
 	//localConstant.model = localConstant.model.Transpose();

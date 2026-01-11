@@ -1,12 +1,6 @@
 ﻿#define HLSL
-#include "PhongHLSLCompat.h"
+#include "PBRHLSLCompat.h"
 
-struct LocalConstant
-{
-    row_major matrix model;
-    row_major matrix modelInvTranspose;
-    
-};
 
 struct VSInput
 {

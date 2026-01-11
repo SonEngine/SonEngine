@@ -1,5 +1,5 @@
 ﻿#define HLSL
-#include "PhongHLSLCompat.h"
+#include "PBRHLSLCompat.h"
 
 struct vsInput
 {

@@ -2,22 +2,21 @@
 
 float4 main(psInput input) : SV_TARGET
 {
-    float3 normalT = gNormal.Sample(gSampler, input.uv).xyz;
+    float3 normalT = gNormal.Sample(gWrapLinearSampler, input.uv).xyz;
+    float4 albedo = gAlbedo.Sample(gWrapLinearSampler, input.uv);
+    float4 modelPos = input.modelPosition;
     
     normalT = 2.f * normalT - 1.f;
+    float3 tangent = normalize(input.tangent);
     
     float3 N = input.normal;
-    float3 tangent = normalize(input.tangent);
-    float3 T = normalize(input.tangent - dot(N, input.tangent) * N);
+    float3 T = normalize(tangent - dot(tangent, N) * N);
     float3 B = cross(N, T);
     
     float3x3 TBN = float3x3(T, B, N);
-    float3 n = normalize(mul(TBN, normalT));
-        
-    float4 modelPos = input.modelPosition;
-    float4 albedo = gAlbedo.Sample(gSampler, input.uv);
-    //return float4(normal, 1.f);
-    //return gAlbedo.Sample(gSampler, input.uv);
+    float3 n = normalize(mul(normalT, TBN));
+    //float3 n = N;
+    
     for (int i = 0; i < NUM_LIGHTS; i++)
     {
         PBRLightInfo light = gPBRGCB.lights[i];

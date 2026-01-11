@@ -75,7 +75,7 @@ void Camera::UpdateProjMatrix()
 	}
 	else
 	{
-		projMatrix = DirectX::SimpleMath::Matrix::CreateOrthographic(m_width, m_height, m_nearZ, m_farZ);
+		projMatrix = DirectX::SimpleMath::Matrix::CreateOrthographic((float)m_width, (float)m_height, m_nearZ, m_farZ);
 	}
 }
 

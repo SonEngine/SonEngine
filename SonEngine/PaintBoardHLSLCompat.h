@@ -1,5 +1,5 @@
-﻿#ifndef PBHLSLCOMPAT_H
-#define PBHLSLCOMPAT_H
+﻿#ifndef PAINTBOARDHLSLCOMPAT_H
+#define PAINTBOARDHLSLCOMPAT_H
 
 #ifdef HLSL
 #include "HlslCompat.h"

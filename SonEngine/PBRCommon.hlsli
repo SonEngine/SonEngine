@@ -1,17 +1,6 @@
 ﻿#define HLSL
 #include "PBRHLSLCompat.h"
 
-struct LocalConstant
-{
-    row_major matrix model;
-    row_major matrix modelInvTranspose;
-    
-    int forceMip0;
-    int cubeMapMipLevel;
-    int useReflect;
-    float heightScale;
-};
-
 TextureCube gCubeMapDiffuse : register(t0);
 TextureCube gCubeMap : register(t1);
 TextureCube gCubeMapSpecular : register(t2);
@@ -25,7 +14,9 @@ Texture2D gMetal : register(t6);
 Texture2D gNormal : register(t7);
 Texture2D gRoughness : register(t8);
 
-SamplerState gSampler : register(s0);
+SamplerState gWrapLinearSampler : register(s0);
+SamplerState gClampLinearSampler : register(s1);
+
 ConstantBuffer<LocalConstant> gLocalCB : register(b0);
 ConstantBuffer<PBRGlobalConstant> gPBRGCB : register(b1);
 

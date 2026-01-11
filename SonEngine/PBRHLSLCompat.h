@@ -1,13 +1,28 @@
-﻿#ifndef PBRCOMPAT_H
-#define PBRCOMPAT_H
+﻿#ifndef PBRHLSLCOMPAT_H
+#define PBRHLSLCOMPAT_H
 
 #ifdef HLSL
 #include "HlslCompat.h"
 #else
+using namespace DirectX::SimpleMath;
 using namespace DirectX;
 #endif
 
 #define NUM_LIGHTS 1
+
+struct LocalConstant
+{
+    Matrix model;
+    Matrix modelInvTranspose;
+
+    int forceMip0;
+    int cubeMapMipLevel;
+    int useReflect;
+    float heightScale;
+
+    float dummy[28];
+};
+
 
 struct PBRLightInfo
 {
@@ -18,8 +33,8 @@ struct PBRLightInfo
 
 struct PBRGlobalConstant
 {
-    XMMATRIX view;
-    XMMATRIX proj;
+    Matrix view;
+    Matrix proj;
 
     XMVECTOR cameraPos;
     XMVECTOR cameraDir;

@@ -21,6 +21,7 @@
 #include "CompiledShaders/CubeMapVS.h"
 #include "CompiledShaders/CubeMapPS.h"
 
+#include "CompiledShaders/BoxCubeMapVS.h"
 #include "CompiledShaders/BoxCubeMapPS.h"
 
 #include "CompiledShaders/RenderTextureVS.h"
@@ -242,7 +243,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	genCubeMapPSO.SetRasterizerState(rasterizerDefault);
 	genCubeMapPSO.SetBlendState(blendNoColorWrite);
 	genCubeMapPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
-	genCubeMapPSO.SetVertexShader(g_pPhongVS, sizeof(g_pPhongVS));
+	genCubeMapPSO.SetVertexShader(g_pBoxCubeMapVS, sizeof(g_pBoxCubeMapVS));
 	genCubeMapPSO.SetPixelShader(g_pBoxCubeMapPS, sizeof(g_pBoxCubeMapPS));
 	genCubeMapPSO.SetSampleMask(UINT_MAX);
 	genCubeMapPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);

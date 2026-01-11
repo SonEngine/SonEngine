@@ -2,6 +2,9 @@
 
 #include "StaticMesh.h"
 #include <variant>
+#include "directxtk12/SimpleMath.h"
+
+#include "PBRHLSLCompat.h"
 
 enum MeshType {
 	MT_primitive,

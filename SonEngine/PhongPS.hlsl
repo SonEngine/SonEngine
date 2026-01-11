@@ -14,8 +14,6 @@ Texture2D gNormal : register(t7);
 Texture2D gRoughness : register(t8);
 
 SamplerState gSampler : register(s0);
-ConstantBuffer<LocalConstant> gLocalCB : register(b0);
-ConstantBuffer<PhongGlobalConstant> gPhongGCB : register(b1);
 
 
 float4 main(psInput input) : SV_TARGET
@@ -37,7 +35,7 @@ float4 main(psInput input) : SV_TARGET
     float3 diffuse = cubeMapExposure * gCubeMapDiffuse.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
     float3 specluar = cubeMapExposure * gCubeMapSpecular.SampleLevel(gSampler, input.worldPosition, gLocalCB.cubeMapMipLevel).xyz;
     
-    float3 normal = gNormal.Sample(gSampler, input.uv);
+    float3 normal = gNormal.Sample(gSampler, input.uv).xyz;
     
 
     if(gLocalCB.useReflect)
@@ -54,7 +52,7 @@ float4 main(psInput input) : SV_TARGET
    
     for (int i = 0; i < NUM_LIGHTS; i++)
     {
-        LightInfo light = gPhongGCB.lights[i];
+        PBRLightInfo light = gPhongGCB.lights[i];
         //float3 L = normalize(float3(-1, 1, -1));
         float3 L = normalize((light.location - modelPos).xyz);
         float3 I = -L;

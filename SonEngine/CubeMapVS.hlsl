@@ -1,6 +1,6 @@
 ﻿#include "CubeCommon.hlsli"
 
-ConstantBuffer<PhongGlobalConstant> gPhongGCB : register(b0);
+ConstantBuffer<PBRGlobalConstant> gPhongGCB : register(b0);
 
 psInput main(vsInput input )
 {    

@@ -2,7 +2,7 @@
 
 #include <variant>
 #include "RenderCommand.h"
-#include "Constants.h"
+#include "PBRHLSLCompat.h"
 
 struct CmdUpdateActorConstant {
 	long long id = 0;

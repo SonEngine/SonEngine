@@ -1,7 +1,7 @@
 ﻿#include "PointCloud.hlsli"
 
 ConstantBuffer<LocalConstant> gLocalCB : register(b0);
-ConstantBuffer<PhongGlobalConstant> gGlobalCB : register(b1);
+ConstantBuffer<PBRGlobalConstant> gGlobalCB : register(b1);
 
 float4 GetSVPosition(float3 pos)
 {

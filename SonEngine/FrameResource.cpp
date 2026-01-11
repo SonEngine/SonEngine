@@ -20,6 +20,7 @@ FrameResource::FrameResource()
 
 }
 
+// TODO : BoxCubeMap용 LightInfo 업데이트 
 void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd)
 {
 	hwnd = mainHwnd;
@@ -32,7 +33,7 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 	rtvIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	Graphics::utility->CreateConstantBuffer(
-		sizeof(PhongGlobalConstant),
+		sizeof(PBRGlobalConstant),
 		m_phongGCBuffer,
 		reinterpret_cast<void**>(&pPhongGCB)
 	);
@@ -56,12 +57,18 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 	DirectX::SimpleMath::Matrix projMatrix = DirectX::XMMatrixPerspectiveFovLH(
 		fov, 1.f, 0.1f, 1000.f);
 
+	PBRLightInfo lInfo;
+	lInfo.location = { -5,5,0 };
+	lInfo.brightness = { 0.8f,0.8f,0.8f,1.f };
+	std::vector<PBRLightInfo> lightInfos;
+	lightInfos.push_back(lInfo);
+
 	m_pCubeGC.resize(6);
 	for (int i = 0; i < 6; i++)
 	{
 
 		Graphics::utility->CreateConstantBuffer(
-			sizeof(PhongGlobalConstant),
+			sizeof(PBRGlobalConstant),
 			m_cubeMapGCB[i],
 			reinterpret_cast<void**>(&m_pCubeGC[i])
 		);
@@ -71,23 +78,29 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 		m_cubePhongGC[i].proj = projMatrix.Transpose();
 		m_cubePhongGC[i].view = viewMatrix.Transpose();
 
-		m_cubePhongGC[i].proj;
-		memcpy(m_pCubeGC[i], &m_cubePhongGC[i], sizeof(PhongGlobalConstant));
+		for (size_t j = 0; j < lightInfos.size(); j++)
+		{
+			m_cubePhongGC[i].lights[j].direction = lightInfos[j].direction;
+			m_cubePhongGC[i].lights[j].location = lightInfos[j].location;
+			m_cubePhongGC[i].lights[j].brightness = lightInfos[j].brightness;
+		}
+		m_cubePhongGC[i].cameraDir = kEyeDir[i];
+		m_cubePhongGC[i].cameraPos = Vector3(0, 0, 0);
+		
+		memcpy(m_pCubeGC[i], &m_cubePhongGC[i], sizeof(PBRGlobalConstant));
 	}
 }
 
 void FrameResource::AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy)
 {
-	Microsoft::WRL::ComPtr<ID3D12Resource> buffer;
+	LocalData ld;
 	void* pLB;
 	Graphics::utility->CreateConstantBuffer(
 		sizeof(LocalConstant),
-		buffer,
+		ld.localCB,
 		reinterpret_cast<void**>(&pLB)
 	);
-
-	LocalData ld;
-	ld.localCB = buffer;
+	
 	ld.textureName = proxy.textureName;
 	ld.psoName = proxy.psoName;
 	m_localData[id] = ld;
@@ -108,15 +121,16 @@ void FrameResource::UpdateCubeGCView(const DirectX::SimpleMath::Vector3& loc)
 	{
 		DirectX::SimpleMath::Matrix viewMatrix = XMMatrixLookToLH(loc, kEyeDir[i], kUpDir[i]);
 		m_cubePhongGC[i].view = viewMatrix.Transpose();
+		m_cubePhongGC[i].cameraPos = Vector3(loc);
 
-		memcpy(m_pCubeGC[i], &m_cubePhongGC[i], sizeof(PhongGlobalConstant));
+		memcpy(m_pCubeGC[i], &m_cubePhongGC[i], sizeof(PBRGlobalConstant));
 	}
 }
 
-void FrameResource::UpdateGlobalConstantBuffer(const PhongGlobalConstant& pgc)
+void FrameResource::UpdateGlobalConstantBuffer(const PBRGlobalConstant& pgc)
 {
 	phongGC = pgc;
-	memcpy(pPhongGCB, &phongGC, sizeof(PhongGlobalConstant));
+	memcpy(pPhongGCB, &phongGC, sizeof(PBRGlobalConstant));
 }
 
 void FrameResource::UpdatePBGlobalConstantBuffer(const PBGlobalConstant& pbgc)

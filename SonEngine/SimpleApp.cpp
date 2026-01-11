@@ -539,13 +539,13 @@ void Core::SimpleApp::BuildConstantBuffers()
 {
 
 	utility->CreateConstantBuffer(
-		sizeof(GlobalConstant),
+		sizeof(PBRGlobalConstant),
 		m_globalCB,
 		reinterpret_cast<void**>(&pGlobalConstant)
 	);
 
 	utility->CreateConstantBuffer(
-		sizeof(PhongGlobalConstant),
+		sizeof(PBRGlobalConstant),
 		m_phongGCB,
 		reinterpret_cast<void**>(&pPhongCB)
 	);
@@ -564,7 +564,7 @@ void Core::SimpleApp::BuildConstantBuffers()
 	memcpy(
 		pGlobalConstant,
 		&globalConstant,
-		sizeof(GlobalConstant)
+		sizeof(PBRGlobalConstant)
 	);
 
 	phongGC.proj = XMMatrixPerspectiveFovLH(
@@ -578,7 +578,7 @@ void Core::SimpleApp::BuildConstantBuffers()
 	memcpy(
 		pPhongCB,
 		&phongGC,
-		sizeof(PhongGlobalConstant)
+		sizeof(PBRGlobalConstant)
 	);
 
 }

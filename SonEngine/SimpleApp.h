@@ -6,8 +6,8 @@
 
 #include "BaseApp.h"
 #include "Renderer.h"
-#include "Constants.h"
-#include "PhongHLSLCompat.h"
+
+#include "PBRHLSLCompat.h"
 #include "Camera.h"
 #include "Light.h"
 #include "TextureLoader.h"
@@ -129,8 +129,8 @@ namespace Core {
 		LocalConstant localConstant;
 
 		// Global Constant
-		GlobalConstant globalConstant;
-		PhongGlobalConstant phongGC;
+		PBRGlobalConstant globalConstant;
+		PBRGlobalConstant phongGC;
 
 		// Global Constant Buffers
 		Microsoft::WRL::ComPtr<ID3D12Resource> m_globalCB;

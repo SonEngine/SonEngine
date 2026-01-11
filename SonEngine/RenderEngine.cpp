@@ -272,7 +272,7 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 						proxy.updateDirtyFlags[r_currentResourceIndex] = false;
 						if (id == 0)
 						{
-							auto position = proxy.constant.model.Translation();
+							auto position = proxy.constant.model.Transpose().Translation();
 							r_currentFrameResource->UpdateCubeGCView(position);
 						}
 					}
@@ -559,7 +559,7 @@ void RenderEngine::UpdateGUI()
 		cmd.lc = guiLocalConstant;
 		m_renderToMainCmdQueue->Push(std::move(cmd));
 	}
-	if (ImGui::SliderInt("Cubemap MipLevel", &guiLocalConstant.cubeMipLevel, 0, 5))
+	if (ImGui::SliderInt("Cubemap MipLevel", &guiLocalConstant.cubeMapMipLevel, 0, 5))
 	{
 		CmdUpdateActorConstant cmd;
 		cmd.id = r_selecteId;
@@ -646,7 +646,7 @@ void  RenderEngine::UpdateMousePosition()
 	pMouseinputStateHelper->UpdatePrevMousePos(prevMousePt.x, prevMousePt.y);
 }
 
-void RenderEngine::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<LightInfo>& lightInfos)
+void RenderEngine::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<PBRLightInfo>& lightInfos)
 {
 	packet.gc.cameraDir = ToVector4(viewProjInfo.viewDirection, 0.f);
 	packet.gc.cameraPos = ToVector4(viewProjInfo.viewLocation, 0.f);
@@ -700,7 +700,7 @@ void RenderEngine::Tick(float deltaTime)
 	for (int i = 0; i < m_primitives.size(); i++)
 	{
 		PrimitiveComponent* prim = m_primitives[i];
-		if (prim->GetUpdateConstant())
+		if (prim->IsUpdateConstant())
 		{
 			std::string name = prim->GetName();
 			CmdUpdatePrimitive update;
@@ -1501,7 +1501,7 @@ void RenderEngine::SaveTextureCPU()
 
 	CD3DX12_RANGE range(0, 0);
 
-	uint32_t pixelSize = imageInfo.rowSize * imageInfo.numRows;
+	uint32_t pixelSize = (uint32_t)(imageInfo.rowSize * imageInfo.numRows);
 	uint32_t pixelCount = pixelSize;
 	if (imageInfo.format == DXGI_FORMAT_R16G16B16A16_FLOAT)
 	{
@@ -1605,8 +1605,8 @@ void RenderEngine::ApplyImpl(const CmdAddActor& c)
 void RenderEngine::ApplyImpl(const CmdUpdateActorConstant& c)
 {
 	CmdUpdatePrimitive update;
-	update.id = c.id;
-	m_primitives[c.id]->SetCubeMapMipLevel(c.lc.cubeMipLevel);
+	update.id = (UINT)c.id;
+	m_primitives[c.id]->SetCubeMapMipLevel(c.lc.cubeMapMipLevel);
 	m_primitives[c.id]->SetHeightScale(c.lc.heightScale);
 	update.constant = m_primitives[c.id]->GetLocalConstant();
 	update.meshType = MT_primitive;

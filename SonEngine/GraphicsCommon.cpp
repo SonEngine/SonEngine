@@ -6,6 +6,7 @@ namespace Graphics
 {
   
 	D3D12_STATIC_SAMPLER_DESC wrapLinearSampler;
+	D3D12_STATIC_SAMPLER_DESC clampLinearSampler;
 
 	D3D12_RASTERIZER_DESC rasterizerDefault;
 	D3D12_RASTERIZER_DESC noneCullRasterizer;
@@ -48,6 +49,21 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	wrapLinearSampler.RegisterSpace = 0;
 	wrapLinearSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
    
+	clampLinearSampler = {};
+	clampLinearSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	clampLinearSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	clampLinearSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	clampLinearSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	clampLinearSampler.MipLODBias = 0;
+	clampLinearSampler.MaxAnisotropy = 0;
+	clampLinearSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	clampLinearSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	clampLinearSampler.MinLOD = 0.0f;
+	clampLinearSampler.MaxLOD = D3D12_FLOAT32_MAX;
+	clampLinearSampler.ShaderRegister = 1;
+	clampLinearSampler.RegisterSpace = 0;
+	clampLinearSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
 	rasterizerDefault = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	noneCullRasterizer = rasterizerDefault;
 	noneCullRasterizer.CullMode = D3D12_CULL_MODE_NONE;
@@ -102,13 +118,14 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	g_R2_C2_RS.Finalize(device, L"R2_C2_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	
-	g_R3_C2_RS.Reset(5, 1);
+	g_R3_C2_RS.Reset(5, 2);
 	g_R3_C2_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3); // cubemap
 	g_R3_C2_RS[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 6); // albedo
 	g_R3_C2_RS[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 9, 1); // 반사용 cubemap
 	g_R3_C2_RS[3].InitCBV(0); // local
 	g_R3_C2_RS[4].InitCBV(1); // global
 	g_R3_C2_RS.InitStaticSampler(0, wrapLinearSampler);
+	g_R3_C2_RS.InitStaticSampler(1, clampLinearSampler);
 	g_R3_C2_RS.Finalize(device, L"R3_C2_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 }
