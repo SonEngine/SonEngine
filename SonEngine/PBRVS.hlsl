@@ -3,10 +3,12 @@
 psInput main(vsInput input) 
 {
     psInput output;
-    float2 uv = input.uv * 2.f;
+    
+    float2 uv = mul(float4(input.uv, 0, 1), gLocalCB.texTransform).xy;
+    output.uv = uv;
+    
     float height = gHeight.SampleLevel(gWrapLinearSampler, uv, 0.f).x;
     height = height * 2.0 - 1.0;
-    
     height *= gLocalCB.heightScale;
         
     float3 posW = mul(float4(input.pos, 0.f), gLocalCB.model).xyz;
@@ -22,10 +24,10 @@ psInput main(vsInput input)
     
     output.svPosition = position;
     
-    output.uv = uv;
+    
     
     float3 normal = mul(float4(input.normal, 0.f), gLocalCB.modelInvTranspose).xyz;
-    float3 tangent = mul(float4(input.tangent, 0.f), gLocalCB.modelInvTranspose).xyz;
+    float3 tangent = mul(float4(input.tangent, 0.f), gLocalCB.model).xyz;
     
     output.normal = normalize(normal);
     output.tangent = tangent;

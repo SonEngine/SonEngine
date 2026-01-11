@@ -14,6 +14,7 @@ struct LocalConstant
 {
     Matrix model;
     Matrix modelInvTranspose;
+    Matrix texTransform;
 
     int forceMip0;
     int cubeMapMipLevel;

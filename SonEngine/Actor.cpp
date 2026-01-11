@@ -22,7 +22,8 @@ void Actor::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
 	cmp->SetPhysX(ad.useSimulate);
 	cmp->SetPhysXMode(ad.mode);
 	cmp->SetHeightScale(ad.heightScale);
-	
+	cmp->UpdateTexTransform(ad.lc.texTransform);
+
 	SetRootComponent(cmp);
 	SetActorData(ad);
 }

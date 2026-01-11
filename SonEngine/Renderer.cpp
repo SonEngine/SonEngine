@@ -24,6 +24,9 @@
 #include "CompiledShaders/BoxCubeMapVS.h"
 #include "CompiledShaders/BoxCubeMapPS.h"
 
+#include "CompiledShaders/PBRBoxCubeMapVS.h"
+#include "CompiledShaders/PBRBoxCubeMapPS.h"
+
 #include "CompiledShaders/RenderTextureVS.h"
 #include "CompiledShaders/RenderTextureGS.h"
 #include "CompiledShaders/RenderTexturePS.h"
@@ -59,6 +62,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	GraphicsPSO cubeMapPSO(L"cubeMap PSO");
 	GraphicsPSO cubeMapCullPSO(L"cubeMapCull PSO");
 	GraphicsPSO genCubeMapPSO(L"genCubeMap PSO");
+	GraphicsPSO genPBRCubeMapPSO(L"genPBRCubeMap PSO");
 
 	ComputePSO defaultCPSO(L"default CPSO");
 
@@ -252,6 +256,21 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	genCubeMapPSO.Finalize(device);
 	m_PSOs["genCubeMapPSO"] = genCubeMapPSO;
 	psoNames.push_back("genCubeMapPSO");
+
+	genPBRCubeMapPSO.SetInputLayout(_countof(pbrIL), pbrIL);
+	genPBRCubeMapPSO.SetRootSignature(g_R2_C2_RS);
+	genPBRCubeMapPSO.SetRasterizerState(rasterizerDefault);
+	genPBRCubeMapPSO.SetBlendState(blendNoColorWrite);
+	genPBRCubeMapPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+	genPBRCubeMapPSO.SetVertexShader(g_pPBRBoxCubeMapVS, sizeof(g_pPBRBoxCubeMapVS));
+	genPBRCubeMapPSO.SetPixelShader(g_pPBRBoxCubeMapPS, sizeof(g_pPBRBoxCubeMapPS));
+	genPBRCubeMapPSO.SetSampleMask(UINT_MAX);
+	genPBRCubeMapPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+	genPBRCubeMapPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
+	genPBRCubeMapPSO.SetDepthStencilState(depthStateDefault);
+	genPBRCubeMapPSO.Finalize(device);
+	m_PSOs["genPBRCubeMapPSO"] = genPBRCubeMapPSO;
+	psoNames.push_back("genPBRCubeMapPSO");
 
 	defaultCPSO.SetComputeShader(g_pPaintBoardCS, sizeof(g_pPaintBoardCS));
 	defaultCPSO.SetRootSignature(g_U1_C1_RS);

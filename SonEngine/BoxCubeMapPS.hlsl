@@ -36,6 +36,7 @@ float4 main(psInput input) : SV_TARGET
     
     float3 normal = gNormal.Sample(gSampler, input.uv).xyz;  
     float4 modelPos = input.modelPosition;
+    return albedo;
     
     for (int i = 0; i < NUM_LIGHTS; i++)
     {

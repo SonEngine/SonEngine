@@ -206,6 +206,7 @@ private:
 	std::string textPSO = "textPSO";
 	std::string computePSO = "defaultCPSO";
 	std::string genCubeMapPSO = "genCubeMapPSO";
+	std::string genPBRCubeMapPSO = "genPBRCubeMapPSO";
 	std::string cubeMapPSO = "cubeMapPSO";
 	std::string pbrPSO = "pbrPSO";
 

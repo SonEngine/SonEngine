@@ -115,3 +115,7 @@ void SceneComponent::UpdateUseReflect(int newUseReflect)
 {
 	localConstant.useReflect = newUseReflect;
 }
+void SceneComponent::UpdateTexTransform(const DirectX::SimpleMath::Matrix& texTransform)
+{
+	localConstant.texTransform = texTransform;
+}

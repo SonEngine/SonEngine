@@ -322,6 +322,9 @@ bool RenderEngine::InitGUI(HWND wnd)
 	guiPenColor[2] = 1.f;
 	guiPenRadius = 15.f;
 
+	guiLocalConstant = {};
+
+
 	g_imguiReady.store(true, std::memory_order_release);
 	return true;
 }
@@ -1335,6 +1338,7 @@ void RenderEngine::DrawingWithMouse()
 	int i = 0;
 	RenderCube(cubeMapPSO, phongPSO, i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
 	RenderCube(genCubeMapPSO, phongPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+	RenderCube(genPBRCubeMapPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 
 	//Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	if (test) {

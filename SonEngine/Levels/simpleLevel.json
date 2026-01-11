@@ -5,7 +5,7 @@
       "class": "Actor",
       "name": "player",
       "transform": {
-        "pos": [ -1.5, 0.8, 0.0 ],
+        "pos": [ 0.0, 0.8, 0.0 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -44,7 +44,7 @@
         {
           "type": "StaticMesh",
           "mesh": "plane",
-          "material": "worn-painted-metal_albedo"
+          "material": "PavingStones145_2K-PNG__albedo"
         },
         {
           "type": "RigidBody",
@@ -67,7 +67,7 @@
       "class": "Actor",
       "name": "sphere0",
       "transform": {
-        "pos": [ 0, 0.8, 0.0 ],
+        "pos": [ -1.5, 0.8, 0.0 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -96,7 +96,7 @@
     },
     {
       "class": "Actor",
-      "name": "sphere1",
+      "name": "pbrSphere",
       "transform": {
         "pos": [ 1.5 , 0.8, 0.0 ],
         "rot": [ 0, 0, 0, 1 ],
@@ -118,7 +118,12 @@
           "forceMip0": false,
           "updateConstants": false,
           "useReflect": false,
-          "heightScale": 0.02
+          "heightScale": 0.02,
+          "texTransform": {
+            "pos": [ 0.0, 0.0, 0.0 ],
+            "rot": [ 0, 0, 0, 1 ],
+            "scale": [ 2, 2, 1 ]
+          }
         },
         {
           "type": "RenderMode",

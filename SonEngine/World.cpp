@@ -252,7 +252,9 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 			{
 				auto t = a["transform"];
 				if (t.contains("pos"))
+				{
 					ad.pos = ParseVec3(t["pos"]);
+				}
 			}
 			if (a.contains("components"))
 			{
@@ -278,6 +280,17 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 						ad.useReflect = comp["useReflect"].get<bool>();
 						if(comp.contains("heightScale"))
 							ad.heightScale = comp["heightScale"].get<float>();
+						if (comp.contains("texTransform"))
+						{
+							auto& tt = comp["texTransform"];
+							if (tt.contains("pos"))
+							{
+								Vector3 pos = ParseVec3(tt["pos"]);
+								Vector3 scale = ParseVec3(tt["scale"]);
+								Matrix texTransform = DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
+								ad.lc.texTransform = texTransform;
+							}
+						}
 					}
 					else if (type == "RenderMode")
 					{

@@ -337,6 +337,8 @@
     <FxCompile Include="BoxCubeMapPS.hlsl" />
     <FxCompile Include="PBRVS.hlsl" />
     <FxCompile Include="PBRPS.hlsl" />
+    <FxCompile Include="PBRBoxCubeMapPS.hlsl" />
+    <FxCompile Include="PBRBoxCubeMapVS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />
@@ -362,6 +364,7 @@
     </None>
     <None Include="PBRCommon.hlsli" />
     <None Include="BoxCubeMap.hlsli" />
+    <None Include="PBRBoxCubeMap.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\earth_Albedo.dds">

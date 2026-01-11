@@ -2,6 +2,7 @@
 
 #include <string>
 #include <directxtk12/SimpleMath.h>
+#include "PBRHLSLCompat.h"
 #include "PhysXMode.h"
 
 struct ActorData 
@@ -18,4 +19,5 @@ struct ActorData
 	bool updateConstants;
 	bool useReflect;
 	float heightScale = 0.f;
+	LocalConstant lc;
 };

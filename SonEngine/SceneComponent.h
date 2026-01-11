@@ -52,6 +52,7 @@ public:
 	void UpdateConstantRotation();
 	void UpdateMipState(int newForceMip0);
 	void UpdateUseReflect(int newUseReflect);
+	void UpdateTexTransform(const DirectX::SimpleMath::Matrix& texTransform);
 	
 protected:
 	//DirectX::SimpleMath::Vector3 m_location;
