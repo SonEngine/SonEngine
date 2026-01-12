@@ -15,7 +15,7 @@ Texture2D gRoughness : register(t8);
 
 SamplerState gSampler : register(s0);
 
-
+// BOOKMARK ps
 float4 main(psInput input) : SV_TARGET
 {
     float cubeMapExposure = 3.f;

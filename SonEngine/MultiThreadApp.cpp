@@ -127,7 +127,7 @@ bool Core::MultiThreadApp::InitGUI()
 	}
 	return false;
 }
-
+// BOOKMARK
 // main thread
 void Core::MultiThreadApp::Update(float deltaTime)
 {

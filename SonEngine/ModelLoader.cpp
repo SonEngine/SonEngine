@@ -36,7 +36,7 @@ void ModelLoader<Vertex, uint16_t>::Initialize(ID3D12Device5* device,
 	meshesMap["sphere"] = sphereMesh;
 	
 }
-
+// BOOKMARK
 void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	ID3D12GraphicsCommandList* commandList)
 {
@@ -59,6 +59,82 @@ void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	std::shared_ptr<StaticMesh> planeMesh = std::make_shared<StaticMesh>();
 	planeMesh->Initialize<PBRVertex, uint16_t>(device, commandList, plane.m_meshes);
 
+	std::shared_ptr<StaticMesh> sphereTanMesh = std::make_shared<StaticMesh>();
+	sphereTanMesh->Initialize<PBRVertex, uint16_t>(device, commandList, assets["sphere"].m_meshes);
+
+	meshesMap["sphereTan"] = sphereTanMesh;
 	meshesMap["sphere"] = sphereMesh;
 	meshesMap["plane"] = planeMesh;
+}
+
+
+void ModelLoader<Vertex, uint16_t>::ProcessMesh(std::vector<Mesh<Vertex, uint16_t>>& meshes, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr)
+{
+	Mesh<Vertex, uint16_t> meshData;
+	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+		aiVector3D v = mesh->mVertices[i];
+		aiVector3D n = aiVector3D(0, 1, 0);
+		if (mesh->HasNormals())
+		{
+			n = mesh->mNormals[i];
+		}
+
+		meshData.m_vertices.push_back({
+				aiToVector3(v),
+				aiToVector3(n),
+				Vector2(0,0)
+			});
+	}
+
+	for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+		aiFace face = mesh->mFaces[i];
+
+		for (unsigned int j = 0; j < face.mNumIndices; j++) {
+			meshData.m_indices.push_back(face.mIndices[j]);
+		}
+	}
+
+	meshes.push_back(meshData);
+}
+
+
+void ModelLoader<PBRVertex, uint16_t>::ProcessMesh(std::vector<Mesh<PBRVertex, uint16_t>>& meshes, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr)
+{
+	Mesh<PBRVertex, uint16_t> meshData;
+	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+		aiVector3D v = mesh->mVertices[i];
+		aiVector3D n = aiVector3D(0, 1, 0);
+		aiVector3D t = aiVector3D(1, 0, 0);
+		aiVector3D uv = aiVector3D(0 ,0, 0);
+		if (mesh->HasNormals())
+		{
+			n = mesh->mNormals[i];
+		}
+		if (mesh->HasTangentsAndBitangents())
+		{
+			t = mesh->mTangents[i];
+		}
+		if (mesh->HasTextureCoords(0))
+		{
+			uv = mesh->mTextureCoords[0][i];
+		}
+		Vector3 vecUV = aiToVector3(uv);
+
+		meshData.m_vertices.push_back({
+				aiToVector3(v),
+				aiToVector3(n),
+				aiToVector3(t),
+				Vector2(vecUV.x,vecUV.y)
+			});
+	}
+
+	for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+		aiFace face = mesh->mFaces[i];
+
+		for (unsigned int j = 0; j < face.mNumIndices; j++) {
+			meshData.m_indices.push_back(face.mIndices[j]);
+		}
+	}
+
+	meshes.push_back(meshData);
 }

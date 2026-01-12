@@ -1,24 +1,22 @@
 ﻿#include "PBRCommon.hlsli"
-
+// BOOKMARK
 float4 main(psInput input) : SV_TARGET
 {
-    float3 normalT = gNormal.Sample(gWrapLinearSampler, input.uv).xyz;
+    float3 normalTex = gNormal.SampleLevel(gWrapLinearSampler, input.uv, 0.f).rgb;
     float4 albedo = gAlbedo.Sample(gWrapLinearSampler, input.uv);
     float4 modelPos = input.modelPosition;
-    
-    //return albedo;
-    
-    normalT = 2.f * normalT - 1.f;
+
+    normalTex = normalTex * 2.f - 1.f;
+    normalTex = normalize(normalTex);
     float3 tangent = normalize(input.tangent);
-    
-    float3 N = input.normal;
+
+    float3 N = normalize(input.normal);
     float3 T = normalize(tangent - dot(tangent, N) * N);
-    float3 B = cross(N, T);
+    float3 B = normalize(cross(N, T));
     
     float3x3 TBN = float3x3(T, B, N);
-    float3 n = normalize(mul(normalT, TBN));
-    //float3 n = N;
-    
+    float3 n = normalize(mul(normalTex, TBN));
+
     for (int i = 0; i < NUM_LIGHTS; i++)
     {
         PBRLightInfo light = gPBRGCB.lights[i];

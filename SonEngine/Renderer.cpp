@@ -46,6 +46,7 @@ namespace Renderer
 	std::vector<std::string> psoNames;
 	std::vector<std::string> cpsoNames;
 
+	DXGI_FORMAT hdrFormat;
 	DXGI_FORMAT backBufferFormat;
 	DXGI_FORMAT dsBufferFormat;
 }
@@ -69,8 +70,8 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 
 	ComputePSO defaultCPSO(L"default CPSO");
 
-	backBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	//backBufferFormat  = DXGI_FORMAT_R8G8B8A8_UNORM;
+	hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	backBufferFormat  = DXGI_FORMAT_R8G8B8A8_UNORM;
 	dsBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	D3D12_INPUT_ELEMENT_DESC posOnlyIL[] =
@@ -137,7 +138,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	videoPSO.SetRenderTargetFormat(backBufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
 	videoPSO.Finalize(device);
 	m_PSOs["videoPSO"] = videoPSO;
-
+	// BOOKMARK
 	phongPSO.SetInputLayout(_countof(phongIL), phongIL);
 	phongPSO.SetRootSignature(g_R3_C2_RS);
 	phongPSO.SetRasterizerState(rasterizerDefault);
@@ -146,7 +147,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	phongPSO.SetVertexShader(g_pPhongVS, sizeof(g_pPhongVS));
 	phongPSO.SetPixelShader(g_pPhongPS, sizeof(g_pPhongPS));
 	phongPSO.SetSampleMask(UINT_MAX);
-	phongPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+	phongPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
 	phongPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
 	phongPSO.SetDepthStencilState(depthStateDefault);
 	phongPSO.Finalize(device);
@@ -161,7 +162,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	pbrPSO.SetVertexShader(g_pPBRVS, sizeof(g_pPBRVS));
 	pbrPSO.SetPixelShader(g_pPBRPS, sizeof(g_pPBRPS));
 	pbrPSO.SetSampleMask(UINT_MAX);
-	pbrPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+	pbrPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
 	pbrPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
 	pbrPSO.SetDepthStencilState(depthStateDefault);
 	pbrPSO.Finalize(device);
@@ -176,7 +177,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	wirePbrPSO.SetVertexShader(g_pPBRVS, sizeof(g_pPBRVS));
 	wirePbrPSO.SetPixelShader(g_pPBRPS, sizeof(g_pPBRPS));
 	wirePbrPSO.SetSampleMask(UINT_MAX);
-	wirePbrPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+	wirePbrPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
 	wirePbrPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
 	wirePbrPSO.SetDepthStencilState(depthStateDefault);
 	wirePbrPSO.Finalize(device);
@@ -208,7 +209,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	pointCloudPSO.SetGeometryShader(g_pPointCloudGS, sizeof(g_pPointCloudGS));
 	pointCloudPSO.SetPixelShader(g_pPointCloudPS, sizeof(g_pPointCloudPS));
 	pointCloudPSO.SetSampleMask(UINT_MAX);
-	pointCloudPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+	pointCloudPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
 	pointCloudPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
 	pointCloudPSO.SetDepthStencilState(depthStateDefault);
 	pointCloudPSO.Finalize(device);
@@ -239,7 +240,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	cubeMapPSO.SetVertexShader(g_pCubeMapVS, sizeof(g_pCubeMapVS));
 	cubeMapPSO.SetPixelShader(g_pCubeMapPS, sizeof(g_pCubeMapPS));
 	cubeMapPSO.SetSampleMask(UINT_MAX);
-	cubeMapPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+	cubeMapPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
 	cubeMapPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
 	cubeMapPSO.SetDepthStencilState(depthStateDefault);
 	cubeMapPSO.Finalize(device);
@@ -254,7 +255,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	cubeMapCullPSO.SetVertexShader(g_pCubeMapVS, sizeof(g_pCubeMapVS));
 	cubeMapCullPSO.SetPixelShader(g_pCubeMapPS, sizeof(g_pCubeMapPS));
 	cubeMapCullPSO.SetSampleMask(UINT_MAX);
-	cubeMapCullPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+	cubeMapCullPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
 	cubeMapCullPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
 	cubeMapCullPSO.SetDepthStencilState(depthStateDefault);
 	cubeMapCullPSO.Finalize(device);
@@ -269,7 +270,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	genCubeMapPSO.SetVertexShader(g_pBoxCubeMapVS, sizeof(g_pBoxCubeMapVS));
 	genCubeMapPSO.SetPixelShader(g_pBoxCubeMapPS, sizeof(g_pBoxCubeMapPS));
 	genCubeMapPSO.SetSampleMask(UINT_MAX);
-	genCubeMapPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+	genCubeMapPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
 	genCubeMapPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
 	genCubeMapPSO.SetDepthStencilState(depthStateDefault);
 	genCubeMapPSO.Finalize(device);
@@ -284,7 +285,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	genPBRCubeMapPSO.SetVertexShader(g_pPBRBoxCubeMapVS, sizeof(g_pPBRBoxCubeMapVS));
 	genPBRCubeMapPSO.SetPixelShader(g_pPBRBoxCubeMapPS, sizeof(g_pPBRBoxCubeMapPS));
 	genPBRCubeMapPSO.SetSampleMask(UINT_MAX);
-	genPBRCubeMapPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+	genPBRCubeMapPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
 	genPBRCubeMapPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
 	genPBRCubeMapPSO.SetDepthStencilState(depthStateDefault);
 	genPBRCubeMapPSO.Finalize(device);

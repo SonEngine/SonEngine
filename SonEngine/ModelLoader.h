@@ -121,34 +121,7 @@ inline void ModelLoader<V, I>::ProcessNode(std::vector<Mesh<V, I>>& meshes, aiNo
 	}
 }
 
-template<typename V, typename I>
-inline void ModelLoader<V, I>::ProcessMesh(std::vector<Mesh<V, I>>& meshes, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr)
-{
-	Mesh<V, I> meshData;
-	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-		aiVector3D v = mesh->mVertices[i];
-		aiVector3D n = aiVector3D(0, 1, 0);
-		if (mesh->HasNormals())
-		{
-			n = mesh->mNormals[i];
-		}
-		meshData.m_vertices.push_back({
-				aiToVector3(v),
-				aiToVector3(n),
-				Vector2(0,0)
-			});
-	}
 
-	for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
-		aiFace face = mesh->mFaces[i];
-		
-		for (unsigned int j = 0; j < face.mNumIndices; j++) {
-			meshData.m_indices.push_back(face.mIndices[j]);
-		}
-	}
-
-	meshes.push_back(meshData);
-}
 
 template<typename V, typename I>
 inline void ModelLoader<V, I>::LoadPointCloud(std::string filename, DirectX::SimpleMath::Matrix tr)

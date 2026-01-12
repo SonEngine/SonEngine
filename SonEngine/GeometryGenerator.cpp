@@ -271,7 +271,6 @@ Mesh<PBRVertex, uint16_t> GeometryGenerator::MakePBRSphere(int c, float r)
 			vertex.uv = Vector2(deluv * j, deluv * i);
 			if (i == 0 || i == c)
 			{
-				//vertex.tangent = Vector3::Transform(Vector3(0, 0, -1), yMat);
 				vertex.tangent = Vector3(0, 0, -1);
 			}
 			else
@@ -304,10 +303,12 @@ Mesh<PBRVertex, uint16_t> GeometryGenerator::MakePBRSphere(int c, float r)
 		uint16_t i2 = indices[i + 2];
 
 		Vector3 t = CalculateTangent(vertices, i0, i1, i2);
-		vertices[i0].tangent += t;
+		/*vertices[i0].tangent += t;
 		vertices[i1].tangent += t;
-		vertices[i2].tangent += t;
-
+		vertices[i2].tangent += t;*/
+		vertices[i0].tangent = t;
+		vertices[i1].tangent = t;
+		vertices[i2].tangent = t;
 	}
 
 
@@ -317,21 +318,21 @@ Mesh<PBRVertex, uint16_t> GeometryGenerator::MakePBRSphere(int c, float r)
 		{
 			int idx = i * (c+1) + j;
 			PBRVertex& v = vertices[idx];
-			if (v.tangent == Vector3(0, 0, 0)/* || i == 0 || i == c*/)
-			{
-				v.tangent = Vector3(1, 0, 0);
-			}
+			//if (v.tangent == Vector3(0, 0, 0)/* || i == 0 || i == c*/)
+			//{
+			//	v.tangent = Vector3(1, 0, 0);
+			//}
 
 			if (j == 0)
 			{
 				Vector3 t = v.tangent;
 				int lastIdx = idx + c;
 				t += vertices[lastIdx].tangent;
-
+				t.Normalize();
 				vertices[lastIdx].tangent = t;
 				v.tangent = t;
 			}
-			v.tangent.Normalize();
+			//v.tangent.Normalize();
 		}
 	}
 
@@ -404,10 +405,6 @@ Vector3 GeometryGenerator::CalculateTangent(const std::vector<PBRVertex>& vertic
 	Vector3 e0 = p1 - p0;
 	Vector3 e1 = p2 - p0;
 	
-
-	if(e0.Cross(e1).LengthSquared() < 1e-5f)
-		return Vector3(0.f, 0.f, 0.f);
-
 	Vector2 delUV0 = uv1 - uv0;
 	Vector2 delUV1 = uv2 - uv0;
 
@@ -418,14 +415,11 @@ Vector3 GeometryGenerator::CalculateTangent(const std::vector<PBRVertex>& vertic
 	float d = delUV1.y;
 
 	float det = a * d - b * c;
-	if (std::abs(det) < 1e-8)
-	{
-		return Vector3(0.f, 0.f, 0.f);
-	}
 
 	const float r = 1.0f / det;
 
 	Vector3 t = (e0 * d - e1 * b) * r;
+	t.Normalize();
 	return t;
 }
 

@@ -18,6 +18,7 @@ namespace Renderer
     extern std::vector<std::string> cpsoNames;
 
     extern DXGI_FORMAT backBufferFormat;
+    extern DXGI_FORMAT hdrFormat;
     extern DXGI_FORMAT dsBufferFormat;
 
     // PSO 초기화

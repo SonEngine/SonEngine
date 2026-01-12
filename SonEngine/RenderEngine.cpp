@@ -40,8 +40,8 @@ RenderEngine::~RenderEngine()
 
 bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd, MouseInputStateHelper* mouseInputState)
 {
-	dlModel = std::make_shared<DLModel>();
-	dlModel->Initialize("DL/models/mlp.pt");
+	/*dlModel = std::make_shared<DLModel>();
+	dlModel->Initialize("DL/models/mlp.pt");*/
 
 	m_frameQueue = std::make_shared<BoundedQueue<FramePacket>>(m_frameResourceCount);
 	m_renderCmdQueue = std::make_shared<BoundedQueue<RenderCmd>>(1024);
@@ -55,8 +55,10 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 	m_viewport = CD3DX12_VIEWPORT((FLOAT)m_guiWidth, 0.F, (FLOAT)(m_width - m_guiWidth), (FLOAT)m_height);
 	m_scissorRect = CD3DX12_RECT((LONG)0, 0, (LONG)(m_width), (LONG)m_height);
+	m_hdrViewport = CD3DX12_VIEWPORT((FLOAT)0.F, 0.F, (FLOAT)(m_width), (FLOAT)m_height);
 
 	rtvClearColor = { 0.53F, 0.81F, 0.92F, 1.0F };
+	blackClearColor = { 0.F, 0.F, 0.F, 1.0F };
 
 	CreateCommandObjects();
 
@@ -79,6 +81,7 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 	// DescriptorHeap 생성
 	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRTVHeap);
+	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_hdrRtvHeap);
 	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
 	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_fontSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
@@ -101,6 +104,12 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 	}
 
+	// HDR 버퍼 생성
+	{
+		D3D12_RESOURCE_FLAGS hdrFlag = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		utility->CreateTextureBuffer(m_hdrBuffer, m_width, m_height, m_hdrFormat, hdrFlag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
+		utility->CreateResourceView(m_hdrBuffer, m_hdrFormat, false, m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::RTV);
+	}
 	CreateSwapChain(factory, wnd);
 	CreateFonts();
 	CreateDepthBuffer();
@@ -117,6 +126,7 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 	CreateTextures();
 	m_textureLoader->AddTexture(m_computeBuffer, m_computeTextureName);
+	m_textureLoader->AddTexture(m_hdrBuffer, m_hdrTextureName);
 	clearFlag = true;
 
 	CreateCubeMap();
@@ -164,7 +174,7 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 		FlushCommands();
 	}
-	
+
 	BuildFrameResources();
 
 	saveThread = std::thread([&] {
@@ -188,15 +198,15 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 				lock.unlock();
 				SaveTextureCPU();
 			}
-			else if (runDLReady)
-			{
-				runDLReady = false;
-				lock.unlock();
-				RunDLModel();
-			}
+			//else if (runDLReady)
+			//{
+			//	runDLReady = false;
+			//	lock.unlock();
+			//	RunDLModel();
+			//}
 		}
 		});
-
+	// BOOKMARK
 	renderThread = std::thread([&] {
 		if (world == nullptr)
 		{
@@ -351,7 +361,7 @@ void RenderEngine::RequestRunDL()
 	std::lock_guard<std::mutex> lock(g_mtx);
 	runDLDirty = true;
 }
-
+// BOOKMARK
 void RenderEngine::OnResize()
 {
 	if (m_swapChain == nullptr) return;
@@ -368,6 +378,14 @@ void RenderEngine::OnResize()
 		m_height,
 		DXGI_FORMAT_UNKNOWN,
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+
+	// HDR 버퍼 재생성
+	{
+		D3D12_RESOURCE_FLAGS hdrFlag = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		utility->CreateTextureBuffer(m_hdrBuffer, m_width, m_height, m_hdrFormat, hdrFlag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
+		utility->CreateResourceView(m_hdrBuffer, m_hdrFormat, false, m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::RTV);
+		m_textureLoader->AddTexture(m_hdrBuffer, m_hdrTextureName);
+	}
 
 	// 버퍼에 대한 RTV 재생성
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart());
@@ -398,11 +416,11 @@ void RenderEngine::OnResize()
 	m_currentBackBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
 	m_viewport = CD3DX12_VIEWPORT((FLOAT)m_guiWidth, 0.F, (FLOAT)(m_width - m_guiWidth), (FLOAT)m_height);
-
+	m_hdrViewport = CD3DX12_VIEWPORT((FLOAT)0.F, 0.F, (FLOAT)(m_width), (FLOAT)m_height);
 	m_scissorRect = CD3DX12_RECT((LONG)0, 0, (LONG)(m_width), (LONG)m_height);
 
 }
-
+// BOOKMARK
 void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 {
 	m_primitives.push_back(primitive);
@@ -428,7 +446,7 @@ void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 	else if (DotComponent* pointCloudComp = dynamic_cast<DotComponent*>(primitive))
 	{
 		add.mesh = pointCloudComp->GetMeshPtr();
-		add.meshType = MT_dot;
+		add.meshType = MT_finalize;
 	}
 	else if (CubeMapComponent* cubeMapComp = dynamic_cast<CubeMapComponent*>(primitive))
 	{
@@ -536,10 +554,10 @@ void RenderEngine::CreateDepthBuffer()
 	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_DSVHeap->GetCPUDescriptorHandleForHeapStart();
 	m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &dsvDesc, handle);
 }
-
+// BOOKMARK
 void RenderEngine::UpdateGUI()
 {
-	ImGui::SetWindowSize(ImVec2((float)m_guiWidth, (float)m_height), ImGuiCond_FirstUseEver);
+	ImGui::SetWindowSize(ImVec2((float)m_guiWidth, (float)m_height));
 	ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
 	//ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
 	int fps = int(1 / r_packet.deltaTime);
@@ -558,48 +576,57 @@ void RenderEngine::UpdateGUI()
 	}
 
 	ImGui::NewLine();
+	ImGui::PushItemWidth(m_guiWidth - 30.f);
 
-	ImGui::SliderFloat("Pen Radius", &guiPenRadius, 0.f, 20.f);
-	ImGui::SliderInt("save miplevel", &saveMipLevel, 0, 5);
-	ImGui::SliderInt("name : ", &r_selecteId, 0, r_idMax);
-	ImGui::SameLine();
+	ImGui::Text("Pen Radius");
+	ImGui::SliderFloat("##Pen Radius", &guiPenRadius, 0.f, 20.f);
+
+	/*ImGui::TextUnformatted("save miplevel");
+	ImGui::SliderInt("save miplevel", &saveMipLevel, 0, 5);*/
+
+	ImGui::SeparatorText("Local Constant");
+	
 	ImGui::Text(r_idToName[r_selecteId].c_str());
+	ImGui::SliderInt("##id", &r_selecteId, 0, r_idMax);
 
-	if (ImGui::SliderFloat("Height Scale", &guiLocalConstant.heightScale, 0.f, 1.f))
+	ImGui::Text("Height Scale");
+	if (ImGui::SliderFloat("##Height Scale", &guiLocalConstant.heightScale, 0.f, 1.f))
 	{
 		CmdUpdateActorConstant cmd;
 		cmd.id = r_selecteId;
 		cmd.lc = guiLocalConstant;
 		m_renderToMainCmdQueue->Push(std::move(cmd));
 	}
-	if (ImGui::SliderInt("Cubemap MipLevel", &guiLocalConstant.cubeMapMipLevel, 0, 5))
+	ImGui::Text("Cubemap MipLevel");
+	if (ImGui::SliderInt("##Cubemap MipLevel", &guiLocalConstant.cubeMapMipLevel, 0, 5))
 	{
 		CmdUpdateActorConstant cmd;
 		cmd.id = r_selecteId;
 		cmd.lc = guiLocalConstant;
 		m_renderToMainCmdQueue->Push(std::move(cmd));
 	}
+
+	ImGui::PopItemWidth();
 	if (ImGui::Button("Spawn Actor")) {
 		CmdAddActor cmd;
 		cmd.name = "test";
 		m_renderToMainCmdQueue->Push(std::move(cmd));
 
 	}
+	//if (ImGui::Button("Run DL")) {
+	//	RequestRunDL();
+	//	printRet = true;
 
-	if (ImGui::Button("Run DL")) {
-		RequestRunDL();
-		printRet = true;
-
-	}
-	if (printRet)
-	{
-		//ImGui::SameLine();
-		int ret = dlRet.load(std::memory_order_acquire);
-		std::string retStr = "DL prediction : ";
-		retStr += std::to_string(ret);
-		ImGui::Text(retStr.c_str());
-	}
-	if (ImGui::Button("Save")) {
+	//}
+	//if (printRet)
+	//{
+	//	//ImGui::SameLine();
+	//	int ret = dlRet.load(std::memory_order_acquire);
+	//	std::string retStr = "DL prediction : ";
+	//	retStr += std::to_string(ret);
+	//	ImGui::Text(retStr.c_str());
+	//}
+	if (ImGui::Button("Save backbuffer")) {
 		RequestCapture();
 	}
 	ImGui::SameLine();
@@ -607,19 +634,19 @@ void RenderEngine::UpdateGUI()
 		clearFlag = true;
 	}
 
-	if (ImGui::Button("Open Picker"))
-		ImGui::OpenPopup("PickerPopup");
+	//if (ImGui::Button("Open Picker"))
+	//	ImGui::OpenPopup("PickerPopup");
 
-	if (ImGui::BeginPopup("PickerPopup"))
-	{
-		// 큰 컬러 피커(휠/사각형)
-		ImGui::ColorPicker3("##Picker", (float*)&guiPenColor,
-			ImGuiColorEditFlags_Float |
-			ImGuiColorEditFlags_AlphaBar |
-			ImGuiColorEditFlags_DisplayRGB);
+	//if (ImGui::BeginPopup("PickerPopup"))
+	//{
+	//	// 큰 컬러 피커(휠/사각형)
+	//	ImGui::ColorPicker3("##Picker", (float*)&guiPenColor,
+	//		ImGuiColorEditFlags_Float |
+	//		ImGuiColorEditFlags_AlphaBar |
+	//		ImGuiColorEditFlags_DisplayRGB);
 
-		ImGui::EndPopup();
-	}
+	//	ImGui::EndPopup();
+	//}
 }
 
 void RenderEngine::BuildFrameResources()
@@ -687,7 +714,7 @@ void RenderEngine::UpdatePBGlobalConstantBuffer(const int& guiWidth, const Mouse
 	packet.pbgc.penColor = Vector3(guiPenColor);
 	packet.pbgc.penRadius = guiPenRadius;
 }
-
+// BOOKMARK
 void RenderEngine::Tick(float deltaTime)
 {
 	// drain render input
@@ -769,12 +796,13 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 	ThrowIfFailed(commandList->Reset(r_currentFrameResource->GetAllocator(idx), pso.GetPSO()));
 	commandList->SetPipelineState(pso.GetPSO());
 	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
-	
+
 
 	commandList->RSSetScissorRects(1, &m_scissorRect);
-	commandList->RSSetViewports(1, &m_viewport);
-	
-	{
+
+	if (meshType == MT_finalize) {
+		commandList->RSSetViewports(1, &m_viewport);
+
 		commandList->ResourceBarrier(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -782,14 +810,31 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 				D3D12_RESOURCE_STATE_PRESENT,
 				D3D12_RESOURCE_STATE_RENDER_TARGET
 			));
+		if (clear)
+		{
+			commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
+			commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
+		}
+		commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
 	}
-	
-	if (clear)
+	else
 	{
-		commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
-		commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
+		commandList->RSSetViewports(1, &m_hdrViewport);
+
+		commandList->ResourceBarrier(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				m_hdrBuffer.Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RENDER_TARGET
+			));
+		if (clear)
+		{
+			commandList->ClearRenderTargetView(m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart(), blackClearColor.data(), 0, nullptr);
+			commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
+		}
+		commandList->OMSetRenderTargets(1, &m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart(), TRUE, &GetDSVCpuHandle());
 	}
-	commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
 
 	if (meshType != MT_pointCloud)
 	{
@@ -824,7 +869,7 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 					commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
 					proxy.mesh->RenderPoints(commandList);
 				}
-				else if (type == MT_dot)
+				else if (type == MT_finalize)
 				{
 					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
 					proxy.mesh->RenderDot(commandList);
@@ -838,15 +883,26 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 			}
 		}
 	}
-
-	commandList->ResourceBarrier(
-		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(
-			GetCurrentSwapChainResource(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PRESENT
-		));
-	
+	if (meshType == MT_finalize)
+	{
+		commandList->ResourceBarrier(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				GetCurrentSwapChainResource(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PRESENT
+			));
+	}
+	else
+	{
+		commandList->ResourceBarrier(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				m_hdrBuffer.Get(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+			));
+	}
 
 	commandList->Close();
 
@@ -1076,7 +1132,7 @@ void RenderEngine::RenderCube(const std::string& psoName, const std::string& pro
 					auto it = r_currentFrameResource->m_localData.find(id);
 					auto& ld = it->second;
 					// cubemap - 0, albedo - 1, local - 2, gobal - 3
-					
+
 					if (type == MT_primitive && proxyPsoName == ld.psoName)
 					{
 						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
@@ -1193,13 +1249,13 @@ void RenderEngine::CreateTextures()
 	fallbackDDSPath = "Textures/Fallback/";
 
 	m_textureLoader = std::make_shared<TextureLoader>(texturePath, m_device);
-	m_fallbackLoader = std::make_shared<TextureLoader>(fallbackPath, m_device);
-
 	m_textureLoader->InitHeap(30);
 	m_textureLoader->LoadIdx();
-	m_fallbackLoader->InitHeap(30);
-	m_fallbackLoader->LoadIdx();
 	m_textureLoader->LoadTextures(m_commandQueue);
+
+	//m_fallbackLoader = std::make_shared<TextureLoader>(fallbackPath, m_device);
+	//m_fallbackLoader->InitHeap(30);
+	//m_fallbackLoader->LoadIdx();
 }
 
 
@@ -1298,11 +1354,11 @@ void RenderEngine::CreateCubeMap()
 
 	}
 
-	
 
-	
 
-	
+
+
+
 	m_cubeViewport = CD3DX12_VIEWPORT((FLOAT)0.F, 0.F, (FLOAT)(cubeWidth), (FLOAT)cubeHeight);
 	m_cubeScissorRect = CD3DX12_RECT((LONG)0, 0, (LONG)(cubeWidth), (LONG)cubeHeight);
 	cubeRtvClearColor = { 0.F, 0.F, 0.F, 1.F };
@@ -1352,24 +1408,25 @@ void RenderEngine::RenderWithCompute()
 
 	//RenderGUI(true);
 }
-
+// BOOKMARK
 void RenderEngine::DrawingWithMouse()
 {
 	int i = 0;
 	RenderCube(cubeMapPSO, phongPSO, i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
 	RenderCube(genCubeMapPSO, phongPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 	RenderCube(genPBRCubeMapPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
-	Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	//Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-	if (test) 
+	if (test)
 	{
 		Render("pointCloudPSO", i++, MT_pointCloud, false/*isFinal*/, true/*clear RT*/);
 		Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 		Render(currentPbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 		Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
+
+		Render("renderTexturePSO", i++, MT_finalize, false/*isFinal*/, true/*clear RT*/);
 	}
-	else
-		Render("renderTexturePSO", i++, MT_dot, false/*isFinal*/, true/*clear RT*/);
+
 	RenderGUI(true);
 }
 
@@ -1442,7 +1499,7 @@ void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES
 		t = m_textureLoader->GetTexture(name);
 
 	D3D12_RESOURCE_DESC desc = t->GetDesc();
-	
+
 	UINT subresource = 0;
 
 	if (miplevel != 0)
@@ -1458,7 +1515,7 @@ void RenderEngine::SaveTextureGPU(const std::string& name, D3D12_RESOURCE_STATES
 			/*ArraySize*/ 1
 		);
 	}
-	
+
 	UINT numRows = 0;
 	UINT64 rowSize = 0;
 	UINT64 requiredSize = 0;
@@ -1548,7 +1605,7 @@ void RenderEngine::SaveTextureCPU()
 				mapped + y * imageInfo.rowPitch,
 				imageInfo.rowSize);
 		}*/
-		memcpy(imagef16.data() , mapped, imagef16.size()*2);
+		memcpy(imagef16.data(), mapped, imagef16.size() * 2);
 		for (size_t i = 0; i < image.size(); i++)
 		{
 			double c = std::clamp(fp16_ieee_to_fp32_value(imagef16[i]), 0.f, 1.f);
@@ -1556,7 +1613,7 @@ void RenderEngine::SaveTextureCPU()
 			{
 				c = std::pow(c, 1 / 2.2);
 			}
-			image[i] = std::clamp((int)(c * 255.f), 0,255);
+			image[i] = std::clamp((int)(c * 255.f), 0, 255);
 		}
 	}
 	else
@@ -1579,7 +1636,7 @@ void RenderEngine::SaveTextureCPU()
 
 	std::string filename = imageInfo.name + utility->MakeTimestamp() + ".png";
 	std::string fileFullPath = imageFilePath + filename;
-	if(imageInfo.format == DXGI_FORMAT_R16G16B16A16_FLOAT)
+	if (imageInfo.format == DXGI_FORMAT_R16G16B16A16_FLOAT)
 		stbi_write_png(fileFullPath.c_str(), (int)imageInfo.width, (int)imageInfo.height, 4, image.data(), (int)(imageInfo.rowSize / 2));
 	else
 		stbi_write_png(fileFullPath.c_str(), (int)imageInfo.width, (int)imageInfo.height, 4, image.data(), (int)imageInfo.rowSize);
@@ -1605,9 +1662,9 @@ void RenderEngine::RunDLModel()
 	}
 	m_saveBuffer->Unmap(0, nullptr);
 
-	int ret = dlModel->Run(image);
-	std::cout << "Result : " << ret << '\n';
-	dlRet.store(ret, std::memory_order_release);
+	//int ret = dlModel->Run(image);
+	//std::cout << "Result : " << ret << '\n';
+	//dlRet.store(ret, std::memory_order_release);
 }
 
 void RenderEngine::ApplyGameCommand(const GameCmd& cmd)

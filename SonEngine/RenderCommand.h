@@ -10,7 +10,7 @@ enum MeshType {
 	MT_primitive,
 	MT_pointCloud,
 	MT_cubeMap,
-	MT_dot
+	MT_finalize
 };
 
 struct CmdAddPrimitive {

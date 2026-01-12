@@ -9,7 +9,7 @@ using namespace DirectX;
 #endif
 
 #define NUM_LIGHTS 1
-
+// BOOKMARK
 struct LocalConstant
 {
     Matrix model;

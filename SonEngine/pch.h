@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <torch/script.h>
-#include <torch/torch.h>
+//#include <torch/script.h>
+//#include <torch/torch.h>
 #define NOMINMAX
 #include <Windows.h>

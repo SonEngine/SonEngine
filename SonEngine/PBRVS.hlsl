@@ -10,27 +10,21 @@ psInput main(vsInput input)
     float height = gHeight.SampleLevel(gWrapLinearSampler, uv, 0.f).x;
     height = height * 2.0 - 1.0;
     height *= gLocalCB.heightScale;
-        
-    float3 posW = mul(float4(input.pos, 0.f), gLocalCB.model).xyz;
-    float3 posH = posW + input.normal * height;
-    output.worldPosition = posH;
     
-    float4 position = mul(float4(input.pos, 1.f), gLocalCB.model);
-    position.xyz += +input.normal * height;
-    
+    float4 posOS = float4(input.pos + input.normal * height, 1.f);
+    float4 position = mul(posOS, gLocalCB.model);
+       
     output.modelPosition = position;
     position = mul(position, gPBRGCB.view);
     position = mul(position, gPBRGCB.proj);
     
     output.svPosition = position;
-    
-    
-    
+        
     float3 normal = mul(float4(input.normal, 0.f), gLocalCB.modelInvTranspose).xyz;
     float3 tangent = mul(float4(input.tangent, 0.f), gLocalCB.model).xyz;
     
     output.normal = normalize(normal);
-    output.tangent = tangent;
+    output.tangent = normalize(tangent);
     
     return output;
 }

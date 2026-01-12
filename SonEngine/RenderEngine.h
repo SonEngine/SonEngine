@@ -128,6 +128,7 @@ private:
 
 private:
 	D3D12_VIEWPORT m_viewport;
+	D3D12_VIEWPORT m_hdrViewport;
 	D3D12_RECT m_scissorRect;
 	int m_width;
 	int m_height;
@@ -142,6 +143,7 @@ private:
 	UINT m_rtvDescriptorSize = 0;
 	UINT m_dsvDescriptorSize = 0;
 	std::array<float, 4> rtvClearColor;
+	std::array<float, 4> blackClearColor;
 
 private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain3> m_swapChain;
@@ -186,11 +188,20 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_computeBuffer;
 	//DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	//DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	std::string m_computeTextureName = "ComTex";
 	std::string m_cubeMapTextureName = "CubeMap_SkyDiffuseHDR";
 	UINT computeTextureDIM = 1024 * 4;
 	UINT computeTextureDIMX;
 	UINT computeTextureDIMY;
+	
+	//hdr backbuffer
+private:
+
+	DXGI_FORMAT m_hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_hdrBuffer;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_hdrRtvHeap;
+	std::string m_hdrTextureName = "hdrTex";
 
 	// TextureLoader
 private:
@@ -299,7 +310,7 @@ private:
 	//ImGuiContext* m_imguiCtx = nullptr;
 
 private:
-	std::shared_ptr<DLModel> dlModel;
+	//std::shared_ptr<DLModel> dlModel;
 	std::atomic<int> dlRet{ 0 };
 	bool printRet = false;
 

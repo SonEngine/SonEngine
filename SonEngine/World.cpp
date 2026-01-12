@@ -39,21 +39,26 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 
 	m_camera = std::make_shared<Camera>();
 	InitCamera(cameraWidth, cameraHeight);
-
+	// BOOKMARK lightSetting
 	PBRLightInfo lInfo;
-	lInfo.location = { -500,500,0 };
+	lInfo.location = {1.5, 0.8, -100.0 };
+	//lInfo.location = { -500,500,0 };
 	lInfo.brightness = { 0.8f,0.8f,0.8f,1.f };
-
+	//1.5, 0.8, 0.0
 	m_lightInfos.push_back(lInfo);
 
 	modelLoader->Load("torus.fbx");
 	modelLoader->Initialize(device, commandList);
+
+	pbrModelLoader->Load("sphere.glb");
 	pbrModelLoader->Initialize(device, commandList);
 
 	LoadLevel(levelPath);
 
 	ModelLoader<PointCloudVertex, uint16_t> pcModelLoader;
-	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * DirectX::XMMatrixRotationX(-3.14f / 12.f) * DirectX::XMMatrixTranslationFromVector(Vector3(0.f, 5.2f, 5.f));
+	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * 
+		DirectX::XMMatrixRotationX(-3.14f / 12.f) *
+		DirectX::XMMatrixTranslationFromVector(Vector3(0.f, 0.2f, 5.f));
 	pcModelLoader.LoadPointCloud("map.ply", mat);
 	
 	std::shared_ptr<Actor> cubeMap = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, CubeMapComponent>(
@@ -73,7 +78,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, DotComponent>(
 		"dot",
 		std::vector{ GeometryGenerator::MakePoint() },
-		"ComTex",
+		"hdrTex",
 		{ 0.f,0.f,0.f },
 		this
 	);
@@ -107,9 +112,9 @@ void World::InitCamera(int width, int height)
 	m_camera->m_height = height;
 	m_camera->SetCameraMode(CameraMode::CM_Perspective);
 	m_camera->Initialize();
-	m_camera->SetActorLocation({ 0.f, 10.f, -5.f });
+	m_camera->SetActorLocation({ 0.f, 5.f, -5.f });
 	m_camera->UpdateCameraRotation(0, 70);
-	
+	// BOOKMARK	
 	/*m_camera->SetActorLocation({ -1.5, 0.8, -1.5 });
 	m_camera->UpdateCameraRotation(0, 0);*/
 
@@ -150,7 +155,7 @@ void World::UpdateMouse(int x, int y)
 	mouseDeltaX = x;
 	mouseDeltaY = y;
 }
-
+// BOOKMARK
 void World::Tick(float deltaTime)
 {
 	// view 회전 업데이트
@@ -225,7 +230,7 @@ void World::SetInputState(size_t key, bool isKeyDown)
 {
 	m_inputHelper.SetInputState(key, isKeyDown);
 }
-
+// BOOKMARK
 bool World::LoadLevel(const std::filesystem::path& levelPath)
 {
 	using json = nlohmann::json;

@@ -129,7 +129,7 @@ bool Core::BaseApp::IsWindowFocused()
 
 LRESULT BaseApp::MainProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	if (Graphics::g_imguiCtx) // ready 플래그 대신 context 존재로도 충분
+	if (Graphics::g_imguiCtx)
 	{
 		static thread_local bool s_inImGui = false;
 		if (!s_inImGui)
