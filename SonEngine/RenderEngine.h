@@ -96,6 +96,7 @@ private:
 protected:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRtvCpuHandle() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCubeMapRtvCpuHandle(int i) const;
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCubeMapDsvCpuHandle(int i) const;
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCpuHandle() const;
 	ID3D12Resource* GetCurrentSwapChainResource() const;
 
@@ -161,9 +162,9 @@ private:
 	DXGI_FORMAT cubeFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cubeMapRtvHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cubeMapSrvHeap;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cubeMapDSVHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cubeMapDsvHeap;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_cubeDepthBuffer;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_cubeDepthBuffer[6];
 
 	PBRGlobalConstant m_cubePhongGC[6];
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_cubeMapGCB[6];
@@ -208,6 +209,8 @@ private:
 	std::string genCubeMapPSO = "genCubeMapPSO";
 	std::string genPBRCubeMapPSO = "genPBRCubeMapPSO";
 	std::string cubeMapPSO = "cubeMapPSO";
+	std::string currentPbrPSO = "pbrPSO";
+	std::string wirePbrPSO = "wire_pbrPSO";
 	std::string pbrPSO = "pbrPSO";
 
 	//FrameResource
@@ -263,6 +266,7 @@ private:
 private:
 	std::vector<class PrimitiveComponent*> m_primitives;
 	bool test = true;
+	bool gui_wireFrameMode = false;
 
 private:
 	MouseInputStateHelper* pMouseinputStateHelper = nullptr;

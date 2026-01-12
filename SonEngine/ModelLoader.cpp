@@ -42,11 +42,23 @@ void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 {
 	float sphereRadius = 0.5f;
 	int sphereDetail = 100;
+	
 	Asset<PBRVertex, uint16_t> sphere;
 	sphere.m_meshes.push_back({ GeometryGenerator::MakePBRSphere(sphereDetail, sphereRadius) });
+	
+	float planeSize = 2.f*100.f;
+	int div = 200.f;
+
+	Asset<PBRVertex, uint16_t> plane;
+	plane.m_meshes.push_back({ GeometryGenerator::MakePBRPlane(planeSize, planeSize, div) });
+
 
 	std::shared_ptr<StaticMesh> sphereMesh = std::make_shared<StaticMesh>();
 	sphereMesh->Initialize<PBRVertex, uint16_t>(device, commandList, sphere.m_meshes);
 
+	std::shared_ptr<StaticMesh> planeMesh = std::make_shared<StaticMesh>();
+	planeMesh->Initialize<PBRVertex, uint16_t>(device, commandList, plane.m_meshes);
+
 	meshesMap["sphere"] = sphereMesh;
+	meshesMap["plane"] = planeMesh;
 }

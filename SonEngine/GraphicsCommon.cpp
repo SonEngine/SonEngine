@@ -9,6 +9,7 @@ namespace Graphics
 	D3D12_STATIC_SAMPLER_DESC clampLinearSampler;
 
 	D3D12_RASTERIZER_DESC rasterizerDefault;
+	D3D12_RASTERIZER_DESC wireRasterizer;
 	D3D12_RASTERIZER_DESC noneCullRasterizer;
 
     D3D12_BLEND_DESC blendNoColorWrite;		
@@ -65,9 +66,15 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	clampLinearSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	rasterizerDefault = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	
 	noneCullRasterizer = rasterizerDefault;
 	noneCullRasterizer.CullMode = D3D12_CULL_MODE_NONE;
 	noneCullRasterizer.DepthClipEnable = false;
+
+	wireRasterizer = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	wireRasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;
+	wireRasterizer.CullMode = D3D12_CULL_MODE_NONE;
+	wireRasterizer.DepthClipEnable = false;
 
 	blendNoColorWrite = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 

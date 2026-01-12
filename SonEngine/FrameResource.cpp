@@ -21,7 +21,7 @@ FrameResource::FrameResource()
 }
 
 // TODO : BoxCubeMap용 LightInfo 업데이트 
-void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd)
+void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd, const std::vector<PBRLightInfo> & lightInfos)
 {
 	hwnd = mainHwnd;
 	if (Graphics::utility == nullptr)
@@ -56,12 +56,6 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 	float fov = DirectX::XM_PIDIV2;
 	DirectX::SimpleMath::Matrix projMatrix = DirectX::XMMatrixPerspectiveFovLH(
 		fov, 1.f, 0.1f, 1000.f);
-
-	PBRLightInfo lInfo;
-	lInfo.location = { -5,5,0 };
-	lInfo.brightness = { 0.8f,0.8f,0.8f,1.f };
-	std::vector<PBRLightInfo> lightInfos;
-	lightInfos.push_back(lInfo);
 
 	m_pCubeGC.resize(6);
 	for (int i = 0; i < 6; i++)

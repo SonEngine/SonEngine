@@ -428,3 +428,57 @@ Vector3 GeometryGenerator::CalculateTangent(const std::vector<PBRVertex>& vertic
 	Vector3 t = (e0 * d - e1 * b) * r;
 	return t;
 }
+
+Mesh<PBRVertex, uint16_t> GeometryGenerator::MakePBRPlane(float x, float z, int c)
+{
+	float halfX = x / 2.f;
+	float halfZ = z / 2.f;
+
+	std::vector<PBRVertex> vertices;
+	std::vector<uint16_t> indices;
+
+	Vector3 baseV = Vector3(-halfX, 0, halfZ);
+	float delX = x / c;
+	float delZ = -z / c;
+
+	float deluv = 1.f / c;
+	for (int i = 0; i <= c; i++)
+	{
+
+		Vector3 xBase = baseV + Vector3(0.f, 0.f, delZ) * (float)i;
+		for (int j = 0; j <= c; j++)
+		{
+			Vector3 v = xBase + (float)j * Vector3(delX, 0, 0);
+			PBRVertex vertex;
+			vertex.position = v;
+			vertex.normal = Vector3(0.f, 1.f, 0.f);
+			vertex.uv = Vector2(deluv * j, deluv * i);
+			vertex.tangent = Vector3(1, 0, 0);
+
+			vertices.push_back(vertex);
+
+			if (j != c && i != c)
+			{
+				uint16_t a = (c + 1) * i + j;
+				uint16_t b = a + c + 1;
+				uint16_t c = a + 1;
+				uint16_t d = b + 1;
+				indices.push_back(b);
+				indices.push_back(a);
+				indices.push_back(c);
+
+				indices.push_back(b);
+				indices.push_back(c);
+				indices.push_back(d);
+			}
+		}
+	}
+
+
+	Mesh<PBRVertex, uint16_t> mesh;
+
+	mesh.m_vertices = vertices;
+	mesh.m_indices = indices;
+
+	return mesh;
+}

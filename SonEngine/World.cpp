@@ -41,7 +41,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	InitCamera(cameraWidth, cameraHeight);
 
 	PBRLightInfo lInfo;
-	lInfo.location = { -5,5,0 };
+	lInfo.location = { -500,500,0 };
 	lInfo.brightness = { 0.8f,0.8f,0.8f,1.f };
 
 	m_lightInfos.push_back(lInfo);
@@ -53,7 +53,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	LoadLevel(levelPath);
 
 	ModelLoader<PointCloudVertex, uint16_t> pcModelLoader;
-	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * DirectX::XMMatrixRotationX(-3.14f / 12.f) * DirectX::XMMatrixTranslationFromVector(Vector3(0.f, 0.2f, 5.f));
+	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * DirectX::XMMatrixRotationX(-3.14f / 12.f) * DirectX::XMMatrixTranslationFromVector(Vector3(0.f, 5.2f, 5.f));
 	pcModelLoader.LoadPointCloud("map.ply", mat);
 	
 	std::shared_ptr<Actor> cubeMap = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, CubeMapComponent>(
@@ -63,22 +63,22 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		{ 0.f,0.f,0.f },
 		this
 	);
-	//std::shared_ptr<Actor> pointCloud = utility->CreatePCActor(
-	//	"pointCloud",
-	//	pcModelLoader.GetAsset("map"),
-	//	"",
-	//	this
-	//);
+	std::shared_ptr<Actor> pointCloud = utility->CreatePCActor(
+		"pointCloud",
+		pcModelLoader.GetAsset("map"),
+		"",
+		this
+	);
 
-	//std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, DotComponent>(
-	//	"dot",
-	//	std::vector{ GeometryGenerator::MakePoint() },
-	//	"ComTex",
-	//	{ 0.f,0.f,0.f },
-	//	this
-	//);
-	//SpawnActor(pointCloud);
-	//SpawnActor(dot);
+	std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, DotComponent>(
+		"dot",
+		std::vector{ GeometryGenerator::MakePoint() },
+		"ComTex",
+		{ 0.f,0.f,0.f },
+		this
+	);
+	SpawnActor(pointCloud);
+	SpawnActor(dot);
 
 	SpawnActor(cubeMap);
 
@@ -107,7 +107,7 @@ void World::InitCamera(int width, int height)
 	m_camera->m_height = height;
 	m_camera->SetCameraMode(CameraMode::CM_Perspective);
 	m_camera->Initialize();
-	m_camera->SetActorLocation({ 0.f, 5.f, -5.f });
+	m_camera->SetActorLocation({ 0.f, 10.f, -5.f });
 	m_camera->UpdateCameraRotation(0, 70);
 	
 	/*m_camera->SetActorLocation({ -1.5, 0.8, -1.5 });

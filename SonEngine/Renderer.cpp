@@ -56,7 +56,10 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	GraphicsPSO videoPSO(L"video PSO");
 	GraphicsPSO phongPSO(L"phong PSO");
 	GraphicsPSO pbrPSO(L"pbr PSO");
+	GraphicsPSO wirePbrPSO(L"wirePbr PSO");
+
 	GraphicsPSO textPSO(L"text PSO");
+
 	GraphicsPSO pointCloudPSO(L"pointCloud PSO");
 	GraphicsPSO renderTexturePSO(L"renderTexture PSO");
 	GraphicsPSO cubeMapPSO(L"cubeMap PSO");
@@ -164,6 +167,22 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	pbrPSO.Finalize(device);
 	m_PSOs["pbrPSO"] = pbrPSO;
 	psoNames.push_back("pbrPSO");
+
+	wirePbrPSO.SetInputLayout(_countof(pbrIL), pbrIL);
+	wirePbrPSO.SetRootSignature(g_R3_C2_RS);
+	wirePbrPSO.SetRasterizerState(wireRasterizer);
+	wirePbrPSO.SetBlendState(blendNoColorWrite);
+	wirePbrPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+	wirePbrPSO.SetVertexShader(g_pPBRVS, sizeof(g_pPBRVS));
+	wirePbrPSO.SetPixelShader(g_pPBRPS, sizeof(g_pPBRPS));
+	wirePbrPSO.SetSampleMask(UINT_MAX);
+	wirePbrPSO.SetRenderTargetFormat(backBufferFormat, dsBufferFormat, 1, 0);
+	wirePbrPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
+	wirePbrPSO.SetDepthStencilState(depthStateDefault);
+	wirePbrPSO.Finalize(device);
+	m_PSOs["wire_pbrPSO"] = wirePbrPSO;
+	psoNames.push_back("wire_pbrPSO");
+
 
 	textPSO.SetInputLayout(_countof(textIL), textIL);
 	textPSO.SetRootSignature(g_commonRS);

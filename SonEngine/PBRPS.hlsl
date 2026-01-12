@@ -6,6 +6,8 @@ float4 main(psInput input) : SV_TARGET
     float4 albedo = gAlbedo.Sample(gWrapLinearSampler, input.uv);
     float4 modelPos = input.modelPosition;
     
+    //return albedo;
+    
     normalT = 2.f * normalT - 1.f;
     float3 tangent = normalize(input.tangent);
     

@@ -121,7 +121,6 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 	CreateCubeMap();
 
-	BuildFrameResources();
 
 	float r = 0.f;
 	float g = 0.f;
@@ -165,6 +164,8 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 		FlushCommands();
 	}
+	
+	BuildFrameResources();
 
 	saveThread = std::thread([&] {
 		if (world == nullptr)
@@ -546,6 +547,15 @@ void RenderEngine::UpdateGUI()
 	ImGui::Text(fpsStr.c_str());
 
 	ImGui::Checkbox("Change Mode", &test);
+	if (ImGui::Checkbox("WireFrame Mode", &gui_wireFrameMode))
+	{
+		if (gui_wireFrameMode)
+		{
+			currentPbrPSO = wirePbrPSO;
+		}
+		else
+			currentPbrPSO = pbrPSO;
+	}
 
 	ImGui::NewLine();
 
@@ -618,8 +628,10 @@ void RenderEngine::BuildFrameResources()
 	for (int i = 0; i < m_frameResourceCount; i++)
 	{
 		m_frameResources[i] = std::make_shared<FrameResource>();
-		// TODO textActor 개수 추가
-		m_frameResources[i]->Initialize(m_device, 512, 512, 0, mainWnd);
+		if (world)
+		{
+			m_frameResources[i]->Initialize(m_device, 512, 512, 0, mainWnd, world->GetLightInfos());
+		}
 	}
 }
 
@@ -762,23 +774,22 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 	commandList->RSSetScissorRects(1, &m_scissorRect);
 	commandList->RSSetViewports(1, &m_viewport);
 	
-
-	commandList->ResourceBarrier(
-		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(
-			GetCurrentSwapChainResource(),
-			D3D12_RESOURCE_STATE_PRESENT,
-			D3D12_RESOURCE_STATE_RENDER_TARGET
-		));
-
+	{
+		commandList->ResourceBarrier(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				GetCurrentSwapChainResource(),
+				D3D12_RESOURCE_STATE_PRESENT,
+				D3D12_RESOURCE_STATE_RENDER_TARGET
+			));
+	}
+	
 	if (clear)
 	{
 		commandList->ClearRenderTargetView(GetCurrentRtvCpuHandle(), rtvClearColor.data(), 0, nullptr);
 		commandList->ClearDepthStencilView(GetDSVCpuHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
 	}
 	commandList->OMSetRenderTargets(1, &GetCurrentRtvCpuHandle(), TRUE, &GetDSVCpuHandle());
-
-
 
 	if (meshType != MT_pointCloud)
 	{
@@ -798,7 +809,7 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 				auto& ld = it->second;
 
 				// cubemap - 0, albedo - 1, player cubemap - 2, local - 3, gobal - 4
-				if (type == MT_primitive && ld.psoName == psoName)
+				if (type == MT_primitive && (psoName.find(ld.psoName) != std::string::npos))
 				{
 					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
 					commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(ld.textureName));
@@ -1051,9 +1062,10 @@ void RenderEngine::RenderCube(const std::string& psoName, const std::string& pro
 		if (clear)
 		{
 			commandList->ClearRenderTargetView(GetCubeMapRtvCpuHandle(i), cubeRtvClearColor.data(), 0, nullptr);
+			commandList->ClearDepthStencilView(GetCubeMapDsvCpuHandle(i), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
+
 		}
-		commandList->ClearDepthStencilView(m_cubeMapDSVHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
-		commandList->OMSetRenderTargets(1, &GetCubeMapRtvCpuHandle(i), TRUE, &m_cubeMapDSVHeap->GetCPUDescriptorHandleForHeapStart());
+		commandList->OMSetRenderTargets(1, &GetCubeMapRtvCpuHandle(i), TRUE, &GetCubeMapDsvCpuHandle(i));
 
 		for (auto& [type, proxies] : m_scene->m_proxies)
 		{
@@ -1230,14 +1242,15 @@ void RenderEngine::CreateCubeMap()
 
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.NumDescriptors = 6;
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	dsvHeapDesc.NodeMask = 0;
 
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(m_cubeMapRtvHeap.ReleaseAndGetAddressOf())));
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(m_cubeMapDSVHeap.ReleaseAndGetAddressOf())));
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(m_cubeMapDsvHeap.ReleaseAndGetAddressOf())));
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_cubeMapRtvHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dHandle(m_cubeMapDsvHeap->GetCPUDescriptorHandleForHeapStart());
 	for (int i = 0; i < 6; i++)
 	{
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
@@ -1250,39 +1263,46 @@ void RenderEngine::CreateCubeMap()
 		m_device->CreateRenderTargetView(m_cubeMap.Get(), &rtvDesc, handle);
 		if (i != 5)
 			handle.Offset(1, m_rtvDescriptorSize);
+
+		D3D12_RESOURCE_DESC dDesc = {};
+		dDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		dDesc.Format = Renderer::dsBufferFormat;
+		dDesc.MipLevels = 0;
+		dDesc.DepthOrArraySize = 1;
+		dDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		dDesc.Width = cubeWidth;
+		dDesc.Height = cubeHeight;
+		dDesc.SampleDesc = { 1,0 };
+		D3D12_CLEAR_VALUE cValue = {};
+		cValue.DepthStencil.Depth = 1.f;
+		cValue.DepthStencil.Stencil = 0;
+		cValue.Format = Renderer::dsBufferFormat;
+
+		m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&dDesc,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			&cValue,
+			IID_PPV_ARGS(m_cubeDepthBuffer[i].ReleaseAndGetAddressOf())
+		);
+		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		dsvDesc.Texture2D.MipSlice = 0;
+		dsvDesc.Format = Renderer::dsBufferFormat;
+		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+		m_device->CreateDepthStencilView(m_cubeDepthBuffer[i].Get(), &dsvDesc, dHandle);
+
+		if (i != 5)
+			dHandle.Offset(1, m_dsvDescriptorSize);
+
 	}
 
-	D3D12_RESOURCE_DESC dDesc = {};
-	dDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	dDesc.Format = Renderer::dsBufferFormat;
-	dDesc.MipLevels = 0;
-	dDesc.DepthOrArraySize = 1;
-	dDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-	dDesc.Width = cubeWidth;
-	dDesc.Height = cubeHeight;
-	dDesc.SampleDesc = { 1,0 };
+	
 
-	D3D12_CLEAR_VALUE cValue = {};
-	cValue.DepthStencil.Depth = 1.f;
-	cValue.DepthStencil.Stencil = 0;
-	cValue.Format = Renderer::dsBufferFormat;
+	
 
-	m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&dDesc,
-		D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		&cValue,
-		IID_PPV_ARGS(m_cubeDepthBuffer.ReleaseAndGetAddressOf())
-	);
-
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	dsvDesc.Texture2D.MipSlice = 0;
-	dsvDesc.Format = Renderer::dsBufferFormat;
-	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-	m_device->CreateDepthStencilView(m_cubeDepthBuffer.Get(), &dsvDesc, m_cubeMapDSVHeap->GetCPUDescriptorHandleForHeapStart());
-
+	
 	m_cubeViewport = CD3DX12_VIEWPORT((FLOAT)0.F, 0.F, (FLOAT)(cubeWidth), (FLOAT)cubeHeight);
 	m_cubeScissorRect = CD3DX12_RECT((LONG)0, 0, (LONG)(cubeWidth), (LONG)cubeHeight);
 	cubeRtvClearColor = { 0.F, 0.F, 0.F, 1.F };
@@ -1339,14 +1359,14 @@ void RenderEngine::DrawingWithMouse()
 	RenderCube(cubeMapPSO, phongPSO, i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
 	RenderCube(genCubeMapPSO, phongPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 	RenderCube(genPBRCubeMapPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+	Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-	//Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	if (test) {
-		//Render("pointCloudPSO", i++, MT_pointCloud, false/*isFinal*/, true/*clear RT*/);
-		Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
-		Render(pbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+	if (test) 
+	{
+		Render("pointCloudPSO", i++, MT_pointCloud, false/*isFinal*/, true/*clear RT*/);
+		Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+		Render(currentPbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 		Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
-
 	}
 	else
 		Render("renderTexturePSO", i++, MT_dot, false/*isFinal*/, true/*clear RT*/);
@@ -1361,6 +1381,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetCurrentRtvCpuHandle() const
 D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetCubeMapRtvCpuHandle(int i) const
 {
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cubeMapRtvHeap->GetCPUDescriptorHandleForHeapStart(), i, m_rtvDescriptorSize);
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetCubeMapDsvCpuHandle(int i) const
+{
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cubeMapDsvHeap->GetCPUDescriptorHandleForHeapStart(), i, m_dsvDescriptorSize);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetDSVCpuHandle() const
