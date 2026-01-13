@@ -27,6 +27,9 @@
 #include "CompiledShaders/PBRBoxCubeMapVS.h"
 #include "CompiledShaders/PBRBoxCubeMapPS.h"
 
+#include "CompiledShaders/DepthOnlyVS.h"
+#include "CompiledShaders/DepthOnlyPS.h"
+
 #include "CompiledShaders/RenderTextureVS.h"
 #include "CompiledShaders/RenderTextureGS.h"
 #include "CompiledShaders/RenderTexturePS.h"
@@ -49,6 +52,10 @@ namespace Renderer
 	DXGI_FORMAT hdrFormat;
 	DXGI_FORMAT backBufferFormat;
 	DXGI_FORMAT dsBufferFormat;
+	DXGI_FORMAT dsOnlyFormat;
+	DXGI_FORMAT dsOnlyDsvFormat;
+	DXGI_FORMAT dsOnlySrvFormat;
+
 }
 
 void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
@@ -57,6 +64,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	GraphicsPSO videoPSO(L"video PSO");
 	GraphicsPSO phongPSO(L"phong PSO");
 	GraphicsPSO pbrPSO(L"pbr PSO");
+	GraphicsPSO dsOnlyPbrPSO(L"dsOnlyPbr PSO");
 	GraphicsPSO wirePbrPSO(L"wirePbr PSO");
 
 	GraphicsPSO textPSO(L"text PSO");
@@ -70,9 +78,13 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 
 	ComputePSO defaultCPSO(L"default CPSO");
 
-	hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	backBufferFormat  = DXGI_FORMAT_R8G8B8A8_UNORM;
+	hdrFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	backBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	//backBufferFormat  = hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	dsBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	dsOnlyFormat = DXGI_FORMAT_R32_TYPELESS;
+	dsOnlyDsvFormat = DXGI_FORMAT_D32_FLOAT;
+	dsOnlySrvFormat = DXGI_FORMAT_R32_FLOAT;
 
 	D3D12_INPUT_ELEMENT_DESC posOnlyIL[] =
 	{
@@ -138,9 +150,10 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	videoPSO.SetRenderTargetFormat(backBufferFormat, DXGI_FORMAT_UNKNOWN, 1, 0);
 	videoPSO.Finalize(device);
 	m_PSOs["videoPSO"] = videoPSO;
+
 	// BOOKMARK
 	phongPSO.SetInputLayout(_countof(phongIL), phongIL);
-	phongPSO.SetRootSignature(g_R3_C2_RS);
+	phongPSO.SetRootSignature(g_R4_C2_RS);
 	phongPSO.SetRasterizerState(rasterizerDefault);
 	phongPSO.SetBlendState(blendNoColorWrite);
 	phongPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
@@ -155,7 +168,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	psoNames.push_back("phongPSO");
 
 	pbrPSO.SetInputLayout(_countof(pbrIL), pbrIL);
-	pbrPSO.SetRootSignature(g_R3_C2_RS);
+	pbrPSO.SetRootSignature(g_R4_C2_RS);
 	pbrPSO.SetRasterizerState(rasterizerDefault);
 	pbrPSO.SetBlendState(blendNoColorWrite);
 	pbrPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
@@ -170,7 +183,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	psoNames.push_back("pbrPSO");
 
 	wirePbrPSO.SetInputLayout(_countof(pbrIL), pbrIL);
-	wirePbrPSO.SetRootSignature(g_R3_C2_RS);
+	wirePbrPSO.SetRootSignature(g_R4_C2_RS);
 	wirePbrPSO.SetRasterizerState(wireRasterizer);
 	wirePbrPSO.SetBlendState(blendNoColorWrite);
 	wirePbrPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
@@ -184,6 +197,20 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	m_PSOs["wire_pbrPSO"] = wirePbrPSO;
 	psoNames.push_back("wire_pbrPSO");
 
+	dsOnlyPbrPSO.SetInputLayout(_countof(pbrIL), pbrIL);
+	dsOnlyPbrPSO.SetRootSignature(g_R1_C2_RS);
+	dsOnlyPbrPSO.SetRasterizerState(rasterizerDefault);
+	dsOnlyPbrPSO.SetBlendState(blendNoColorWrite);
+	dsOnlyPbrPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+	dsOnlyPbrPSO.SetVertexShader(g_pDepthOnlyVS, sizeof(g_pDepthOnlyVS));
+	dsOnlyPbrPSO.SetPixelShader(g_pDepthOnlyPS, sizeof(g_pDepthOnlyPS));
+	dsOnlyPbrPSO.SetSampleMask(UINT_MAX);
+	//dsOnlyPbrPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
+	dsOnlyPbrPSO.SetDepthTargetFormat(dsOnlyDsvFormat, 1, 0);
+	dsOnlyPbrPSO.SetDepthStencilState(depthStateDefault);
+	dsOnlyPbrPSO.Finalize(device);
+	m_PSOs["dsOnly_pbrPSO"] = dsOnlyPbrPSO;
+	psoNames.push_back("dsOnly_pbrPSO");
 
 	textPSO.SetInputLayout(_countof(textIL), textIL);
 	textPSO.SetRootSignature(g_commonRS);

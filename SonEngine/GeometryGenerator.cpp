@@ -476,3 +476,112 @@ Mesh<PBRVertex, uint16_t> GeometryGenerator::MakePBRPlane(float x, float z, int 
 
 	return mesh;
 }
+Mesh<PBRVertex, uint16_t> GeometryGenerator::PbrSphere(const float& radius, const int& x, const int& y)
+{
+	Mesh<PBRVertex, uint16_t> mesh;
+
+	Vector3 basePosition(Vector3(0.f, radius, 0.f));
+
+
+	float delYTheta = DirectX::XM_2PI / x;
+	float delZTheta = DirectX::XM_PI / y;
+
+	float uvDelX = 1.f / x;
+	float uvDelY = 1.f / y;
+
+	int index = 0;
+
+	std::vector<PBRVertex> vertices;
+	std::vector<uint16_t> indices;
+	for (int j = 0; j < y + 1; ++j)
+	{
+		Vector3 position = Vector3::Transform(basePosition, DirectX::XMMatrixRotationZ(-delZTheta * j));
+		for (int i = 0; i < x + 1; ++i)
+		{
+			if (j == 0 || j == y) {
+				if (i == x) {
+					break;
+				}
+			}
+
+			PBRVertex v;
+			v.position = Vector3::Transform(position, DirectX::XMMatrixRotationY(-delYTheta * i));
+			v.uv = Vector2(i * uvDelX, j * uvDelY);
+			v.normal = v.position;
+			v.normal.Normalize();
+
+			vertices.push_back(v);
+		}
+	}
+
+	for (int i = 0; i < y; i++)
+	{
+		int index = i * (x + 1) - 1;
+		for (int j = 0; j < x; j++)
+		{
+			int idx = index + j;
+			if (i == 0) {
+				indices.push_back(idx + x + 1);
+				indices.push_back(idx + 1);
+				indices.push_back(idx + x + 2);
+			}
+			else if (i == y - 1) {
+				indices.push_back(index + x + 1);
+				indices.push_back(idx);
+				indices.push_back(idx + 1);
+			}
+			else {
+				indices.push_back(idx + x + 1);
+				indices.push_back(idx);
+				indices.push_back(idx + 1);
+
+				indices.push_back(idx + x + 1);
+				indices.push_back(idx + 1);
+				indices.push_back(idx + x + 2);
+			}
+
+		}
+	}
+	for (size_t i = 0; i < indices.size(); i += 3) {
+		int idx0 = indices[i];
+		int idx1 = indices[i + 1];
+		int idx2 = indices[i + 2];
+
+		PBRVertex& v0 = vertices[idx0];
+		PBRVertex& v1 = vertices[idx1];
+		PBRVertex& v2 = vertices[idx2];
+
+		ComputeTangent(v0, v1, v2);
+	}
+	//vertices[0].tangent = Vector3(0, 0, 0);
+	mesh.m_vertices = vertices;
+	mesh.m_indices = indices;
+
+
+	return mesh;
+}
+
+
+void GeometryGenerator::ComputeTangent(PBRVertex& v0, PBRVertex& v1, PBRVertex& v2) {
+	DirectX::SimpleMath::Vector2 t0 = v1.uv - v0.uv;
+	DirectX::SimpleMath::Vector2 t1 = v2.uv - v0.uv;
+
+	Vector3 e0 = v1.position - v0.position;
+	Vector3 e1 = (v2.position - v0.position);
+
+	float a = t0.x;
+	float b = t0.y;
+	float c = t1.x;
+	float d = t1.y;
+
+	float det = a * d - b * c;
+	float invDet = 1.f / det;
+
+	Vector3 tangent = invDet * (e0 * d - b * e1);
+	tangent.Normalize();
+
+	v0.tangent = tangent;
+	v1.tangent = tangent;
+	v2.tangent = tangent;
+
+}

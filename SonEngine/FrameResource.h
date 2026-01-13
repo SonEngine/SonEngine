@@ -53,6 +53,7 @@ public:
 	D3D12_GPU_VIRTUAL_ADDRESS GetGCBGPUAddress() const { return m_phongGCBuffer->GetGPUVirtualAddress(); }
 	D3D12_GPU_VIRTUAL_ADDRESS GetPBGCBGPUAddress() const { return m_pbGCBuffer->GetGPUVirtualAddress(); }
 	D3D12_GPU_VIRTUAL_ADDRESS GetCubeGCBGPUAddress(int idx) const { return m_cubeMapGCB[idx]->GetGPUVirtualAddress(); }
+	D3D12_GPU_VIRTUAL_ADDRESS GetLightGCBGPUAddress(int idx) const { return m_lightGCB[idx]->GetGPUVirtualAddress(); }
 
 public:
 	ID3D12CommandAllocator* GetAllocator(int idx) const { return m_commandAllocator[idx].Get(); }
@@ -83,6 +84,11 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_cubeMapGCB[6];
 	std::vector<void*> m_pCubeGC;
 
+	PBRGlobalConstant m_lightGC[NUM_LIGHTS];
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_lightGCB[NUM_LIGHTS];
+	std::vector<void*> m_pLightGC;
+
+
 public:
 	std::array<DirectX::SimpleMath::Vector4, 6> kEyeDir;
 	std::array<DirectX::SimpleMath::Vector4, 6> kUpDir;
@@ -91,7 +97,7 @@ private:
 	HWND hwnd;
 
 private:
-	const static int commandCount = 8;
+	const static int commandCount = 10;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator[commandCount];
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList[commandCount];
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_textCommandAllocator;

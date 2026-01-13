@@ -85,7 +85,8 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& com
 		std::string filename = nameMap[i];
 		
 		bool isCubeMap = filename.find("CubeMap") != std::string::npos;
-
+		bool isAlbedo = (filename.find("albedo") != std::string::npos) ||
+			(filename.find("Albedo") != std::string::npos);
 		TextureInfo info = textureMap[filename];
 		uint64_t size = info.size;
 		std::vector<uint8_t> texture(size);
@@ -96,15 +97,31 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& com
 		// 2. heap에 view를 만든다
 		
 		Microsoft::WRL::ComPtr<ID3D12Resource> t;
-		ThrowIfFailed(DirectX::CreateDDSTextureFromMemoryEx(
-			m_device,
-			resourceUpload,
-			reinterpret_cast<const uint8_t*>(texture.data()),
-			size,
-			0,
-			D3D12_RESOURCE_FLAG_NONE,
-			DirectX::DX12::DDS_LOADER_FORCE_SRGB,
-			t.GetAddressOf()));
+		if(isAlbedo)
+		{
+			ThrowIfFailed(DirectX::CreateDDSTextureFromMemoryEx(
+				m_device,
+				resourceUpload,
+				reinterpret_cast<const uint8_t*>(texture.data()),
+				size,
+				0,
+				D3D12_RESOURCE_FLAG_NONE,
+				DirectX::DX12::DDS_LOADER_FORCE_SRGB,
+				t.GetAddressOf()));
+			//std::cout << filename << '\n';
+		}
+		else
+		{
+			ThrowIfFailed(DirectX::CreateDDSTextureFromMemoryEx(
+				m_device,
+				resourceUpload,
+				reinterpret_cast<const uint8_t*>(texture.data()),
+				size,
+				0,
+				D3D12_RESOURCE_FLAG_NONE,
+				DirectX::DX12::DDS_LOADER_DEFAULT,
+				t.GetAddressOf()));
+		}
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Format = t->GetDesc().Format;
@@ -149,6 +166,32 @@ void TextureLoader::AddTexture(Microsoft::WRL::ComPtr<ID3D12Resource> & texture,
 	{
 		int idx = it->second;
 	
+		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart(), idx, srvOffset);
+		m_device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
+
+		textures[idx] = texture;
+	}
+	else if (count <= m_heapSize)
+	{
+		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart(), count, srvOffset);
+		m_device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
+		idxMap[filename] = count;
+		textures.push_back(texture);
+		count++;
+	}
+	else
+	{
+		std::cout << "Failed to AddTexture : 힙이 가득 찾습니다\n";
+		return;
+	}
+}
+void TextureLoader::AddTexture(Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const D3D12_SHADER_RESOURCE_VIEW_DESC& srvDesc, std::string& filename, bool isCubeMap)
+{
+	auto it = idxMap.find(filename);
+	if (it != idxMap.end())
+	{
+		int idx = it->second;
+
 		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart(), idx, srvOffset);
 		m_device->CreateShaderResourceView(texture.Get(), &srvDesc, handle);
 

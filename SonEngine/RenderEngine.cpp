@@ -73,14 +73,6 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 	// DescriptorHeap 생성
 	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRTVHeap);
-	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
-	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_fontSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-	//textCount = 9;
-	//cpuTexts.resize(textCount);
-
-	// DescriptorHeap 생성
-	utility->CreateDescriptorHeap(m_swapChainBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_swapChainRTVHeap);
 	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_hdrRtvHeap);
 	utility->CreateDescriptorHeap(m_dsBufferCount, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, m_DSVHeap);
 	utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_fontSrvHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
@@ -91,29 +83,10 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVCPUHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_SRVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	}
-
-	// Compute Shader에서 사용할 버퍼 생성
-	{
-		computeTextureDIMX = m_width - m_guiWidth;
-		computeTextureDIMY = m_height;
-		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
-
-		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
-		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVCPUHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
-
-	}
-
-	// HDR 버퍼 생성
-	{
-		D3D12_RESOURCE_FLAGS hdrFlag = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		utility->CreateTextureBuffer(m_hdrBuffer, m_width, m_height, m_hdrFormat, hdrFlag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
-		utility->CreateResourceView(m_hdrBuffer, m_hdrFormat, false, m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::RTV);
-	}
+	
 	CreateSwapChain(factory, wnd);
 	CreateFonts();
-	CreateDepthBuffer();
-
+	
 	// Create SwapChain RTVs
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart());
 	for (int i = 0; i < m_swapChainBufferCount; i++)
@@ -125,8 +98,9 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 	}
 
 	CreateTextures();
-	m_textureLoader->AddTexture(m_computeBuffer, m_computeTextureName);
-	m_textureLoader->AddTexture(m_hdrBuffer, m_hdrTextureName);
+	CreateTextureBuffers();
+	CreateDepthBuffers();
+
 	clearFlag = true;
 
 	CreateCubeMap();
@@ -379,14 +353,6 @@ void RenderEngine::OnResize()
 		DXGI_FORMAT_UNKNOWN,
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
 
-	// HDR 버퍼 재생성
-	{
-		D3D12_RESOURCE_FLAGS hdrFlag = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		utility->CreateTextureBuffer(m_hdrBuffer, m_width, m_height, m_hdrFormat, hdrFlag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
-		utility->CreateResourceView(m_hdrBuffer, m_hdrFormat, false, m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::RTV);
-		m_textureLoader->AddTexture(m_hdrBuffer, m_hdrTextureName);
-	}
-
 	// 버퍼에 대한 RTV 재생성
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart());
 	for (int i = 0; i < m_swapChainBufferCount; i++)
@@ -398,20 +364,8 @@ void RenderEngine::OnResize()
 	}
 
 	// DepthBuffer 재생성
-	CreateDepthBuffer();
-
-	// Compute Shader에서 사용할 버퍼 생성
-	{
-		computeTextureDIMX = m_width - m_guiWidth;
-		computeTextureDIMY = m_height;
-		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 1);
-
-		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
-		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVCPUHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
-		m_textureLoader->AddTexture(m_computeBuffer, m_computeTextureName);
-		clearFlag = true;
-	}
+	CreateMainDepthBuffer();
+	CreateTextureBuffers();
 
 	m_currentBackBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
@@ -519,41 +473,65 @@ void RenderEngine::CreateSwapChain(IDXGIFactory7* factory, HWND wnd)
 	m_currentBackBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 }
 
-void RenderEngine::CreateDepthBuffer()
+void RenderEngine::CreateMainDepthBuffer()
 {
-	D3D12_RESOURCE_DESC rDesc = {};
-	rDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	rDesc.Format = Renderer::dsBufferFormat;
-	rDesc.MipLevels = 0;
-	rDesc.DepthOrArraySize = 1;
-	rDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-	rDesc.Width = m_width;
-	rDesc.Height = m_height;
-	rDesc.SampleDesc = { 1,0 };
+	utility->CreateTextureBuffer(m_depthStencilBuffer, m_width, m_height,
+		Renderer::dsBufferFormat, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE, 0, L"mainDepthBuffer");
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_DSVHeap->GetCPUDescriptorHandleForHeapStart());
 
-	D3D12_CLEAR_VALUE cValue = {};
-	cValue.DepthStencil.Depth = 1.f;
-	cValue.DepthStencil.Stencil = 0;
-	cValue.Format = Renderer::dsBufferFormat;
-
-	m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&rDesc,
-		D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		&cValue,
-		IID_PPV_ARGS(m_depthStencilBuffer.ReleaseAndGetAddressOf())
-	);
-
-	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	dsvDesc.Texture2D.MipSlice = 0;
-	dsvDesc.Format = Renderer::dsBufferFormat;
-	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-
-	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_DSVHeap->GetCPUDescriptorHandleForHeapStart();
-	m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &dsvDesc, handle);
+	utility->CreateResourceView(m_depthStencilBuffer, Renderer::dsBufferFormat, false, handle, DescriptorType::DSV);
 }
+
+void RenderEngine::CreateDepthBuffers()
+{
+	CreateMainDepthBuffer();
+
+	utility->CreateTextureBuffer(m_depthOnlyBuffer, depthOnlyWidth, depthOnlyHeight,
+		Renderer::dsOnlyFormat, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL,
+		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE, 0, L"depthOnyBuffer");
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_DSVHeap->GetCPUDescriptorHandleForHeapStart(),1, m_dsvDescriptorSize);
+	utility->CreateResourceView(m_depthOnlyBuffer, Renderer::dsOnlyDsvFormat, false, handle, DescriptorType::DSV);
+	//utility->CreateResourceView(m_depthOnlyBuffer, Renderer::dsOnlySrvFormat, false, handle, DescriptorType::SRV);
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = Renderer::dsOnlySrvFormat;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Texture2D.MipLevels = m_depthOnlyBuffer->GetDesc().MipLevels;
+	srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	
+	m_textureLoader->AddTexture(m_depthOnlyBuffer, srvDesc, depthOnlyTextureName, false);
+
+	m_depthOnlyViewport = CD3DX12_VIEWPORT((FLOAT)0.F, 0.F, (FLOAT)(depthOnlyWidth), (FLOAT)depthOnlyHeight);
+	m_depthOnlyRect = CD3DX12_RECT((LONG)0, 0, (LONG)(depthOnlyWidth), (LONG)depthOnlyHeight);
+}
+
+void RenderEngine::CreateTextureBuffers()
+{
+	// Compute Shader에서 사용할 버퍼 생성
+	{
+		computeTextureDIMX = m_width - m_guiWidth;
+		computeTextureDIMY = m_height;
+		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		utility->CreateTextureBuffer(m_computeBuffer, computeTextureDIMX, computeTextureDIMY, m_computeBufferFormat, flag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, L"computeBuffer");
+
+		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
+		utility->CreateResourceView(m_computeBuffer, m_computeBufferFormat, false, m_UAVCPUHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::UAV);
+		m_textureLoader->AddTexture(m_computeBuffer, m_computeTextureName);
+
+	}
+
+	// HDR 버퍼 생성
+	{
+		D3D12_RESOURCE_FLAGS hdrFlag = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		utility->CreateTextureBuffer(m_hdrBuffer, m_width, m_height, Renderer::hdrFormat, hdrFlag, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, L"hdrBuffer");
+		utility->CreateResourceView(m_hdrBuffer, Renderer::hdrFormat, false, m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart(), DescriptorType::RTV);
+		m_textureLoader->AddTexture(m_hdrBuffer, m_hdrTextureName);
+	}
+}
+
 // BOOKMARK
 void RenderEngine::UpdateGUI()
 {
@@ -697,9 +675,7 @@ void RenderEngine::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, 
 
 	for (size_t i = 0; i < lightInfos.size(); i++)
 	{
-		packet.gc.lights[i].direction = lightInfos[0].direction;
-		packet.gc.lights[i].location = lightInfos[0].location;
-		packet.gc.lights[i].brightness = lightInfos[0].brightness;
+		packet.gc.lights[i] = lightInfos[i];
 	}
 }
 
@@ -760,6 +736,79 @@ void RenderEngine::Tick(float deltaTime)
 	// render thread 호출
 	cv.notify_one();
 
+}
+
+void RenderEngine::RenderMeshes(const std::string& psoName, ID3D12GraphicsCommandList* commandList, MeshType meshType, RenderPassType rpType, int gcbIdx)
+{
+	ID3D12DescriptorHeap* heaps[] = {
+		m_textureLoader->GetHeap()
+	};
+	commandList->SetDescriptorHeaps(1, heaps);
+
+	for (auto& [type, proxies] : m_scene->m_proxies)
+	{
+		if (type == meshType)
+		{
+			for (auto& [id, proxy] : proxies)
+			{
+				auto it = r_currentFrameResource->m_localData.find(id);
+				auto& ld = it->second;
+
+				// cubemap - 0, albedo - 1, player cubemap - 2, local - 3, gobal - 4
+				if (type == MT_primitive && (psoName.find(ld.psoName) != std::string::npos))
+				{
+					if (rpType == RenderPassType::RPT_Default)
+					{
+						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
+						commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(ld.textureName));
+						commandList->SetGraphicsRootDescriptorTable(2, m_textureLoader->GetGPUHandle(playerCubeMapTextureName));
+						commandList->SetGraphicsRootDescriptorTable(3, m_textureLoader->GetGPUHandle(depthOnlyTextureName));
+						commandList->SetGraphicsRootConstantBufferView(4, ld.localCB->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootConstantBufferView(5, r_currentFrameResource->GetGCBGPUAddress());
+					}
+					else if(rpType == RenderPassType::RPT_CubeMapPass)
+					{
+						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
+						commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(ld.textureName));
+						commandList->SetGraphicsRootConstantBufferView(2, ld.localCB->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootConstantBufferView(3, r_currentFrameResource->GetCubeGCBGPUAddress(gcbIdx));
+					}
+					else if (rpType == RenderPassType::RPT_DepthOnlyPass)
+					{
+						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
+						commandList->SetGraphicsRootConstantBufferView(1, ld.localCB->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetLightGCBGPUAddress(gcbIdx));
+					}
+					proxy.mesh->Render_(commandList);
+				}
+				else if (type == MT_pointCloud)
+				{
+					commandList->SetGraphicsRootConstantBufferView(0, ld.localCB->GetGPUVirtualAddress());
+					commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
+					proxy.mesh->RenderPoints(commandList);
+				}
+				else if (type == MT_finalize)
+				{
+					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
+					proxy.mesh->RenderDot(commandList);
+				}
+				else if (type == MT_cubeMap)
+				{
+					if (rpType == RenderPassType::RPT_Default)
+					{
+						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
+						commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
+					}
+					else if (rpType == RenderPassType::RPT_CubeMapPass)
+					{
+						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
+						commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetCubeGCBGPUAddress(gcbIdx));
+					}
+					proxy.mesh->CubeMapRender(commandList);
+				}
+			}
+		}
+	}
 }
 
 void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType, bool isFinal, bool clear)
@@ -836,53 +885,8 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 		commandList->OMSetRenderTargets(1, &m_hdrRtvHeap->GetCPUDescriptorHandleForHeapStart(), TRUE, &GetDSVCpuHandle());
 	}
 
-	if (meshType != MT_pointCloud)
-	{
-		ID3D12DescriptorHeap* heaps[] = {
-			m_textureLoader->GetHeap()
-		};
-		commandList->SetDescriptorHeaps(1, heaps);
-	}
-
-	for (auto& [type, proxies] : m_scene->m_proxies)
-	{
-		if (type == meshType)
-		{
-			for (auto& [id, proxy] : proxies)
-			{
-				auto it = r_currentFrameResource->m_localData.find(id);
-				auto& ld = it->second;
-
-				// cubemap - 0, albedo - 1, player cubemap - 2, local - 3, gobal - 4
-				if (type == MT_primitive && (psoName.find(ld.psoName) != std::string::npos))
-				{
-					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
-					commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(ld.textureName));
-					commandList->SetGraphicsRootDescriptorTable(2, m_textureLoader->GetGPUHandle(playerCubeMapTextureName));
-					commandList->SetGraphicsRootConstantBufferView(3, ld.localCB->GetGPUVirtualAddress());
-					commandList->SetGraphicsRootConstantBufferView(4, r_currentFrameResource->GetGCBGPUAddress());
-					proxy.mesh->Render_(commandList);
-				}
-				else if (type == MT_pointCloud)
-				{
-					commandList->SetGraphicsRootConstantBufferView(0, ld.localCB->GetGPUVirtualAddress());
-					commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
-					proxy.mesh->RenderPoints(commandList);
-				}
-				else if (type == MT_finalize)
-				{
-					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
-					proxy.mesh->RenderDot(commandList);
-				}
-				else if (type == MT_cubeMap)
-				{
-					commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
-					commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
-					proxy.mesh->CubeMapRender(commandList);
-				}
-			}
-		}
-	}
+	RenderMeshes(psoName, commandList, meshType, RPT_Default);
+		
 	if (meshType == MT_finalize)
 	{
 		commandList->ResourceBarrier(
@@ -1100,11 +1104,6 @@ void RenderEngine::RenderCube(const std::string& psoName, const std::string& pro
 	commandList->RSSetViewports(1, &m_cubeViewport);
 
 
-	ID3D12DescriptorHeap* heaps[] = {
-		m_textureLoader->GetHeap()
-	};
-	commandList->SetDescriptorHeaps(1, heaps);
-
 	commandList->ResourceBarrier(
 		1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -1123,36 +1122,7 @@ void RenderEngine::RenderCube(const std::string& psoName, const std::string& pro
 		}
 		commandList->OMSetRenderTargets(1, &GetCubeMapRtvCpuHandle(i), TRUE, &GetCubeMapDsvCpuHandle(i));
 
-		for (auto& [type, proxies] : m_scene->m_proxies)
-		{
-			if (type == meshType)
-			{
-				for (auto& [id, proxy] : proxies)
-				{
-					auto it = r_currentFrameResource->m_localData.find(id);
-					auto& ld = it->second;
-					// cubemap - 0, albedo - 1, local - 2, gobal - 3
-
-					if (type == MT_primitive && proxyPsoName == ld.psoName)
-					{
-						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
-						commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(ld.textureName));
-						commandList->SetGraphicsRootConstantBufferView(2, ld.localCB->GetGPUVirtualAddress());
-						commandList->SetGraphicsRootConstantBufferView(3, r_currentFrameResource->GetCubeGCBGPUAddress(i));
-
-						proxy.mesh->Render_(commandList);
-
-					}
-					else if (type == MT_cubeMap)
-					{
-						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
-						commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetCubeGCBGPUAddress(i));
-
-						proxy.mesh->CubeMapRender(commandList);
-					}
-				}
-			}
-		}
+		RenderMeshes(proxyPsoName, commandList, meshType, RPT_CubeMapPass, i);
 
 	}
 	commandList->ResourceBarrier(
@@ -1182,6 +1152,87 @@ void RenderEngine::RenderCube(const std::string& psoName, const std::string& pro
 	PIXEndEvent(m_commandQueue.Get());
 }
 
+
+void RenderEngine::DepthOnlyPass(const std::string& psoName, const std::string& proxyPsoName, int idx, MeshType meshType, bool isFinal, bool clear)
+{
+	PIXBeginEvent(m_commandQueue.Get(), PIX_COLOR(255, 0, 0), psoName.c_str());
+
+	using namespace Renderer;
+
+	if (idx == 0)
+	{
+		if (r_currentFrameResource->m_currentFence != 0 &&
+			m_fence->GetCompletedValue() < r_currentFrameResource->m_currentFence)
+		{
+			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			m_fence->SetEventOnCompletion(r_currentFrameResource->m_currentFence, eventHandle);
+
+			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
+		}
+		r_currentFrameResource->m_currentFence = ++m_currentFence;
+	}
+
+	GraphicsPSO pso;
+	if (m_PSOs.find(psoName) != m_PSOs.end())
+	{
+		pso = m_PSOs[psoName];
+	}
+	else
+	{
+		pso = m_PSOs["defaultPSO"];
+	}
+
+	ID3D12GraphicsCommandList* commandList = r_currentFrameResource->GetCommandList(idx);
+	r_currentFrameResource->ResetAllocator(idx);
+	ThrowIfFailed(commandList->Reset(r_currentFrameResource->GetAllocator(idx), pso.GetPSO()));
+
+	commandList->SetPipelineState(pso.GetPSO());
+	commandList->SetGraphicsRootSignature(pso.GetRootSignature()->GetSignature());
+
+	commandList->RSSetScissorRects(1, &m_depthOnlyRect);
+	commandList->RSSetViewports(1, &m_depthOnlyViewport);
+
+	commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_depthOnlyBuffer.Get(),
+			D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE
+		));
+	if (clear)
+	{
+		commandList->ClearDepthStencilView(GetDSVCpuHandle(1), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0, nullptr);
+	}
+	commandList->OMSetRenderTargets(0, nullptr, TRUE, &GetDSVCpuHandle(1));
+	RenderMeshes(proxyPsoName, commandList, meshType, RPT_DepthOnlyPass, 0);
+
+	commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			m_depthOnlyBuffer.Get(),
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE
+		));
+
+	commandList->Close();
+
+	ID3D12CommandList* commands[] = { commandList };
+	{
+		std::lock_guard<std::mutex> lock(queue_mtx);
+		m_commandQueue->ExecuteCommandLists(ARRAYSIZE(commands), commands);
+
+		if (isFinal)
+		{
+			ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), m_currentFence));
+			// text 업데이트를 위해 graphcics memory 사용 시 commit 해줘야 Graphics 메모리를 재사용한다
+			m_graphicsMemory->Commit(m_commandQueue.Get());
+			ThrowIfFailed(m_swapChain->Present(1, 0));
+			m_currentBackBufferIndex = (m_currentBackBufferIndex + 1) % m_swapChainBufferCount;
+		}
+	}
+	PIXEndEvent(m_commandQueue.Get());
+}
 // FrameResource의 텍스트 렌더용 텍스쳐 업데이트
 void RenderEngine::UpdateTexts()
 {
@@ -1258,7 +1309,6 @@ void RenderEngine::CreateTextures()
 	//m_fallbackLoader->LoadIdx();
 }
 
-
 void RenderEngine::CreateCubeMap()
 {
 	cubeMapPos = Vector3(-1.5f, 0.8f, -1.5f);
@@ -1272,14 +1322,14 @@ void RenderEngine::CreateCubeMap()
 	cubeRD.SampleDesc = { 1,0 };
 	cubeRD.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	cubeRD.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	cubeRD.Format = cubeFormat;
+	cubeRD.Format = Renderer::hdrFormat;
 
 	D3D12_CLEAR_VALUE cv = {};
 	cv.Color[0] = 0.f;
 	cv.Color[1] = 0.f;
 	cv.Color[2] = 0.f;
 	cv.Color[3] = 1.f;
-	cv.Format = cubeFormat;
+	cv.Format = Renderer::hdrFormat;
 
 	ThrowIfFailed(m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES::CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -1289,7 +1339,7 @@ void RenderEngine::CreateCubeMap()
 		&cv,
 		IID_PPV_ARGS(m_cubeMap.ReleaseAndGetAddressOf())
 	));
-
+	m_cubeMap->SetName(L"CubeMap");
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	rtvHeapDesc.NumDescriptors = 6;
@@ -1307,11 +1357,12 @@ void RenderEngine::CreateCubeMap()
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_cubeMapRtvHeap->GetCPUDescriptorHandleForHeapStart());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dHandle(m_cubeMapDsvHeap->GetCPUDescriptorHandleForHeapStart());
+
 	for (int i = 0; i < 6; i++)
 	{
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
-		rtvDesc.Format = cubeFormat;
+		rtvDesc.Format = Renderer::hdrFormat;
 		rtvDesc.Texture2DArray.ArraySize = 1;
 		rtvDesc.Texture2DArray.FirstArraySlice = i;
 		rtvDesc.Texture2DArray.MipSlice = 0;
@@ -1353,18 +1404,11 @@ void RenderEngine::CreateCubeMap()
 			dHandle.Offset(1, m_dsvDescriptorSize);
 
 	}
-
-
-
-
-
-
 	m_cubeViewport = CD3DX12_VIEWPORT((FLOAT)0.F, 0.F, (FLOAT)(cubeWidth), (FLOAT)cubeHeight);
 	m_cubeScissorRect = CD3DX12_RECT((LONG)0, 0, (LONG)(cubeWidth), (LONG)cubeHeight);
 	cubeRtvClearColor = { 0.F, 0.F, 0.F, 1.F };
 
 	m_textureLoader->AddTexture(m_cubeMap, playerCubeMapTextureName, true);
-
 }
 
 void RenderEngine::CreateFonts()
@@ -1416,7 +1460,7 @@ void RenderEngine::DrawingWithMouse()
 	RenderCube(genCubeMapPSO, phongPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 	RenderCube(genPBRCubeMapPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 	//Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
+	DepthOnlyPass(depthOnlyPbrPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, true/*clear RT*/);
 	if (test)
 	{
 		Render("pointCloudPSO", i++, MT_pointCloud, false/*isFinal*/, true/*clear RT*/);
@@ -1445,9 +1489,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetCubeMapDsvCpuHandle(int i) const
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cubeMapDsvHeap->GetCPUDescriptorHandleForHeapStart(), i, m_dsvDescriptorSize);
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetDSVCpuHandle() const
+D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetDSVCpuHandle(int idx) const
 {
-	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_DSVHeap->GetCPUDescriptorHandleForHeapStart());
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_DSVHeap->GetCPUDescriptorHandleForHeapStart(), idx, m_dsvDescriptorSize);
 }
 
 ID3D12Resource* RenderEngine::GetCurrentSwapChainResource() const

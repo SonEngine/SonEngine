@@ -28,6 +28,8 @@ public:
 
 	void AddTexture(Microsoft::WRL::ComPtr<ID3D12Resource>& texture, std::string& filename, bool isCubeMap = false);
 
+	void AddTexture(Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const D3D12_SHADER_RESOURCE_VIEW_DESC& srvDesc, std::string& filename, bool isCubeMap);
+
 	//void InitHeap(Microsoft::WRL::ComPtr<ID3D12Device5>& device, UINT heapSize);
 	//void LoadIdx(Microsoft::WRL::ComPtr<ID3D12Device5>& device);
 	/*void LoadTextures(Microsoft::WRL::ComPtr<ID3D12Device5>& device,

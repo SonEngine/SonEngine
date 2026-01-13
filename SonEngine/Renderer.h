@@ -20,6 +20,9 @@ namespace Renderer
     extern DXGI_FORMAT backBufferFormat;
     extern DXGI_FORMAT hdrFormat;
     extern DXGI_FORMAT dsBufferFormat;
+    extern DXGI_FORMAT dsOnlyFormat;
+    extern DXGI_FORMAT dsOnlyDsvFormat;
+    extern DXGI_FORMAT dsOnlySrvFormat;
 
     // PSO 초기화
     void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device);

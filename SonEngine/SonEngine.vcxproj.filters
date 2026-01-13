@@ -339,6 +339,8 @@
     <FxCompile Include="PBRPS.hlsl" />
     <FxCompile Include="PBRBoxCubeMapPS.hlsl" />
     <FxCompile Include="PBRBoxCubeMapVS.hlsl" />
+    <FxCompile Include="DepthOnlyVS.hlsl" />
+    <FxCompile Include="DepthOnlyPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />
@@ -365,6 +367,10 @@
     <None Include="PBRCommon.hlsli" />
     <None Include="BoxCubeMap.hlsli" />
     <None Include="PBRBoxCubeMap.hlsli" />
+    <None Include="Levels\testLevel.json">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="DepthOnlyCommon.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\earth_Albedo.dds">

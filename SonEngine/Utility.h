@@ -25,7 +25,8 @@ enum DescriptorType
 {
 	RTV,
 	UAV,
-	SRV
+	SRV,
+	DSV
 };
 inline std::wstring AnsiToWString(const std::string& str)
 {
@@ -115,7 +116,8 @@ namespace GraphicsUtils {
 			DXGI_FORMAT format,
 			D3D12_RESOURCE_FLAGS Flag,
 			D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_RENDER_TARGET,
-			UINT16 mipLevels = 1
+			UINT16 mipLevels = 1,
+			std::wstring texName = L"tex"
 		);
 
 		template<typename Data>

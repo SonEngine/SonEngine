@@ -44,7 +44,8 @@ void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	int sphereDetail = 100;
 	
 	Asset<PBRVertex, uint16_t> sphere;
-	sphere.m_meshes.push_back({ GeometryGenerator::MakePBRSphere(sphereDetail, sphereRadius) });
+	//sphere.m_meshes.push_back({ GeometryGenerator::MakePBRSphere(sphereDetail, sphereRadius) });
+	sphere.m_meshes.push_back({ GeometryGenerator::PbrSphere(0.5f, 100, 100) });
 	
 	float planeSize = 2.f*100.f;
 	int div = 200.f;

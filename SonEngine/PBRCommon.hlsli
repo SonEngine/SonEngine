@@ -7,6 +7,8 @@ TextureCube gCubeMapSpecular : register(t2);
 
 TextureCube gCubeMapReflect : register(t9);
 
+Texture2D<float> depthOnly : register(t10);
+
 Texture2D gAlbedo : register(t3);
 Texture2D gAo : register(t4);
 Texture2D gHeight : register(t5);

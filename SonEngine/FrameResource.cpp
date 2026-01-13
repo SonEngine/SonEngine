@@ -54,9 +54,8 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 
 
 	float fov = DirectX::XM_PIDIV2;
-	DirectX::SimpleMath::Matrix projMatrix = DirectX::XMMatrixPerspectiveFovLH(
+	DirectX::SimpleMath::Matrix cubeProjMatrix = DirectX::XMMatrixPerspectiveFovLH(
 		fov, 1.f, 0.1f, 1000.f);
-
 	m_pCubeGC.resize(6);
 	for (int i = 0; i < 6; i++)
 	{
@@ -69,7 +68,7 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 
 		DirectX::SimpleMath::Matrix viewMatrix = XMMatrixLookToLH(Vector3(0, 0, 0), kEyeDir[i], kUpDir[i]);
 
-		m_cubePhongGC[i].proj = projMatrix.Transpose();
+		m_cubePhongGC[i].proj = cubeProjMatrix.Transpose();
 		m_cubePhongGC[i].view = viewMatrix.Transpose();
 
 		for (size_t j = 0; j < lightInfos.size(); j++)
@@ -82,6 +81,22 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 		m_cubePhongGC[i].cameraPos = Vector3(0, 0, 0);
 		
 		memcpy(m_pCubeGC[i], &m_cubePhongGC[i], sizeof(PBRGlobalConstant));
+	}
+
+	m_pLightGC.resize(NUM_LIGHTS);
+	for (int i = 0; i < NUM_LIGHTS; i++)
+	{
+
+		Graphics::utility->CreateConstantBuffer(
+			sizeof(PBRGlobalConstant),
+			m_lightGCB[i],
+			reinterpret_cast<void**>(&m_pLightGC[i])
+		);
+
+		m_lightGC[i].proj = lightInfos[i].proj;
+		m_lightGC[i].view = lightInfos[i].view;
+				
+		memcpy(m_pLightGC[i], &m_lightGC[i], sizeof(PBRGlobalConstant));
 	}
 }
 

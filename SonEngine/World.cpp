@@ -36,15 +36,26 @@ World::~World()
 void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEngine, ID3D12Device5* device, ID3D12GraphicsCommandList* commandList)
 {
 	m_renderEngine = renderEngine;
+	//finalRenderTexName = "hdrTex";
 
 	m_camera = std::make_shared<Camera>();
 	InitCamera(cameraWidth, cameraHeight);
+
 	// BOOKMARK lightSetting
 	PBRLightInfo lInfo;
-	lInfo.location = {1.5, 0.8, -100.0 };
-	//lInfo.location = { -500,500,0 };
+	lInfo.location = { -5,5,0 };
+	Vector3 dir = -lInfo.location;
+	dir.Normalize();
+	lInfo.direction = dir;
 	lInfo.brightness = { 0.8f,0.8f,0.8f,1.f };
-	//1.5, 0.8, 0.0
+	float fov = DirectX::XM_PIDIV2;
+	DirectX::SimpleMath::Matrix lightProjMatrix = DirectX::XMMatrixPerspectiveFovLH(
+		fov, 1.f, 0.1f, 100.f);
+
+	DirectX::SimpleMath::Matrix viewMatrix = XMMatrixLookToLH(lInfo.location, lInfo.direction, Vector3(0, 1, 0));
+	lInfo.proj = lightProjMatrix.Transpose();
+	lInfo.view = viewMatrix.Transpose();
+
 	m_lightInfos.push_back(lInfo);
 
 	modelLoader->Load("torus.fbx");
@@ -74,7 +85,8 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		"",
 		this
 	);
-
+	SpawnActor(pointCloud);
+	
 	std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, DotComponent>(
 		"dot",
 		std::vector{ GeometryGenerator::MakePoint() },
@@ -82,7 +94,6 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		{ 0.f,0.f,0.f },
 		this
 	);
-	SpawnActor(pointCloud);
 	SpawnActor(dot);
 
 	SpawnActor(cubeMap);
@@ -112,11 +123,11 @@ void World::InitCamera(int width, int height)
 	m_camera->m_height = height;
 	m_camera->SetCameraMode(CameraMode::CM_Perspective);
 	m_camera->Initialize();
-	m_camera->SetActorLocation({ 0.f, 5.f, -5.f });
-	m_camera->UpdateCameraRotation(0, 70);
-	// BOOKMARK	
-	/*m_camera->SetActorLocation({ -1.5, 0.8, -1.5 });
+	/*m_camera->SetActorLocation({ 0.f, 0.f, -1.f });
 	m_camera->UpdateCameraRotation(0, 0);*/
+	// BOOKMARK	
+	m_camera->SetActorLocation({ 0.f, 2.f, -1.5 });
+	m_camera->UpdateCameraRotation(0, 80);
 
 	m_camera->SetActorSpeed(5.f);
 }

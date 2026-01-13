@@ -34,6 +34,12 @@ enum RenderType {
 	RT_Dot /*렌더타겟에 점하나 넣고 texture 그리기 용도*/
 };
 
+enum RenderPassType {
+	RPT_Default,
+	RPT_CubeMapPass,
+	RPT_DepthOnlyPass
+};
+
 class RenderEngine {
 public:
 	RenderEngine(ID3D12Device5* device = nullptr);
@@ -55,7 +61,9 @@ public:
 protected:
 	void CreateCommandObjects();
 	void CreateSwapChain(IDXGIFactory7* factory, HWND wnd);
-	void CreateDepthBuffer();
+	void CreateMainDepthBuffer();
+	void CreateDepthBuffers();
+	void CreateTextureBuffers();
 	void UpdateGUI();
 	void CreateTextures();
 	void CreateCubeMap();
@@ -69,6 +77,7 @@ protected:
 	void Update(float deltaTime);
 	void AddTextProxy(SceneComponent* component);
 	void UpdateMousePosition();
+	void RenderMeshes(const std::string& psoName, ID3D12GraphicsCommandList* commandList, MeshType meshType, RenderPassType rpType, int cubeGCBIdx = 0);
 	void Render(const std::string& psoName, int idx, MeshType meshType, bool isFinal, bool clear);
 
 	//void Render(const std::string& psoName, int idx, RenderType renderType, bool isFinal, bool clear);
@@ -79,6 +88,8 @@ protected:
 
 	//void RenderCube(const std::string& psoName, int idx, MeshType meshType, bool isFinal, bool clear);
 
+
+	void DepthOnlyPass(const std::string& psoName, const std::string& proxyPsoName, int idx, MeshType meshType, bool isFinal, bool clear);
 
 	void UpdateTexts();
 
@@ -97,7 +108,7 @@ protected:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRtvCpuHandle() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCubeMapRtvCpuHandle(int i) const;
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCubeMapDsvCpuHandle(int i) const;
-	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCpuHandle() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCpuHandle(int idx = 0) const;
 	ID3D12Resource* GetCurrentSwapChainResource() const;
 
 private:
@@ -138,7 +149,7 @@ private:
 private:
 	int m_currentBackBufferIndex = 0;
 	static const UINT m_swapChainBufferCount = 2;
-	static const UINT m_dsBufferCount = 1;
+	static const UINT m_dsBufferCount = 2;
 	UINT m_cbvSrvDescriptorSize = 0;
 	UINT m_rtvDescriptorSize = 0;
 	UINT m_dsvDescriptorSize = 0;
@@ -161,7 +172,7 @@ private:
 	//cubemap
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_cubeMap;
-	DXGI_FORMAT cubeFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	//DXGI_FORMAT cubeFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cubeMapRtvHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cubeMapSrvHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cubeMapDsvHeap;
@@ -183,7 +194,16 @@ private:
 	std::array<float, 4> cubeRtvClearColor;
 	std::string playerCubeMapTextureName = "cubeMapPlayer";
 
-	// Compute Shader 용
+// depthOnly
+private:
+	UINT depthOnlyWidth = 1024*4;
+	UINT depthOnlyHeight = 1024*4;
+	std::string depthOnlyTextureName = "depthOnlyTex";
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_depthOnlyBuffer;
+	D3D12_VIEWPORT m_depthOnlyViewport;
+	D3D12_RECT m_depthOnlyRect;
+
+// Compute Shader 용
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_computeBuffer;
 	//DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -194,11 +214,11 @@ private:
 	UINT computeTextureDIM = 1024 * 4;
 	UINT computeTextureDIMX;
 	UINT computeTextureDIMY;
-	
+
 	//hdr backbuffer
 private:
 
-	DXGI_FORMAT m_hdrFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_hdrBuffer;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_hdrRtvHeap;
 	std::string m_hdrTextureName = "hdrTex";
@@ -222,6 +242,7 @@ private:
 	std::string cubeMapPSO = "cubeMapPSO";
 	std::string currentPbrPSO = "pbrPSO";
 	std::string wirePbrPSO = "wire_pbrPSO";
+	std::string depthOnlyPbrPSO = "dsOnly_pbrPSO";
 	std::string pbrPSO = "pbrPSO";
 
 	//FrameResource
@@ -300,7 +321,7 @@ private:
 	int r_selecteId = 0;
 
 	int saveMipLevel = 4;
-	
+
 	LocalConstant guiLocalConstant;
 	int gui_cubemapMipLevel = 0;
 	FLOAT computeClearColor[4];

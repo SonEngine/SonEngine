@@ -43,9 +43,8 @@ public:
 	int m_height;
 	float m_aspectRatio;
 
-	float m_fovDegrees = 60.f;
+	float m_fovDegrees = 70.f;
 	float m_fovRadians;
-	float m_fovAngle = 70.f;
 	float m_nearZ = 0.1f;
 	float m_farZ = 1000.f;
 

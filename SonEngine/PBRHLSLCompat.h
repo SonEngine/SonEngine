@@ -30,6 +30,9 @@ struct PBRLightInfo
     XMFLOAT4 brightness;
     XMVECTOR location;
     XMVECTOR direction;
+
+    Matrix view;
+    Matrix proj;
 };
 
 struct PBRGlobalConstant

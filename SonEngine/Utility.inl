@@ -72,7 +72,8 @@ namespace GraphicsUtils {
 		DXGI_FORMAT format,
 		D3D12_RESOURCE_FLAGS Flag,
 		D3D12_RESOURCE_STATES state,
-		UINT16 mipLevels
+		UINT16 mipLevels,
+		std::wstring texName
 
 	)
 	{
@@ -89,11 +90,22 @@ namespace GraphicsUtils {
 
 		D3D12_CLEAR_VALUE clearValue;
 		clearValue.Format = format;
+		if (format == DXGI_FORMAT_R32_TYPELESS)
+			clearValue.Format = DXGI_FORMAT_D32_FLOAT;
 
-		clearValue.Color[0] = 0.f;
-		clearValue.Color[1] = 0.f;
-		clearValue.Color[2] = 0.f;
-		clearValue.Color[3] = 1.f;
+		if (clearValue.Format == DXGI_FORMAT_D24_UNORM_S8_UINT ||
+			clearValue.Format == DXGI_FORMAT_D32_FLOAT)
+		{
+			clearValue.DepthStencil.Depth = 1.f;
+			clearValue.DepthStencil.Stencil = 0;
+		}
+		else
+		{
+			clearValue.Color[0] = 0.f;
+			clearValue.Color[1] = 0.f;
+			clearValue.Color[2] = 0.f;
+			clearValue.Color[3] = 1.f;
+		}
 		ThrowIfFailed(m_device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -102,6 +114,7 @@ namespace GraphicsUtils {
 			&clearValue,
 			IID_PPV_ARGS(gpuBuffer.ReleaseAndGetAddressOf())
 		));
+		gpuBuffer->SetName(texName.c_str());
 
 	}
 
@@ -146,6 +159,15 @@ namespace GraphicsUtils {
 			srvDesc.Format = format;
 			srvDesc.Texture2D.MipLevels = 1;
 			m_device->CreateShaderResourceView(buffer.Get(), &srvDesc, handle);
+		}
+		else if (type == DescriptorType::DSV)
+		{
+			D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+			dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+			dsvDesc.Texture2D.MipSlice = 0;
+			dsvDesc.Format = format;
+
+			m_device->CreateDepthStencilView(buffer.Get(), &dsvDesc, handle);
 		}
 	}
 

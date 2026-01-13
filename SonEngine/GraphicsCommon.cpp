@@ -22,8 +22,11 @@ namespace Graphics
 	RootSignature g_videoRS;
 	RootSignature g_U1_C1_RS;
 	RootSignature g_R1_RS;
+	RootSignature g_R1_C2_RS;
 	RootSignature g_R2_C2_RS;
 	RootSignature g_R3_C2_RS;
+	RootSignature g_R4_C2_RS;
+	RootSignature g_C2_RS;
 
 	std::shared_ptr<GraphicsUtils::Utility> utility;
 	std::unique_ptr<World> world;
@@ -115,6 +118,13 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	g_cubeMapRS[1].InitCBV(0);
 	g_cubeMapRS.InitStaticSampler(0, wrapLinearSampler);
 	g_cubeMapRS.Finalize(device, L"cubeMapRS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	
+	g_R1_C2_RS.Reset(3, 1);
+	g_R1_C2_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 6); // albedo
+	g_R1_C2_RS[1].InitCBV(0); // local
+	g_R1_C2_RS[2].InitCBV(1); // global
+	g_R1_C2_RS.InitStaticSampler(0, wrapLinearSampler);
+	g_R1_C2_RS.Finalize(device, L"R1_C2_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	g_R2_C2_RS.Reset(4, 1);
 	g_R2_C2_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3); // cubemap
@@ -123,8 +133,7 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	g_R2_C2_RS[3].InitCBV(1); // global
 	g_R2_C2_RS.InitStaticSampler(0, wrapLinearSampler);
 	g_R2_C2_RS.Finalize(device, L"R2_C2_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-	
+		
 	g_R3_C2_RS.Reset(5, 2);
 	g_R3_C2_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3); // cubemap
 	g_R3_C2_RS[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 6); // albedo
@@ -134,6 +143,22 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	g_R3_C2_RS.InitStaticSampler(0, wrapLinearSampler);
 	g_R3_C2_RS.InitStaticSampler(1, clampLinearSampler);
 	g_R3_C2_RS.Finalize(device, L"R3_C2_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	g_C2_RS.Reset(2, 0);
+	g_C2_RS[0].InitCBV(0); // local
+	g_C2_RS[1].InitCBV(1); // global
+	g_C2_RS.Finalize(device, L"C2_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	g_R4_C2_RS.Reset(6, 2);
+	g_R4_C2_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3); // cubemap
+	g_R4_C2_RS[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 6); // albedo
+	g_R4_C2_RS[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 9, 1); // "반사"용 cubemap
+	g_R4_C2_RS[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 1); // depth only
+	g_R4_C2_RS[4].InitCBV(0); // local
+	g_R4_C2_RS[5].InitCBV(1); // global
+	g_R4_C2_RS.InitStaticSampler(0, wrapLinearSampler);
+	g_R4_C2_RS.InitStaticSampler(1, clampLinearSampler);
+	g_R4_C2_RS.Finalize(device, L"R4_C2_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 }
 
