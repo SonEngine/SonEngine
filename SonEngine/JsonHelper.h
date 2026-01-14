@@ -10,7 +10,8 @@ enum  ActorType {
     AT_AMovingPlatform,
     AT_PointCloud,
     AT_CubeMap,
-    AT_Dot    
+    AT_Dot,
+    AT_Light
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(ActorType, {
@@ -20,6 +21,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(ActorType, {
     {ActorType::AT_PointCloud, "APointCloud"},
     {ActorType::AT_CubeMap, "ACubeMap"},
     {ActorType::AT_Dot, "ADot"},
+    {ActorType::AT_Light, "ALight"},
     })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(PhysXMode, {
@@ -37,6 +39,20 @@ static DirectX::SimpleMath::Vector3 ParseVec3(const nlohmann::json & j)
         v.x = j[0].get<float>();
         v.y = j[1].get<float>();
         v.z = j[2].get<float>();
+    }
+
+    return v;
+}
+
+static DirectX::SimpleMath::Vector4 ParseVec4(const nlohmann::json& j)
+{
+    DirectX::SimpleMath::Vector4 v;
+    if (j.is_array() && j.size() == 4)
+    {
+        v.x = j[0].get<float>();
+        v.y = j[1].get<float>();
+        v.z = j[2].get<float>();
+        v.w = j[3].get<float>();
     }
 
     return v;

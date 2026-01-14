@@ -94,7 +94,8 @@ protected:
 	void UpdateTexts();
 
 public:
-	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<PBRLightInfo>& lightInfos);
+	// GT -> RT
+	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo);
 	void UpdatePBGlobalConstantBuffer(const int& guiWidth, const MouseInputState& mouseInputState);
 	void Tick(float deltaTime);
 	void Quit();
@@ -296,8 +297,10 @@ private:
 
 private:
 	std::vector<class PrimitiveComponent*> m_primitives;
+	std::vector<std::shared_ptr<PBRLightInfo>> m_lightInfos;
 	bool test = true;
 	bool gui_wireFrameMode = false;
+	bool gui_renderPointCloud= false;
 
 private:
 	MouseInputStateHelper* pMouseinputStateHelper = nullptr;

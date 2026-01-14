@@ -35,7 +35,7 @@ protected:
 	float maxYAngle = 89.f;
 	float minYAngle = -89.f;
 
-	float m_rotateSpeed = 0.5f;
+	float m_rotateSpeed = 0.3f;
 
 	// Projection 
 public:

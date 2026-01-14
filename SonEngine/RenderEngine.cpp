@@ -12,6 +12,7 @@
 #include "PipelineState.h"
 #include "GeometryGenerator.h"
 #include "PrimitiveComponent.h"
+#include "LightComponent.h"
 #include "ModelLoader.h"
 
 #include "Directxtk12/DDSTextureLoader.h"
@@ -404,8 +405,13 @@ void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 		add.mesh = cubeMapComp->GetMeshPtr();
 		add.meshType = MT_cubeMap;
 	}
+	else if (LightComponent* lightComp = dynamic_cast<LightComponent*>(primitive))
+	{
+		add.mesh = lightComp->GetMeshPtr();
+		add.meshType = MT_primitive;
+		m_lightInfos.push_back(lightComp->GetLightInfo());
+	}
 	add.constant = primitive->GetLocalConstant();
-
 	m_renderCmdQueue->Push(std::move(add));
 
 	/*m_primitives.push_back(primitive);
@@ -540,6 +546,7 @@ void RenderEngine::UpdateGUI()
 	ImGui::Text(fpsStr.c_str());
 
 	ImGui::Checkbox("Change Mode", &test);
+	ImGui::Checkbox("Render PointCloud", &gui_renderPointCloud);
 	if (ImGui::Checkbox("WireFrame Mode", &gui_wireFrameMode))
 	{
 		if (gui_wireFrameMode)
@@ -632,7 +639,7 @@ void RenderEngine::BuildFrameResources()
 		m_frameResources[i] = std::make_shared<FrameResource>();
 		if (world)
 		{
-			m_frameResources[i]->Initialize(m_device, 512, 512, 0, mainWnd, world->GetLightInfos());
+			m_frameResources[i]->Initialize(m_device, 512, 512, 0, mainWnd, m_lightInfos);
 		}
 	}
 }
@@ -663,16 +670,16 @@ void  RenderEngine::UpdateMousePosition()
 	pMouseinputStateHelper->UpdatePrevMousePos(prevMousePt.x, prevMousePt.y);
 }
 
-void RenderEngine::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<PBRLightInfo>& lightInfos)
+void RenderEngine::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo)
 {
 	packet.gc.cameraDir = ToVector4(viewProjInfo.viewDirection, 0.f);
 	packet.gc.cameraPos = ToVector4(viewProjInfo.viewLocation, 0.f);
 	packet.gc.view = viewProjInfo.view.Transpose();
 	packet.gc.proj = viewProjInfo.proj.Transpose();
 
-	for (size_t i = 0; i < lightInfos.size(); i++)
+	for (size_t i = 0; i < m_lightInfos.size(); i++)
 	{
-		packet.gc.lights[i] = lightInfos[i];
+		packet.gc.lights[i] = *(m_lightInfos[i].get());
 	}
 }
 
@@ -701,7 +708,7 @@ void RenderEngine::Tick(float deltaTime)
 	{
 		packet.frameId = m_frameId++;
 		packet.deltaTime = deltaTime;
-		UpdateGlobalConstantBuffer(world->GetViewProjInfo(), world->GetLightInfos());
+		UpdateGlobalConstantBuffer(world->GetViewProjInfo());
 		{
 			UpdateMousePosition();
 			UpdatePBGlobalConstantBuffer(m_guiWidth, pMouseinputStateHelper->GetInputState());
@@ -1476,13 +1483,16 @@ void RenderEngine::DrawingWithMouse()
 	RenderCube(cubeMapPSO, phongPSO, i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
 	RenderCube(genCubeMapPSO, phongPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 	RenderCube(genPBRCubeMapPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
-	RenderCube(pointCloudPSO, pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
+	if(gui_renderPointCloud)
+		RenderCube(pointCloudPSO, pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
 	//Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	if (test)
 	{
-		Render(pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, true/*clear RT*/);
-		Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+		
+		Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
 		Render(currentPbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+		if (gui_renderPointCloud)
+			Render(pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
 		Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
 
 		Render("renderTexturePSO", i++, MT_finalize, false/*isFinal*/, true/*clear RT*/);

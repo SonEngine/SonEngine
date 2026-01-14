@@ -64,10 +64,6 @@ protected:
 	std::shared_ptr<Actor> m_player;
 	std::shared_ptr<Camera> m_camera;
 	
-protected:
-	std::vector<std::shared_ptr<Light>> m_light;
-	std::vector<PBRLightInfo> m_lightInfos;
-
 public:
 	void RegisterPrimitive(class PrimitiveComponent* primitive, bool usePhysX);
 

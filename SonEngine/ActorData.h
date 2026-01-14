@@ -21,3 +21,14 @@ struct ActorData
 	float heightScale = 0.f;
 	LocalConstant lc;
 };
+
+struct LightData
+{
+	float viewWidth;
+	float viewHeight;
+	float nearZ;
+	float farZ;
+
+	Vector4 brightness;
+	Vector3 dir;
+};

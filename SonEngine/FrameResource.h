@@ -35,13 +35,13 @@ public:
 
 public:
 	//void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd);
-	void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd, const std::vector<PBRLightInfo>& lightInfos);
+	void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd, const std::vector<std::shared_ptr<PBRLightInfo>>& lightInfos);
 	void AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy);
 	void UpdateLocalConstantBuffer(const LocalConstant& lc, uint32_t id);
 	void UpdateCubeGCView(const DirectX::SimpleMath::Vector3& loc);
 	void UpdateGlobalConstantBuffer(const PBRGlobalConstant& pgc);
 	void UpdatePBGlobalConstantBuffer(const PBGlobalConstant& pbgc);
-	void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<PBRLightInfo>& lightInfos);
+	//void UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo, const std::vector<PBRLightInfo>& lightInfos);
 	void UpdatePBGlobalConstantBuffer(const int& guiWidth, const MouseInputState& mouseInputState);
 	
 	
@@ -50,7 +50,7 @@ public:
 	void CreateCommand(ID3D12Device5* device, Microsoft::WRL::ComPtr<ID3D12CommandAllocator>& alloc, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList);
 
 public:
-	D3D12_GPU_VIRTUAL_ADDRESS GetGCBGPUAddress() const { return m_phongGCBuffer->GetGPUVirtualAddress(); }
+	D3D12_GPU_VIRTUAL_ADDRESS GetGCBGPUAddress() const { return m_pbrGCBuffer->GetGPUVirtualAddress(); }
 	D3D12_GPU_VIRTUAL_ADDRESS GetPBGCBGPUAddress() const { return m_pbGCBuffer->GetGPUVirtualAddress(); }
 	D3D12_GPU_VIRTUAL_ADDRESS GetCubeGCBGPUAddress(int idx) const { return m_cubeMapGCB[idx]->GetGPUVirtualAddress(); }
 	D3D12_GPU_VIRTUAL_ADDRESS GetLightGCBGPUAddress(int idx) const { return m_lightGCB[idx]->GetGPUVirtualAddress(); }
@@ -70,10 +70,11 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE GetTextSrvGPUHandle(int idx) const { return CD3DX12_GPU_DESCRIPTOR_HANDLE(m_textSrvHeap->GetGPUDescriptorHandleForHeapStart(), idx, srvIncrementSize); }
 	D3D12_CPU_DESCRIPTOR_HANDLE GetTextRrvCPUHandle(int idx) const {return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_textRtvHeap->GetCPUDescriptorHandleForHeapStart(), idx, rtvIncrementSize);}
 
+
 private:
-	PBRGlobalConstant phongGC;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_phongGCBuffer;
-	void* pPhongGCB = nullptr;
+	PBRGlobalConstant pbrGC;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_pbrGCBuffer;
+	void* pPbrGCB = nullptr;
 
 	PBGlobalConstant pbGC;
 	// paint board global constant buffer

@@ -48,7 +48,7 @@ public:
 	// world->actor 호출
 	virtual void OnRegister();
 
-	void UpdateConstantLocation();
+	virtual void UpdateConstantLocation();
 	void UpdateConstantRotation();
 	void UpdateMipState(int newForceMip0);
 	void UpdateUseReflect(int newUseReflect);

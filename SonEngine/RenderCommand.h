@@ -10,6 +10,7 @@ enum MeshType {
 	MT_primitive,
 	MT_pointCloud,
 	MT_cubeMap,
+	MT_light,
 	MT_finalize
 };
 

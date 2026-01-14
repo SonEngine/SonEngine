@@ -14,6 +14,7 @@
 #include "AMovingPlatform.h"
 #include "APointCloud.h"
 #include "ACubeMap.h"
+#include "ALight.h"
 #include "ADot.h"
 
 #include "ModelLoader.h"
@@ -47,23 +48,6 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	m_camera = std::make_shared<Camera>();
 	InitCamera(cameraWidth, cameraHeight);
 
-	// BOOKMARK lightSetting
-	PBRLightInfo lInfo;
-	lInfo.location = { -5,5,0 };
-	Vector3 dir = -lInfo.location;
-	dir.Normalize();
-	lInfo.direction = dir;
-	lInfo.brightness = { 0.8f,0.8f,0.8f,1.f };
-	float fov = DirectX::XM_PIDIV2;
-	DirectX::SimpleMath::Matrix lightProjMatrix = DirectX::XMMatrixOrthographicLH(
-		128/4, 128/4, 0.1f, 100.f);
-
-	DirectX::SimpleMath::Matrix viewMatrix = XMMatrixLookToLH(lInfo.location, lInfo.direction, Vector3(0, 1, 0));
-	lInfo.proj = lightProjMatrix.Transpose();
-	lInfo.view = viewMatrix.Transpose();
-
-	m_lightInfos.push_back(lInfo);
-
 	modelLoader->Load("torus.fbx");
 	modelLoader->Initialize(device, commandList);
 
@@ -71,16 +55,16 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	pbrModelLoader->Initialize(device, commandList);
 
 	simpleModelLoader->Initialize(device, commandList);
-	
+
 	auto mat = DirectX::XMMatrixRotationZ(3.141592f) *
 		DirectX::XMMatrixRotationX(-3.14f / 12.f) *
 		DirectX::XMMatrixTranslationFromVector(Vector3(0.f, 0.2f, 5.f));
 
 	pcModelLoader->LoadPointCloud("map.ply", mat);
 	pcModelLoader->Initialize(device, commandList);
-	
+
 	LoadLevel(levelPath);
-	
+
 	std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, DotComponent>(
 		"dot",
 		std::vector{ GeometryGenerator::MakePoint() },
@@ -118,8 +102,8 @@ void World::InitCamera(int width, int height)
 	/*m_camera->SetActorLocation({ 0.f, 0.f, -1.f });
 	m_camera->UpdateCameraRotation(0, 0);*/
 	// BOOKMARK	
-	m_camera->SetActorLocation({ 0.f, 2.f, -1.5 });
-	m_camera->UpdateCameraRotation(0, 80);
+	m_camera->SetActorLocation({ 0.f, 1.f, -1.5 });
+	m_camera->UpdateCameraRotation(0, 50);
 
 	m_camera->SetActorSpeed(5.f);
 }
@@ -167,6 +151,7 @@ void World::Tick(float deltaTime)
 
 		// update camera
 		m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY);
+
 		m_camera->UpdateCameraLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
 
 		mouseDeltaX = 0;
@@ -204,11 +189,6 @@ ViewProjInfo World::GetViewProjInfo()
 	return info;
 }
 
-std::vector<PBRLightInfo> World::GetLightInfos() const
-{
-	return m_lightInfos;
-}
-
 void World::RegisterPrimitive(PrimitiveComponent* primitive, bool usePhysX)
 {
 	if (m_renderEngine)
@@ -236,6 +216,8 @@ void World::SetInputState(size_t key, bool isKeyDown)
 // BOOKMARK
 bool World::LoadLevel(const std::filesystem::path& levelPath)
 {
+	static int lightIdx = 0;
+
 	using json = nlohmann::json;
 	std::ifstream ifs(levelPath, std::ios::binary);
 	if (!ifs.is_open()) return false;
@@ -251,7 +233,9 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 	{
 		for (const auto& a : root["actors"])
 		{
+			ActorType at = a["class"].get<ActorType>();
 			ActorData ad;
+			LightData ld;
 			std::string targetName;
 
 			if (a.contains("name"))
@@ -286,7 +270,7 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 						ad.forceMip0 = comp["forceMip0"].get<bool>();
 						ad.updateConstants = comp["updateConstants"].get<bool>();
 						ad.useReflect = comp["useReflect"].get<bool>();
-						if(comp.contains("heightScale"))
+						if (comp.contains("heightScale"))
 							ad.heightScale = comp["heightScale"].get<float>();
 						if (comp.contains("texTransform"))
 						{
@@ -308,18 +292,30 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 					{
 						targetName = comp["target"].get<std::string>();
 					}
-				}
-			}
+					else if (type == "LightInfo")
+					{
+						ld.dir = ParseVec3(comp["dir"]);
+						if (comp.contains("view"))
+						{
+							auto& v = comp["view"];
+							if (v.is_array() && v.size() == 4)
+							{
+								ld.viewWidth = v[0].get<float>();
+								ld.viewHeight = v[1].get<float>();
+								ld.nearZ = v[2].get<float>();
+								ld.farZ = v[3].get<float>();
+							}
+						}
+						ld.brightness = ParseVec4(comp["brightness"]);
 
-			if (a.contains("class"))
-			{
-				const ActorType at = a["class"].get<ActorType>();
+					}
+				}
 				switch (at)
 				{
 				case ActorType::AT_Actor:
 				{
 					std::shared_ptr<Actor> actor = std::make_shared<Actor>(ad.name, this);
-					if(ad.psoName == "phongPSO")
+					if (ad.psoName == "phongPSO")
 						actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
 					else if (ad.psoName == "pbrPSO")
 						actor->Initialize(pbrModelLoader->GetMeshes(ad.mesh), ad);
@@ -345,7 +341,6 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 				{
 					std::shared_ptr<AMovingPlatform> actor = std::make_shared<AMovingPlatform>(ad.name, this);
 					actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
-
 					SpawnActor(actor);
 				}
 				break;
@@ -353,7 +348,6 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 				{
 					std::shared_ptr<APointCloud> actor = std::make_shared<APointCloud>(ad.name, this);
 					actor->Initialize(pcModelLoader->GetMeshes(ad.mesh), ad);
-
 					SpawnActor(actor);
 				}
 				break;
@@ -361,7 +355,6 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 				{
 					std::shared_ptr<ACubeMap> actor = std::make_shared<ACubeMap>(ad.name, this);
 					actor->Initialize(simpleModelLoader->GetMeshes(ad.mesh), ad);
-
 					SpawnActor(actor);
 				}
 				break;
@@ -369,13 +362,20 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 				{
 					std::shared_ptr<ADot> actor = std::make_shared<ADot>(ad.name, this);
 					actor->Initialize(simpleModelLoader->GetMeshes(ad.mesh), ad);
-
+					SpawnActor(actor);
+				}
+				break;
+				case ActorType::AT_Light:
+				{
+					std::shared_ptr<ALight> actor = std::make_shared<ALight>(ad.name, this);
+					actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad, ld);
 					SpawnActor(actor);
 				}
 				break;
 				}
 			}
 		}
+
 	}
 	return true;
 }

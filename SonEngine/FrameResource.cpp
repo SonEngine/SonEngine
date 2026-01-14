@@ -21,7 +21,7 @@ FrameResource::FrameResource()
 }
 
 // TODO : BoxCubeMap용 LightInfo 업데이트 
-void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd, const std::vector<PBRLightInfo> & lightInfos)
+void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd, const std::vector<std::shared_ptr<PBRLightInfo>> & lightInfos)
 {
 	hwnd = mainHwnd;
 	if (Graphics::utility == nullptr)
@@ -34,8 +34,8 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 
 	Graphics::utility->CreateConstantBuffer(
 		sizeof(PBRGlobalConstant),
-		m_phongGCBuffer,
-		reinterpret_cast<void**>(&pPhongGCB)
+		m_pbrGCBuffer,
+		reinterpret_cast<void**>(&pPbrGCB)
 	);
 
 	Graphics::utility->CreateConstantBuffer(
@@ -73,9 +73,10 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 
 		for (size_t j = 0; j < lightInfos.size(); j++)
 		{
-			m_cubePhongGC[i].lights[j].direction = lightInfos[j].direction;
-			m_cubePhongGC[i].lights[j].location = lightInfos[j].location;
-			m_cubePhongGC[i].lights[j].brightness = lightInfos[j].brightness;
+			/*m_cubePhongGC[i].lights[j].direction = lightInfos[j]->direction;
+			m_cubePhongGC[i].lights[j].location = lightInfos[j]->location;
+			m_cubePhongGC[i].lights[j].brightness = lightInfos[j]->brightness;*/
+			m_cubePhongGC[i].lights[j] = *(lightInfos[j].get());
 		}
 		m_cubePhongGC[i].cameraDir = kEyeDir[i];
 		m_cubePhongGC[i].cameraPos = Vector3(0, 0, 0);
@@ -83,8 +84,8 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 		memcpy(m_pCubeGC[i], &m_cubePhongGC[i], sizeof(PBRGlobalConstant));
 	}
 
-	m_pLightGC.resize(NUM_LIGHTS);
-	for (int i = 0; i < NUM_LIGHTS; i++)
+	m_pLightGC.resize(lightInfos.size());
+	for (int i = 0; i < lightInfos.size(); i++)
 	{
 
 		Graphics::utility->CreateConstantBuffer(
@@ -92,9 +93,9 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 			m_lightGCB[i],
 			reinterpret_cast<void**>(&m_pLightGC[i])
 		);
-
-		m_lightGC[i].proj = lightInfos[i].proj;
-		m_lightGC[i].view = lightInfos[i].view;
+		
+		m_lightGC[i].proj = lightInfos[i]->proj;
+		m_lightGC[i].view = lightInfos[i]->view;
 				
 		memcpy(m_pLightGC[i], &m_lightGC[i], sizeof(PBRGlobalConstant));
 	}
@@ -138,8 +139,25 @@ void FrameResource::UpdateCubeGCView(const DirectX::SimpleMath::Vector3& loc)
 
 void FrameResource::UpdateGlobalConstantBuffer(const PBRGlobalConstant& pgc)
 {
-	phongGC = pgc;
-	memcpy(pPhongGCB, &phongGC, sizeof(PBRGlobalConstant));
+	pbrGC = pgc;
+	memcpy(pPbrGCB, &pbrGC, sizeof(PBRGlobalConstant));
+
+	for (int i = 0; i < 6; i++)
+	{
+
+		for (size_t j = 0; j < NUM_LIGHTS; j++)
+		{
+			m_cubePhongGC[i].lights[j] = pgc.lights[j];
+		}
+	}
+	// shadow depth mapping 용
+	for (int i = 0; i < NUM_LIGHTS; i++)
+	{
+		m_lightGC[i].view = pgc.lights[i].view;
+		m_lightGC[i].proj = pgc.lights[i].proj;
+
+		memcpy(m_pLightGC[i], &m_lightGC[i], sizeof(PBRGlobalConstant));
+	}
 }
 
 void FrameResource::UpdatePBGlobalConstantBuffer(const PBGlobalConstant& pbgc)

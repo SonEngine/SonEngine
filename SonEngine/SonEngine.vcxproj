@@ -157,6 +157,7 @@
     <ClCompile Include="ActorComponent.cpp" />
     <ClCompile Include="ACubeMap.cpp" />
     <ClCompile Include="ADot.cpp" />
+    <ClCompile Include="ALight.cpp" />
     <ClCompile Include="AMovingPlatform.cpp" />
     <ClCompile Include="APointCloud.cpp" />
     <ClCompile Include="BaseApp.cpp" />
@@ -174,6 +175,7 @@
     <ClCompile Include="GraphicsCommon.cpp" />
     <ClCompile Include="InputHelper.cpp" />
     <ClCompile Include="Light.cpp" />
+    <ClCompile Include="LightComponent.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="MouseInputState.cpp" />
@@ -209,6 +211,7 @@
     <ClInclude Include="ActorData.h" />
     <ClInclude Include="ACubeMap.h" />
     <ClInclude Include="ADot.h" />
+    <ClInclude Include="ALight.h" />
     <ClInclude Include="AMovingPlatform.h" />
     <ClInclude Include="APointCloud.h" />
     <ClInclude Include="Asset.h" />
@@ -230,6 +233,7 @@
     <ClInclude Include="InputHelper.h" />
     <ClInclude Include="JsonHelper.h" />
     <ClInclude Include="Light.h" />
+    <ClInclude Include="LightComponent.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="MouseInputState.h" />
