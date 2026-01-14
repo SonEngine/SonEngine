@@ -13,8 +13,6 @@ PointCloudComponent::~PointCloudComponent()
 {
 }
 
-
-
 void PointCloudComponent::SetMesh(std::shared_ptr<StaticMesh> newMesh)
 {
 	m_mesh = std::move(newMesh);

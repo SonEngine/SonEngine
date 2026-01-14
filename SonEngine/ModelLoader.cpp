@@ -53,7 +53,6 @@ void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	Asset<PBRVertex, uint16_t> plane;
 	plane.m_meshes.push_back({ GeometryGenerator::MakePBRPlane(planeSize, planeSize, div) });
 
-
 	std::shared_ptr<StaticMesh> sphereMesh = std::make_shared<StaticMesh>();
 	sphereMesh->Initialize<PBRVertex, uint16_t>(device, commandList, sphere.m_meshes);
 
@@ -68,6 +67,37 @@ void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	meshesMap["plane"] = planeMesh;
 }
 
+
+void ModelLoader<PointCloudVertex, uint16_t>::Initialize(ID3D12Device5* device,
+	ID3D12GraphicsCommandList* commandList)
+{
+	
+	std::shared_ptr<StaticMesh> mapMesh = std::make_shared<StaticMesh>();
+	mapMesh->InitializePC<PointCloudVertex, uint16_t>(device, commandList, assets["map"].m_meshes);
+
+	meshesMap["map"] = mapMesh;
+}
+
+void ModelLoader<SimpleVertex, uint16_t>::Initialize(ID3D12Device5* device,
+	ID3D12GraphicsCommandList* commandList)
+{
+	int cubemapSize = 200;
+	Asset<SimpleVertex, uint16_t> cube;
+	cube.m_meshes.push_back({ GeometryGenerator::MakeSimpleCube(200,200,200 )});
+
+	Asset<SimpleVertex, uint16_t> point;
+	point.m_meshes.push_back({ GeometryGenerator::MakePoint() });
+
+
+	std::shared_ptr<StaticMesh> cubeMapMesh = std::make_shared<StaticMesh>();
+	cubeMapMesh->Initialize<SimpleVertex, uint16_t>(device, commandList, cube.m_meshes);
+
+	std::shared_ptr<StaticMesh> pointMesh = std::make_shared<StaticMesh>();
+	pointMesh->InitializePC<SimpleVertex, uint16_t>(device, commandList, point.m_meshes);
+
+	meshesMap["cubeMap"] = cubeMapMesh;
+	meshesMap["point"] = pointMesh;
+}
 
 void ModelLoader<Vertex, uint16_t>::ProcessMesh(std::vector<Mesh<Vertex, uint16_t>>& meshes, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr)
 {

@@ -155,7 +155,10 @@
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="ActorComponent.cpp" />
+    <ClCompile Include="ACubeMap.cpp" />
+    <ClCompile Include="ADot.cpp" />
     <ClCompile Include="AMovingPlatform.cpp" />
+    <ClCompile Include="APointCloud.cpp" />
     <ClCompile Include="BaseApp.cpp" />
     <ClCompile Include="BoundedQueue.cpp" />
     <ClCompile Include="Camera.cpp" />
@@ -204,7 +207,10 @@
   <ItemGroup>
     <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="ActorData.h" />
+    <ClInclude Include="ACubeMap.h" />
+    <ClInclude Include="ADot.h" />
     <ClInclude Include="AMovingPlatform.h" />
+    <ClInclude Include="APointCloud.h" />
     <ClInclude Include="Asset.h" />
     <ClInclude Include="BaseApp.h" />
     <ClInclude Include="BoundedQueue.h" />

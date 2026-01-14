@@ -23,16 +23,18 @@ float4 main(psInput input) : SV_TARGET
     l = mul(l, gPBRGCB.lights[0].proj);
     float3 ndc = l.xyz / l.w;
     float2 lUV = ndc.xy * 0.5f + 0.5f;
-    bool inInUV = lUV.x > 1.f || lUV.x < 0.f || lUV.y > 1.f || lUV.y < 0.f;
     lUV.y = 1 - lUV.y;
     
-    float receiverDepth = ndc.z;
-    float shadowDepth = depthOnly.SampleLevel(gWrapLinearSampler, lUV, 0).r;
+    bool isInUV = lUV.x < 1.f && lUV.x >= 0.f && lUV.y < 1.f && lUV.y >= 0.f;
+    
+    
+    float currentPixelDepth = ndc.z;
+    float shadowDepth = depthOnly.SampleLevel(gWrapLinearSampler, lUV, 0.f).r;
     float bias = 0.0005f; 
-    bool inShadow = (receiverDepth - bias) > shadowDepth;
+    bool inShadow = (currentPixelDepth - shadowDepth) > bias;
 
     
-    if (inShadow || inInUV)
+    if (inShadow && isInUV)
     {
         return float4(0, 0, 0, 1);
     }

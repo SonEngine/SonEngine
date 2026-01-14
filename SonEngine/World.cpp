@@ -12,6 +12,10 @@
 
 #include "ATriggerBox.h"
 #include "AMovingPlatform.h"
+#include "APointCloud.h"
+#include "ACubeMap.h"
+#include "ADot.h"
+
 #include "ModelLoader.h"
 
 #include "ActorData.h"
@@ -23,7 +27,9 @@ using namespace Graphics;
 
 World::World()
 	: modelLoader(std::make_unique<ModelLoader<Vertex, std::uint16_t>>()),
-	pbrModelLoader(std::make_unique<ModelLoader<PBRVertex, std::uint16_t>>())
+	pbrModelLoader(std::make_unique<ModelLoader<PBRVertex, std::uint16_t>>()),
+	pcModelLoader(std::make_unique<ModelLoader<PointCloudVertex, std::uint16_t>>()),
+	simpleModelLoader(std::make_unique<ModelLoader<SimpleVertex, std::uint16_t>>())
 {
 	//m_camera = std::make_shared<Camera>();
 	levelPath = "Levels/simpleLevel.json";
@@ -49,8 +55,8 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	lInfo.direction = dir;
 	lInfo.brightness = { 0.8f,0.8f,0.8f,1.f };
 	float fov = DirectX::XM_PIDIV2;
-	DirectX::SimpleMath::Matrix lightProjMatrix = DirectX::XMMatrixPerspectiveFovLH(
-		fov, 1.f, 0.1f, 100.f);
+	DirectX::SimpleMath::Matrix lightProjMatrix = DirectX::XMMatrixOrthographicLH(
+		128/4, 128/4, 0.1f, 100.f);
 
 	DirectX::SimpleMath::Matrix viewMatrix = XMMatrixLookToLH(lInfo.location, lInfo.direction, Vector3(0, 1, 0));
 	lInfo.proj = lightProjMatrix.Transpose();
@@ -64,28 +70,16 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	pbrModelLoader->Load("sphere.glb");
 	pbrModelLoader->Initialize(device, commandList);
 
-	LoadLevel(levelPath);
-
-	ModelLoader<PointCloudVertex, uint16_t> pcModelLoader;
-	auto mat = DirectX::XMMatrixRotationZ(3.141592f) * 
+	simpleModelLoader->Initialize(device, commandList);
+	
+	auto mat = DirectX::XMMatrixRotationZ(3.141592f) *
 		DirectX::XMMatrixRotationX(-3.14f / 12.f) *
 		DirectX::XMMatrixTranslationFromVector(Vector3(0.f, 0.2f, 5.f));
-	pcModelLoader.LoadPointCloud("map.ply", mat);
+
+	pcModelLoader->LoadPointCloud("map.ply", mat);
+	pcModelLoader->Initialize(device, commandList);
 	
-	std::shared_ptr<Actor> cubeMap = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, CubeMapComponent>(
-		"cubeMap",
-		std::vector{ GeometryGenerator::MakeSimpleCube(100,100,100) },
-		"CubeMap_SkyEnvHDR",
-		{ 0.f,0.f,0.f },
-		this
-	);
-	std::shared_ptr<Actor> pointCloud = utility->CreatePCActor(
-		"pointCloud",
-		pcModelLoader.GetAsset("map"),
-		"",
-		this
-	);
-	SpawnActor(pointCloud);
+	LoadLevel(levelPath);
 	
 	std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, DotComponent>(
 		"dot",
@@ -95,8 +89,6 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 		this
 	);
 	SpawnActor(dot);
-
-	SpawnActor(cubeMap);
 
 }
 
@@ -353,6 +345,30 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 				{
 					std::shared_ptr<AMovingPlatform> actor = std::make_shared<AMovingPlatform>(ad.name, this);
 					actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
+
+					SpawnActor(actor);
+				}
+				break;
+				case ActorType::AT_PointCloud:
+				{
+					std::shared_ptr<APointCloud> actor = std::make_shared<APointCloud>(ad.name, this);
+					actor->Initialize(pcModelLoader->GetMeshes(ad.mesh), ad);
+
+					SpawnActor(actor);
+				}
+				break;
+				case ActorType::AT_CubeMap:
+				{
+					std::shared_ptr<ACubeMap> actor = std::make_shared<ACubeMap>(ad.name, this);
+					actor->Initialize(simpleModelLoader->GetMeshes(ad.mesh), ad);
+
+					SpawnActor(actor);
+				}
+				break;
+				case ActorType::AT_Dot:
+				{
+					std::shared_ptr<ADot> actor = std::make_shared<ADot>(ad.name, this);
+					actor->Initialize(simpleModelLoader->GetMeshes(ad.mesh), ad);
 
 					SpawnActor(actor);
 				}

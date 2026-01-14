@@ -7,13 +7,19 @@
 enum  ActorType {
     AT_Actor,
     AT_ATriggerBox,
-    AT_AMovingPlatform
+    AT_AMovingPlatform,
+    AT_PointCloud,
+    AT_CubeMap,
+    AT_Dot    
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(ActorType, {
     {ActorType::AT_Actor, "Actor"},
     {ActorType::AT_ATriggerBox, "ATriggerBox"},
     {ActorType::AT_AMovingPlatform, "AMovingPlatform"},
+    {ActorType::AT_PointCloud, "APointCloud"},
+    {ActorType::AT_CubeMap, "ACubeMap"},
+    {ActorType::AT_Dot, "ADot"},
     })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(PhysXMode, {

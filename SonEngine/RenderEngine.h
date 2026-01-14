@@ -217,8 +217,6 @@ private:
 
 	//hdr backbuffer
 private:
-
-
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_hdrBuffer;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_hdrRtvHeap;
 	std::string m_hdrTextureName = "hdrTex";
@@ -244,6 +242,7 @@ private:
 	std::string wirePbrPSO = "wire_pbrPSO";
 	std::string depthOnlyPbrPSO = "dsOnly_pbrPSO";
 	std::string pbrPSO = "pbrPSO";
+	std::string pointCloudPSO = "pointCloudPSO";
 
 	//FrameResource
 private:

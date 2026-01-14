@@ -49,6 +49,12 @@ void ATriggerBox::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& 
 	cmp->SetMesh(mesh);
 	cmp->SetPhysX(ad.useSimulate);
 	cmp->SetPhysXMode(ad.mode);
+	cmp->SetHeightScale(ad.heightScale);
+	cmp->UpdateTexTransform(ad.lc.texTransform);
+	cmp->SetPSOName(ad.psoName);
+	cmp->SetUpdateConstant(ad.updateConstants);
+	cmp->SetTextureName(ad.material);
+
 	cmp->OnComponentBeginOverlap.Bind(this, &ATriggerBox::OnBeginTrigger);
 	cmp->OnComponentEndOverlap.Bind(this, &ATriggerBox::OnEndTrigger);
 

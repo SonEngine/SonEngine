@@ -23,6 +23,9 @@ void Actor::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
 	cmp->SetPhysXMode(ad.mode);
 	cmp->SetHeightScale(ad.heightScale);
 	cmp->UpdateTexTransform(ad.lc.texTransform);
+	cmp->SetPSOName(ad.psoName);
+	cmp->SetUpdateConstant(ad.updateConstants);
+	cmp->SetTextureName(ad.material);
 
 	SetRootComponent(cmp);
 	SetActorData(ad);
@@ -184,10 +187,6 @@ void Actor::SetUpdateConstant(bool newState)
 void Actor::SetActorData(const ActorData& ad)
 {
 	SetActorLocation(ad.pos);
-	SetUpdateConstant(ad.updateConstants);
-	SetTextureName(ad.material);
-	SetPSOName(ad.psoName);
-
 	UpdateMipState(ad.forceMip0);
 	UpdateUseReflect(ad.useReflect);
 }

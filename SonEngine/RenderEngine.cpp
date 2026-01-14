@@ -105,7 +105,6 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 
 	CreateCubeMap();
 
-
 	float r = 0.f;
 	float g = 0.f;
 	float b = 0.f;
@@ -113,7 +112,6 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 	computeClearColor[1] = g;
 	computeClearColor[2] = b;
 	computeClearColor[3] = 1.f;
-
 	{
 		ThrowIfFailed(
 			m_device->CreateCommandAllocator(
@@ -395,7 +393,6 @@ void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 	{
 		add.mesh = pointCloudComp->GetMeshPtr();
 		add.meshType = MT_pointCloud;
-
 	}
 	else if (DotComponent* pointCloudComp = dynamic_cast<DotComponent*>(primitive))
 	{
@@ -755,6 +752,7 @@ void RenderEngine::RenderMeshes(const std::string& psoName, ID3D12GraphicsComman
 				auto& ld = it->second;
 
 				// cubemap - 0, albedo - 1, player cubemap - 2, local - 3, gobal - 4
+				// phong 과 pbr 구분 목적 psoName검사
 				if (type == MT_primitive && (psoName.find(ld.psoName) != std::string::npos))
 				{
 					if (rpType == RenderPassType::RPT_Default)
@@ -768,6 +766,12 @@ void RenderEngine::RenderMeshes(const std::string& psoName, ID3D12GraphicsComman
 					}
 					else if(rpType == RenderPassType::RPT_CubeMapPass)
 					{
+						/*commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
+						commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(ld.textureName));
+						commandList->SetGraphicsRootDescriptorTable(3, m_textureLoader->GetGPUHandle(depthOnlyTextureName));
+						commandList->SetGraphicsRootConstantBufferView(4, ld.localCB->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootConstantBufferView(5, r_currentFrameResource->GetCubeGCBGPUAddress(gcbIdx));*/
+
 						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
 						commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(ld.textureName));
 						commandList->SetGraphicsRootConstantBufferView(2, ld.localCB->GetGPUVirtualAddress());
@@ -783,9 +787,18 @@ void RenderEngine::RenderMeshes(const std::string& psoName, ID3D12GraphicsComman
 				}
 				else if (type == MT_pointCloud)
 				{
-					commandList->SetGraphicsRootConstantBufferView(0, ld.localCB->GetGPUVirtualAddress());
-					commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
+					if (rpType == RenderPassType::RPT_Default)
+					{
+						commandList->SetGraphicsRootConstantBufferView(0, ld.localCB->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
+					}
+					else if (rpType == RenderPassType::RPT_CubeMapPass)
+					{
+						commandList->SetGraphicsRootConstantBufferView(0, ld.localCB->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetCubeGCBGPUAddress(gcbIdx));
+					}
 					proxy.mesh->RenderPoints(commandList);
+
 				}
 				else if (type == MT_finalize)
 				{
@@ -1123,6 +1136,7 @@ void RenderEngine::RenderCube(const std::string& psoName, const std::string& pro
 		commandList->OMSetRenderTargets(1, &GetCubeMapRtvCpuHandle(i), TRUE, &GetCubeMapDsvCpuHandle(i));
 
 		RenderMeshes(proxyPsoName, commandList, meshType, RPT_CubeMapPass, i);
+		//RenderMeshes(proxyPsoName, commandList, meshType, , i);
 
 	}
 	commandList->ResourceBarrier(
@@ -1456,14 +1470,17 @@ void RenderEngine::RenderWithCompute()
 void RenderEngine::DrawingWithMouse()
 {
 	int i = 0;
+	// cubemap에 환경 cubemap, mesh 렌더링
+	DepthOnlyPass(depthOnlyPbrPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, true/*clear RT*/);
+
 	RenderCube(cubeMapPSO, phongPSO, i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
 	RenderCube(genCubeMapPSO, phongPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 	RenderCube(genPBRCubeMapPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+	RenderCube(pointCloudPSO, pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
 	//Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	DepthOnlyPass(depthOnlyPbrPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, true/*clear RT*/);
 	if (test)
 	{
-		Render("pointCloudPSO", i++, MT_pointCloud, false/*isFinal*/, true/*clear RT*/);
+		Render(pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, true/*clear RT*/);
 		Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 		Render(currentPbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 		Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
