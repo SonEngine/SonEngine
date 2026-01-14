@@ -12,8 +12,8 @@ DirectX 12을 사용한 로우레벨 3D 렌더링 엔진.
 ### 2. Cubemap reflection
 <img src="SonEngine/Images/BackBuffer_260109_190553.png" width="320" height="180"> 
 
-### 2. Texture mapping
-<img src="SonEngine/Images/BackBuffer_260111_183900.png" width="320" height="180"> 
+### 2. Texture & shadow mapping
+<img src="SonEngine/Images/BackBuffer_260111_183900.png" width="320" height="180"> <img src="SonEngine/Images/BackBuffer_260114_125152.png" width="320" height="180">
 
 
 
