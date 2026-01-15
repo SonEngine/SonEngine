@@ -1,18 +1,27 @@
-#include "InputHelper.h"
+﻿#include "InputHelper.h"
 #include <iostream>
-
-
 
 using DirectX::SimpleMath::Vector3;
 
 Input::InputHelper::InputHelper()
 {
+	InputStates[grabKey] = false;
 }
 
-void Input::InputHelper::SetInputState(size_t wParam, bool bKeyDown)
+void Input::InputHelper::SetInputState(size_t wParam, bool newState)
 {
-	InputStates[wParam] = bKeyDown;
-	//std::cout << (char)wParam << '\n';
+	if (wParam == grabKey)
+	{
+		bool prevState = InputStates[wParam];
+		if (prevState != newState)
+		{
+			grabDirty = true;
+			InputStates[wParam] = newState;
+		}
+	}
+	else
+		InputStates[wParam] = newState;
+
 }
 bool Input::InputHelper::GetInputState(size_t wParam)
 {

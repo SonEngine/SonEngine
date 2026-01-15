@@ -34,6 +34,8 @@ protected:
 	void onWake(physx::PxActor** actors, physx::PxU32 count) override { PX_UNUSED(actors); PX_UNUSED(count); }
 	void onSleep(physx::PxActor** actors, physx::PxU32 count) override { PX_UNUSED(actors); PX_UNUSED(count); }
 	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) override;
+	void SetKinematicMode(PrimitiveComponent* prim, physx::PxRigidDynamic* dyn);
+	void SetDynamicMode(PrimitiveComponent* prim, physx::PxRigidDynamic* dyn);
 	void onAdvance(const physx::PxRigidBody* const*, const physx::PxTransform*, const physx::PxU32) override {}
 	
 private:
@@ -49,4 +51,9 @@ private:
 
 private:
 	std::vector< PhysXProxy> proxyArr;
+
+private:
+	class PrimitiveComponent* grabbedPrimitive = nullptr;
+	class physx::PxRigidDynamic* grabbedDynamic = nullptr;
+	physx::PxF32 grabbedDistance = 0;
 };

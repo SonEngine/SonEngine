@@ -14,10 +14,11 @@ struct GeometryGenerator
 
 	static Mesh<Vertex, uint16_t> MakeSphere(int c, float r);
 	
-	static Mesh<PBRVertex, uint16_t> MakePBRSphere(int c, float r);
-	static Mesh<PBRVertex, uint16_t> MakePBRPlane(float x, float z, int c);
-
+	
+	;
+	static Mesh<PBRVertex, uint16_t> PBRPlane(float halfX, float halfZ, int cX, int cY);
 	static Mesh<PBRVertex, uint16_t> PbrSphere(const float& radius, const int& x, const int& y);
+	static Mesh<PBRVertex, uint16_t> PBRCube(float halfX, float halfY, float halfZ, int xCount, int yCount, int zCount);
 
 	static void ComputeTangent(PBRVertex & v0, PBRVertex& v1, PBRVertex& v2);
 	
@@ -25,8 +26,7 @@ struct GeometryGenerator
 
 	static Mesh<SimpleVertex, uint16_t> MakePoint();
 
-
-	static Vector3 CalculateTangent(const std::vector<PBRVertex>& vertices, int i0, int i1, int i2);
+	
 
 	
 

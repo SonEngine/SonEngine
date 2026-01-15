@@ -48,10 +48,16 @@ void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	sphere.m_meshes.push_back({ GeometryGenerator::PbrSphere(0.5f, 100, 100) });
 	
 	float planeSize = 2.f*100.f;
-	int div = 200.f;
+	int div = 200;
 
 	Asset<PBRVertex, uint16_t> plane;
-	plane.m_meshes.push_back({ GeometryGenerator::MakePBRPlane(planeSize, planeSize, div) });
+	plane.m_meshes.push_back({ GeometryGenerator::PBRPlane(planeSize, planeSize, div, div) });
+
+	Asset<PBRVertex, uint16_t> cube;
+	cube.m_meshes.push_back({ GeometryGenerator::PBRCube(0.5,0.5,0.5,40,40,40) });
+
+	Asset<PBRVertex, uint16_t> simpleCube;
+	simpleCube.m_meshes.push_back({ GeometryGenerator::PBRCube(0.5,0.5,0.5,1,1,1) });
 
 	std::shared_ptr<StaticMesh> sphereMesh = std::make_shared<StaticMesh>();
 	sphereMesh->Initialize<PBRVertex, uint16_t>(device, commandList, sphere.m_meshes);
@@ -62,9 +68,17 @@ void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	std::shared_ptr<StaticMesh> sphereTanMesh = std::make_shared<StaticMesh>();
 	sphereTanMesh->Initialize<PBRVertex, uint16_t>(device, commandList, assets["sphere"].m_meshes);
 
+	std::shared_ptr<StaticMesh> cubeMesh = std::make_shared<StaticMesh>();
+	cubeMesh->Initialize<PBRVertex, uint16_t>(device, commandList, cube.m_meshes);
+
+	std::shared_ptr<StaticMesh> simpleCubeMesh = std::make_shared<StaticMesh>();
+	simpleCubeMesh->Initialize<PBRVertex, uint16_t>(device, commandList, simpleCube.m_meshes);
+
 	meshesMap["sphereTan"] = sphereTanMesh;
 	meshesMap["sphere"] = sphereMesh;
 	meshesMap["plane"] = planeMesh;
+	meshesMap["cube"] = cubeMesh;
+	meshesMap["simpleCube"] = simpleCubeMesh;
 }
 
 

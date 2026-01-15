@@ -213,6 +213,27 @@ void World::SetInputState(size_t key, bool isKeyDown)
 {
 	m_inputHelper.SetInputState(key, isKeyDown);
 }
+
+bool World::GetInputState(size_t key)
+{
+	return m_inputHelper.GetInputState(key);
+}
+
+bool World::GetGrabState()
+{
+	return m_inputHelper.GetGrabState();
+}
+
+bool World::GetGrabDirty()
+{
+	return m_inputHelper.grabDirty;
+}
+
+void World::SetGrabDirty(bool newDity)
+{
+	m_inputHelper.grabDirty = newDity;
+}
+
 // BOOKMARK
 bool World::LoadLevel(const std::filesystem::path& levelPath)
 {
@@ -326,7 +347,11 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 				case ActorType::AT_ATriggerBox:
 				{
 					std::shared_ptr<ATriggerBox> actor = std::make_shared<ATriggerBox>(ad.name, this);
-					actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
+					if (ad.psoName == "phongPSO")
+						actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
+					else if (ad.psoName == "pbrPSO")
+						actor->Initialize(pbrModelLoader->GetMeshes(ad.mesh), ad);
+
 					SpawnActor(actor);
 					auto target = m_actors.find(targetName);
 					if (target != m_actors.end())
@@ -340,7 +365,10 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 				case ActorType::AT_AMovingPlatform:
 				{
 					std::shared_ptr<AMovingPlatform> actor = std::make_shared<AMovingPlatform>(ad.name, this);
-					actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
+					if (ad.psoName == "phongPSO")
+						actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
+					else if (ad.psoName == "pbrPSO")
+						actor->Initialize(pbrModelLoader->GetMeshes(ad.mesh), ad);
 					SpawnActor(actor);
 				}
 				break;

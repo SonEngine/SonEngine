@@ -58,7 +58,7 @@ float4 main(psInput input) : SV_TARGET
         float specularStrength = pow(clamp(dot(r, v), 0.f, 1.f), 100);
         float3 diffuse = light.brightness.xyz * diffuseStrength;
         float3 specular = float3(1, 1, 1) * specularStrength;
-        direct += diffuse;
+        direct += diffuse + specular;
     }
     return float4(ambient + albedo * direct* (1.f-shadow), 1.f);
 }

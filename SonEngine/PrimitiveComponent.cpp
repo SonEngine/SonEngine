@@ -17,6 +17,7 @@ World* PrimitiveComponent::GetWorld() const
 {
     return m_owner ? m_owner->GetWorld() : nullptr;
 }
+
 std::string PrimitiveComponent::GetName() const
 {
 	return m_owner ? m_owner->GetName() : "";

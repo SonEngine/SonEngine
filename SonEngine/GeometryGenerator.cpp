@@ -241,110 +241,6 @@ Mesh<Vertex, uint16_t> GeometryGenerator::MakeSphere(int c, float r)
 }
 
 
-Mesh<PBRVertex, uint16_t> GeometryGenerator::MakePBRSphere(int c, float r)
-{
-	float pi = (float)std::acos(-1);
-	float thetaZ = pi / c;
-	float thetaY = pi * 2.f / c;
-
-	std::vector<PBRVertex> vertices;
-	std::vector<uint16_t> indices;
-
-
-	Vector3 baseZ = Vector3(0, r, 0);
-
-	float deluv = 1.f / c;
-	for (int i = 0; i <= c; i++)
-	{
-		DirectX::SimpleMath::Matrix zMat = DirectX::XMMatrixRotationZ(thetaZ * i);
-		Vector3 baseY = Vector3::Transform(baseZ, zMat);
-		for (int j = 0; j <= c; j++)
-		{
-			DirectX::SimpleMath::Matrix yMat = DirectX::XMMatrixRotationY(-thetaY * j);
-			Vector3 pos = Vector3::Transform(baseY, yMat);
-			Vector3 n = pos;
-			n.Normalize();
-
-			PBRVertex vertex;
-			vertex.position = pos;
-			vertex.normal = n;
-			vertex.uv = Vector2(deluv * j, deluv * i);
-			if (i == 0 || i == c)
-			{
-				vertex.tangent = Vector3(0, 0, -1);
-			}
-			else
-			{
-				vertex.tangent = Vector3(0, 0, 0);
-			}
-
-			vertices.push_back(vertex);
-			if (j != c && i != c)
-			{
-				uint16_t i0 = (c + 1) * i + j;
-				uint16_t i1 = i0 + c + 1;
-				uint16_t i2 = i0 + 1;
-				uint16_t i3 = i1 + 1;
-				indices.push_back(i1);
-				indices.push_back(i0);
-				indices.push_back(i2);
-
-				indices.push_back(i1);
-				indices.push_back(i2);
-				indices.push_back(i3);
-			}
-		}
-	}
-
-	for (size_t i = 0; i < indices.size(); i += 3)
-	{
-		uint16_t i0 = indices[i];
-		uint16_t i1 = indices[i + 1];
-		uint16_t i2 = indices[i + 2];
-
-		Vector3 t = CalculateTangent(vertices, i0, i1, i2);
-		/*vertices[i0].tangent += t;
-		vertices[i1].tangent += t;
-		vertices[i2].tangent += t;*/
-		vertices[i0].tangent = t;
-		vertices[i1].tangent = t;
-		vertices[i2].tangent = t;
-	}
-
-
-	for (int i = 0; i <= c; i++)
-	{
-		for (int j = 0; j <= c; j++)
-		{
-			int idx = i * (c+1) + j;
-			PBRVertex& v = vertices[idx];
-			//if (v.tangent == Vector3(0, 0, 0)/* || i == 0 || i == c*/)
-			//{
-			//	v.tangent = Vector3(1, 0, 0);
-			//}
-
-			if (j == 0)
-			{
-				Vector3 t = v.tangent;
-				int lastIdx = idx + c;
-				t += vertices[lastIdx].tangent;
-				t.Normalize();
-				vertices[lastIdx].tangent = t;
-				v.tangent = t;
-			}
-			//v.tangent.Normalize();
-		}
-	}
-
-	Mesh<PBRVertex, uint16_t> mesh;
-
-	mesh.m_vertices = vertices;
-	mesh.m_indices = indices;
-
-	return mesh;
-}
-
-
 Mesh<PointCloudVertex, uint16_t> GeometryGenerator::MakePointCube(float x, float y, float z)
 {
 	float halfX = x / 2.f;
@@ -392,69 +288,36 @@ Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakePoint()
 	return mesh;
 }
 
-Vector3 GeometryGenerator::CalculateTangent(const std::vector<PBRVertex>& vertices, int i0, int i1, int i2)
+Mesh<PBRVertex, uint16_t> GeometryGenerator::PBRPlane(float halfX, float halfZ, int cX, int cZ)
 {
-	Vector3 p0 = vertices[i0].position;
-	Vector3 p1 = vertices[i1].position;
-	Vector3 p2 = vertices[i2].position;
-
-	Vector2 uv0 = vertices[i0].uv;
-	Vector2 uv1 = vertices[i1].uv;
-	Vector2 uv2 = vertices[i2].uv;
-
-	Vector3 e0 = p1 - p0;
-	Vector3 e1 = p2 - p0;
-	
-	Vector2 delUV0 = uv1 - uv0;
-	Vector2 delUV1 = uv2 - uv0;
-
-	float a = delUV0.x;
-	float b = delUV0.y;
-
-	float c = delUV1.x;
-	float d = delUV1.y;
-
-	float det = a * d - b * c;
-
-	const float r = 1.0f / det;
-
-	Vector3 t = (e0 * d - e1 * b) * r;
-	t.Normalize();
-	return t;
-}
-
-Mesh<PBRVertex, uint16_t> GeometryGenerator::MakePBRPlane(float x, float z, int c)
-{
-	float halfX = x / 2.f;
-	float halfZ = z / 2.f;
-
 	std::vector<PBRVertex> vertices;
 	std::vector<uint16_t> indices;
 
 	Vector3 baseV = Vector3(-halfX, 0, halfZ);
-	float delX = x / c;
-	float delZ = -z / c;
+	float delX = halfX * 2.f / cX;
+	float delZ = -halfZ * 2.f / cZ;
 
-	float deluv = 1.f / c;
-	for (int i = 0; i <= c; i++)
+	float deluvX = 1.f / cX;
+	float deluvZ = 1.f / cZ;
+	for (int i = 0; i <= cZ; i++)
 	{
 
 		Vector3 xBase = baseV + Vector3(0.f, 0.f, delZ) * (float)i;
-		for (int j = 0; j <= c; j++)
+		for (int j = 0; j <= cX; j++)
 		{
 			Vector3 v = xBase + (float)j * Vector3(delX, 0, 0);
 			PBRVertex vertex;
 			vertex.position = v;
 			vertex.normal = Vector3(0.f, 1.f, 0.f);
-			vertex.uv = Vector2(deluv * j, deluv * i);
+			vertex.uv = Vector2(deluvX * j, deluvZ * i);
 			vertex.tangent = Vector3(1, 0, 0);
 
 			vertices.push_back(vertex);
 
-			if (j != c && i != c)
+			if (j != cX && i != cZ)
 			{
-				uint16_t a = (c + 1) * i + j;
-				uint16_t b = a + c + 1;
+				uint16_t a = (cX + 1) * i + j;
+				uint16_t b = a + cX + 1;
 				uint16_t c = a + 1;
 				uint16_t d = b + 1;
 				indices.push_back(b);
@@ -561,6 +424,67 @@ Mesh<PBRVertex, uint16_t> GeometryGenerator::PbrSphere(const float& radius, cons
 	return mesh;
 }
 
+Mesh<PBRVertex, uint16_t> GeometryGenerator::PBRCube(float halfX, float halfY, float halfZ, int xCount, int yCount, int zCount)
+{
+	std::vector<PBRVertex> vertices;
+	std::vector<uint16_t> indices;
+
+	std::vector<std::tuple<float, float, int, int>> halfList = {
+		{halfX, halfZ, xCount, zCount},
+		{halfX, halfY, xCount, yCount},
+		{halfX, halfY, xCount, yCount},
+		{halfZ, halfY, zCount, yCount},
+		{halfZ, halfY, zCount, yCount},
+		{halfX, halfZ, xCount, zCount}
+
+	};
+	DirectX::SimpleMath::Matrix frontMat = DirectX::XMMatrixRotationX(-DirectX::XM_PIDIV2);
+	// 위 앞 뒤 좌 우 아래
+	std::vector<DirectX::SimpleMath::Matrix> matList = {
+		DirectX::XMMatrixTranslation(0,halfY,0), // 위
+		frontMat * DirectX::XMMatrixTranslation(0,0, -halfZ), //앞
+		frontMat * DirectX::XMMatrixRotationY(DirectX::XM_PI)* DirectX::XMMatrixTranslation(0,0, halfZ), // 뒤
+		frontMat * DirectX::XMMatrixRotationY(DirectX::XM_PIDIV2)* DirectX::XMMatrixTranslation(-halfX,0,0), // 좌
+		frontMat * DirectX::XMMatrixRotationY(-DirectX::XM_PIDIV2)* DirectX::XMMatrixTranslation(halfX,0,0),// 우
+		DirectX::XMMatrixRotationX(-DirectX::XM_PI) * DirectX::XMMatrixTranslation(0,-halfY,0), // 아래
+	};
+
+	size_t offset = 0;
+	for (size_t i = 0; i < 6; i++)
+	{
+		Mesh<PBRVertex, uint16_t> m =
+			PBRPlane(
+				std::get<0>(halfList[i]),
+				std::get<1>(halfList[i]),
+				std::get<2>(halfList[i]),
+				std::get<3>(halfList[i])
+			);
+
+		for (auto& v : m.m_vertices)
+		{
+			v.position = Vector3::Transform(v.position, matList[i]);
+			v.normal = Vector3::Transform(v.normal, matList[i]);
+			v.tangent = Vector3::Transform(v.tangent, matList[i]);
+
+			v.normal.Normalize();
+			v.tangent.Normalize();
+			vertices.push_back(v);
+		}
+		for (auto& i : m.m_indices)
+		{
+			i += offset;
+			indices.push_back(i);
+		}
+		offset += m.m_vertices.size();
+	}
+
+	Mesh<PBRVertex, uint16_t> mesh;
+
+	mesh.m_vertices = vertices;
+	mesh.m_indices = indices;
+
+	return mesh;
+}
 
 void GeometryGenerator::ComputeTangent(PBRVertex& v0, PBRVertex& v1, PBRVertex& v2) {
 	DirectX::SimpleMath::Vector2 t0 = v1.uv - v0.uv;

@@ -48,7 +48,7 @@ public:
 
 public:
 	ViewProjInfo GetViewProjInfo();
-	std::vector<PBRLightInfo> GetLightInfos() const;
+	//std::vector<PBRLightInfo> GetLightInfos() const;
 
 public:
 	//Actor* Getplayer() { return m_player.get(); }
@@ -73,6 +73,13 @@ public:
 
 protected:
 	Input::InputHelper m_inputHelper;
+
+public:
+	bool GetInputState(size_t key);
+	bool GetGrabState();
+	bool GetGrabDirty();
+
+	void SetGrabDirty(bool newDity);
 
 // mouse
 private:

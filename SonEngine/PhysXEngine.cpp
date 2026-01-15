@@ -3,18 +3,27 @@
 #include <vector>
 #include <iostream>
 
+#include "GraphicsCommon.h"
 #include "PrimitiveComponent.h"
 
 
 using namespace physx;
+using namespace Graphics;
 
+
+PxVec3 VectorToPxVec(const Vector3& vec)
+{
+	return PxVec3(vec.x, vec.y, vec.z);
+}
+Vector3 PxVecToVector(const PxVec3& vec)
+{
+	return Vector3(vec.x, vec.y, vec.z);
+}
 
 static physx::PxFilterFlags contactReportFilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
 	physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
 	physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize)
 {
-	using namespace physx;
-
 	PX_UNUSED(attributes0);
 	PX_UNUSED(attributes1);
 	PX_UNUSED(filterData0);
@@ -88,6 +97,52 @@ void PhysXEngine::Tick(float deltaTime)
 			proxy.primitive->SyncFromPhysX(proxy.body->getGlobalPose());
 		}
 	}
+
+	// grab 상태가 변했을 때 raycast를 통해 hit 판정 후
+	// hit 했다면 해당 primitive를 kinematic 모드로 전환 후 grabbedPrimitive에 저장
+	// 매 tick 마다 grabbedPrimitive가 존재한다면 카메라 앞으로 location 지정
+	if (world->GetGrabDirty()) {
+		world->SetGrabDirty(false);
+
+		if (world->GetGrabState() && grabbedPrimitive == nullptr) {
+
+			PxVec3 origin = VectorToPxVec(world->GetViewProjInfo().viewLocation);
+			PxVec3 unitDir = VectorToPxVec(world->GetViewProjInfo().viewDirection);
+			PxReal maxDistance = 3.f;
+
+			PxRaycastBuffer hit;
+			bool gState = gScene->raycast(origin, unitDir, maxDistance, hit);
+			if (gState && hit.hasBlock)
+			{
+				const PxRaycastHit& h = hit.block;;
+				PxShape* shape = h.shape;
+				grabbedDistance = h.distance;
+				PxRigidActor* ha = h.actor;
+
+				PrimitiveComponent* prim = static_cast<PrimitiveComponent*>(shape->userData);
+				if (prim && ha) {
+					grabbedPrimitive = prim;
+					if (grabbedDynamic = ha->is<PxRigidDynamic>())
+					{
+						SetKinematicMode(grabbedPrimitive, grabbedDynamic);
+					}
+				}
+			}
+		}
+		else {
+			if (grabbedDynamic && grabbedPrimitive) {
+				SetDynamicMode(grabbedPrimitive, grabbedDynamic);
+				grabbedDynamic = nullptr;
+				grabbedPrimitive = nullptr;
+			}
+		}
+	}
+	if (grabbedPrimitive) {
+		PxVec3 origin = VectorToPxVec(world->GetViewProjInfo().viewLocation);
+		PxVec3 unitDir = VectorToPxVec(world->GetViewProjInfo().viewDirection);
+		PxVec3 newLoc = origin + (unitDir * grabbedDistance);
+		grabbedPrimitive->SetLocation(PxVecToVector(newLoc));
+	}
 }
 
 void PhysXEngine::AddRigidDynamic(physx::PxRigidDynamic* rigidBody)
@@ -105,7 +160,7 @@ void PhysXEngine::RegisterPrimitive(class PrimitiveComponent* primitive, bool us
 	DirectX::SimpleMath::Vector3 loc = primitive->GetLocation();
 	DirectX::SimpleMath::Quaternion rot = primitive->GetRotation();
 
-	PxTransform t = PxTransform(PxVec3(loc.x, loc.y, loc.z),PxQuat(rot.x,rot.y,rot.z,rot.w));
+	PxTransform t = PxTransform(PxVec3(loc.x, loc.y, loc.z), PxQuat(rot.x, rot.y, rot.z, rot.w));
 	PxReal halfExtent = 0.5f;
 	PxFilterData filterData;
 	filterData.word0 = 1;
@@ -163,7 +218,6 @@ void PhysXEngine::SyncKinematics()
 			if (proxy.body)
 			{
 				PxTransform t = proxy.primitive->GetPxTransform();
-				//std::cout << "SyncKinematic - " << t.p.x << t.p.y << t.p.z << '\n';
 				proxy.body->setKinematicTarget(t);
 			}
 		}
@@ -179,9 +233,10 @@ void PhysXEngine::onContact(const PxContactPairHeader& pairHeader, const PxConta
 
 		PrimitiveComponent* prim0 = static_cast<PrimitiveComponent*>(shape0->userData);
 		PrimitiveComponent* prim1 = static_cast<PrimitiveComponent*>(shape1->userData);
+		std::cout << "onContact - ";
 		if (prim0)
 		{
-			std::cout << "prim0 : " << prim0->GetName() << std::endl;
+			std::cout << "prim0 : " << prim0->GetName() << ", ";
 		}
 		if (prim1)
 		{
@@ -227,4 +282,17 @@ void PhysXEngine::onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count)
 			}
 		}
 	}
+}
+
+void PhysXEngine::SetKinematicMode(PrimitiveComponent* prim, PxRigidDynamic* dyn)
+{
+	prim->SetPhysXMode(PhysXMode::PM_Kinematic);
+	dyn->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+	dyn->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+}
+void PhysXEngine::SetDynamicMode(PrimitiveComponent* prim, PxRigidDynamic* dyn)
+{
+	prim->SetPhysXMode(PhysXMode::PM_Dynamic);
+	dyn->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+	dyn->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
 }
