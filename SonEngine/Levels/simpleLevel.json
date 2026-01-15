@@ -12,7 +12,7 @@
       "components": [
         {
           "type": "StaticMesh",
-          "mesh": "simpleCube",
+          "mesh": "sphere",
           "material": "worn-painted-metal_albedo"
         },
         {
@@ -104,43 +104,6 @@
             "pos": [ 0.0, 0.0, 0.0 ],
             "rot": [ 0, 0, 0, 1 ],
             "scale": [ 100, 100, 1 ]
-          }
-        },
-        {
-          "type": "RenderMode",
-          "psoName": "pbrPSO"
-        }
-      ]
-    },
-    {
-      "class": "Actor",
-      "name": "pbrSphereRight",
-      "transform": {
-        "pos": [ 1.5, 0.8, 0.0 ],
-        "rot": [ 0, 0, 0, 1 ],
-        "scale": [ 1, 1, 1 ]
-      },
-      "components": [
-        {
-          "type": "StaticMesh",
-          "mesh": "sphere",
-          "material": "PavingStones145_2K-PNG_Albedo"
-        },
-        {
-          "type": "RigidBody",
-          "simulate": true,
-          "mode": "PM_Default"
-        },
-        {
-          "type": "LocalConstant",
-          "forceMip0": false,
-          "updateConstants": true,
-          "useReflect": false,
-          "heightScale": 0.02,
-          "texTransform": {
-            "pos": [ 0.0, 0.0, 0.0 ],
-            "rot": [ 0, 0, 0, 1 ],
-            "scale": [ 2, 2, 1 ]
           }
         },
         {
@@ -296,6 +259,43 @@
             "pos": [ 0.0, 0.0, 0.0 ],
             "rot": [ 0, 0, 0, 1 ],
             "scale": [ 2, 2, 1 ]
+          }
+        },
+        {
+          "type": "RenderMode",
+          "psoName": "pbrPSO"
+        }
+      ]
+    },
+    {
+      "class": "ADoor",
+      "name": "door",
+      "transform": {
+        "pos": [ 1.5, 0.0, 0 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "cube",
+          "material": "large_castle_door_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Default"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": true,
+          "useReflect": false,
+          "heightScale": 0.0,
+          "texTransform": {
+            "pos": [ 0.0, 0.0, 0.0 ],
+            "rot": [ 0, 0, 0, 1 ],
+            "scale": [ 1, 1, 1 ]
           }
         },
         {

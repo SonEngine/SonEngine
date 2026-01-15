@@ -18,4 +18,13 @@ void StaticMeshComponent::SetMesh(std::shared_ptr<StaticMesh> newMesh)
 	m_mesh = std::move(newMesh);
 }
 
-
+void StaticMeshComponent::SetActorData(const ActorData& ad)
+{
+	SetPhysX(ad.useSimulate);
+	SetPhysXMode(ad.mode);
+	SetHeightScale(ad.heightScale);
+	UpdateTexTransform(ad.lc.texTransform);
+	SetPSOName(ad.psoName);
+	SetUpdateConstant(ad.updateConstants);
+	SetTextureName(ad.material);
+}

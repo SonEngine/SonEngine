@@ -19,13 +19,7 @@ void Actor::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
 {
 	std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(this);
 	cmp->SetMesh(mesh);
-	cmp->SetPhysX(ad.useSimulate);
-	cmp->SetPhysXMode(ad.mode);
-	cmp->SetHeightScale(ad.heightScale);
-	cmp->UpdateTexTransform(ad.lc.texTransform);
-	cmp->SetPSOName(ad.psoName);
-	cmp->SetUpdateConstant(ad.updateConstants);
-	cmp->SetTextureName(ad.material);
+	cmp->SetActorData(ad);
 
 	SetRootComponent(cmp);
 	SetActorData(ad);

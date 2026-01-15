@@ -540,7 +540,16 @@ void RenderEngine::UpdateGUI()
 {
 	ImGui::SetWindowSize(ImVec2((float)m_guiWidth, (float)m_height));
 	ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
-	//ImGui::SetWindowPos(ImVec2(0.f, 0.f), ImGuiCond_FirstUseEver);
+
+	auto it = m_scene->m_proxies[MeshType::MT_primitive].find(r_selecteId);
+	if (it != m_scene->m_proxies[MeshType::MT_primitive].end())
+	{
+		PrimitiveProxy proxy = it->second;
+		guiLocalConstant = proxy.constant;
+	}
+	Vector3 loc = guiLocalConstant.model.Transpose().Translation();
+	gui_location = { loc.x, loc.y, loc.z };
+
 	int fps = int(1 / r_packet.deltaTime);
 	std::string fpsStr = "FPS : " + std::to_string(fps);
 	ImGui::Text(fpsStr.c_str());
@@ -570,7 +579,23 @@ void RenderEngine::UpdateGUI()
 	
 	ImGui::Text(r_idToName[r_selecteId].c_str());
 	ImGui::SliderInt("##id", &r_selecteId, 0, r_idMax);
+	ImGui::Text("position");
+	if (ImGui::DragFloat3("##loc", gui_location.data(), 0.1f, -100.f, 100.f))
+	{
+		guiLocalConstant.model = guiLocalConstant.model.Transpose();
 
+		guiLocalConstant.model.m[3][0] = gui_location[0];
+		guiLocalConstant.model.m[3][1] = gui_location[1];
+		guiLocalConstant.model.m[3][2] = gui_location[2];
+
+		guiLocalConstant.modelInvTranspose = guiLocalConstant.model.Invert();
+		guiLocalConstant.model = guiLocalConstant.model.Transpose();
+
+		CmdUpdateActorConstant cmd;
+		cmd.id = r_selecteId;
+		cmd.lc = guiLocalConstant;
+		m_renderToMainCmdQueue->Push(std::move(cmd));
+	}
 	ImGui::Text("Height Scale");
 	if (ImGui::SliderFloat("##Height Scale", &guiLocalConstant.heightScale, 0.f, 1.f))
 	{
@@ -1758,17 +1783,19 @@ void RenderEngine::ApplyImpl(const CmdAddActor& c)
 	}
 
 }
-
+// TODO : MeshType도 받아오기
 void RenderEngine::ApplyImpl(const CmdUpdateActorConstant& c)
 {
 	CmdUpdatePrimitive update;
 	update.id = (UINT)c.id;
+	//m_primitives[c.id]->SetLocalConstant(c.lc);
 	m_primitives[c.id]->SetCubeMapMipLevel(c.lc.cubeMapMipLevel);
 	m_primitives[c.id]->SetHeightScale(c.lc.heightScale);
-	update.constant = m_primitives[c.id]->GetLocalConstant();
-	update.meshType = MT_primitive;
+	m_primitives[c.id]->SetLocation(c.lc.model.Transpose().Translation());
+	//update.constant = m_primitives[c.id]->GetLocalConstant();
+	//update.meshType = MT_primitive;
 
-	m_renderCmdQueue->Push(update);
+	//m_renderCmdQueue->Push(update);
 }
 
 void RenderEngine::ClearTexture()

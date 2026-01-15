@@ -156,6 +156,7 @@
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="ActorComponent.cpp" />
     <ClCompile Include="ACubeMap.cpp" />
+    <ClCompile Include="ADoor.cpp" />
     <ClCompile Include="ADot.cpp" />
     <ClCompile Include="ALight.cpp" />
     <ClCompile Include="AMovingPlatform.cpp" />
@@ -210,6 +211,7 @@
     <ClInclude Include="ActorComponent.h" />
     <ClInclude Include="ActorData.h" />
     <ClInclude Include="ACubeMap.h" />
+    <ClInclude Include="ADoor.h" />
     <ClInclude Include="ADot.h" />
     <ClInclude Include="ALight.h" />
     <ClInclude Include="AMovingPlatform.h" />

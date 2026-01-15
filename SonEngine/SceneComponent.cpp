@@ -18,6 +18,11 @@ SceneComponent::~SceneComponent()
 {
 }
 
+void SceneComponent::Attach(std::shared_ptr<SceneComponent> sceneComp)
+{
+	m_children.push_back(sceneComp);
+}
+
 void SceneComponent::SetSpeed(const float& newSpeed)
 {
 	m_speed = newSpeed;
@@ -26,17 +31,38 @@ void SceneComponent::SetRotateSpeed(const float& newSpeed)
 {
 	m_rotateSpeed = newSpeed;
 }
+void SceneComponent::UpdateWorldTransform(const Transform& tr)
+{
+	worldTransform = tr;
+	UpdateConstantLocation();
+}
+
+void SceneComponent::SetLocalConstant(const LocalConstant& newConstant)
+{
+	localConstant = newConstant;
+	//SetLocation(localConstant.)
+}
 
 void SceneComponent::SetLocation(const DirectX::SimpleMath::Vector3& newLocation)
 {
 	localTransform.location = newLocation;
 	UpdateConstantLocation();
+
+	for (const auto& c : m_children)
+	{
+		c->UpdateWorldTransform(localTransform);
+	}
 }
 
 void SceneComponent::SetRotation(const DirectX::SimpleMath::Quaternion& newQuat)
 {
 	localTransform.quat = newQuat;
 	UpdateConstantRotation();
+
+	for (const auto& c : m_children)
+	{
+		c->UpdateWorldTransform(localTransform);
+	}
 }
 
 void SceneComponent::SetCubeMapMipLevel(const int& newCubeMapMipLevel)
@@ -53,11 +79,21 @@ void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation
 {
 	localTransform.location += delLocation;
 	UpdateConstantLocation();
+
+	for (const auto& c : m_children)
+	{
+		c->UpdateWorldTransform(localTransform);
+	}
 }
 void SceneComponent::AddRotation(const DirectX::SimpleMath::Quaternion& delQ)
 {
 	localTransform.quat *= delQ;
 	UpdateConstantRotation();
+
+	for (const auto& c : m_children)
+	{
+		c->UpdateWorldTransform(localTransform);
+	}
 }
 
 DirectX::SimpleMath::Matrix SceneComponent::GetViewMatrix() const
@@ -110,12 +146,25 @@ void SceneComponent::UpdateConstantRotation()
 void SceneComponent::UpdateMipState(int newForceMip0)
 {
 	localConstant.forceMip0 = newForceMip0;
+	for (const auto& c : m_children)
+	{
+		c->UpdateMipState(newForceMip0);
+	}
 }
 void SceneComponent::UpdateUseReflect(int newUseReflect)
 {
 	localConstant.useReflect = newUseReflect;
+
+	for (const auto& c : m_children)
+	{
+		c->UpdateUseReflect(newUseReflect);
+	}
 }
 void SceneComponent::UpdateTexTransform(const DirectX::SimpleMath::Matrix& texTransform)
 {
 	localConstant.texTransform = texTransform;
+	for (const auto& c : m_children)
+	{
+		c->UpdateTexTransform(texTransform);
+	}
 }

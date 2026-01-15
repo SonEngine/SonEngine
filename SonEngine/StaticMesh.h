@@ -44,10 +44,10 @@ public:
 	UINT GetIndexCount(int index = 0)const { return m_indexCounts[index]; }
 
 protected:
-	std::vector <Microsoft::WRL::ComPtr<ID3D12Resource>> m_vertexGpu;
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_vertexGpu;
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_vertexUpload;
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_indexGpu;
-	std::vector <Microsoft::WRL::ComPtr<ID3D12Resource>> m_indexUpload;
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_indexUpload;
 
 	std::vector<D3D12_VERTEX_BUFFER_VIEW> m_vertexBufferViews;
 	std::vector<D3D12_INDEX_BUFFER_VIEW> m_indexBufferViews;

@@ -14,9 +14,13 @@ public:
 	SceneComponent(Actor* owner);
 	virtual ~SceneComponent();
 
+	void Attach(std::shared_ptr<SceneComponent> sceneComp);
+
 public:
 	void SetSpeed(const float& newSpeed);
 	void SetRotateSpeed(const float& newSpeed);
+	void UpdateWorldTransform(const Transform& tr);
+	void SetLocalConstant(const LocalConstant& newConstant);
 	void SetLocation(const DirectX::SimpleMath::Vector3& newLocation);
 	void SetRotation(const DirectX::SimpleMath::Quaternion& newQuat);
 	void SetFrontDirection(const DirectX::SimpleMath::Vector3& newDir) { m_frontDirection = newDir; }

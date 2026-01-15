@@ -16,6 +16,7 @@
 #include "ACubeMap.h"
 #include "ALight.h"
 #include "ADot.h"
+#include "ADoor.h"
 
 #include "ModelLoader.h"
 
@@ -52,19 +53,24 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	modelLoader->Initialize(device, commandList);
 
 	pbrModelLoader->Load("sphere.glb");
+
+	auto tr = DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2);
+
+	pbrModelLoader->Load("large_castle_door_4k.fbx", tr);
 	pbrModelLoader->Initialize(device, commandList);
 
+	
 	simpleModelLoader->Initialize(device, commandList);
 
-	auto mat = DirectX::XMMatrixRotationZ(3.141592f) *
+	tr = DirectX::XMMatrixRotationZ(3.141592f) *
 		DirectX::XMMatrixRotationX(-3.14f / 12.f) *
 		DirectX::XMMatrixTranslationFromVector(Vector3(0.f, 0.2f, 5.f));
 
-	pcModelLoader->LoadPointCloud("map.ply", mat);
+	pcModelLoader->LoadPointCloud("map.ply", tr);
 	pcModelLoader->Initialize(device, commandList);
 
 	LoadLevel(levelPath);
-
+	
 	std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, DotComponent>(
 		"dot",
 		std::vector{ GeometryGenerator::MakePoint() },
@@ -397,6 +403,13 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 				{
 					std::shared_ptr<ALight> actor = std::make_shared<ALight>(ad.name, this);
 					actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad, ld);
+					SpawnActor(actor);
+				}
+				break;
+				case ActorType::AT_Door:
+				{
+					std::shared_ptr<ADoor> actor = std::make_shared<ADoor>(ad.name, this);
+					actor->Initialize(ad);
 					SpawnActor(actor);
 				}
 				break;

@@ -301,6 +301,7 @@ private:
 	bool test = true;
 	bool gui_wireFrameMode = false;
 	bool gui_renderPointCloud= false;
+	std::array<float,3> gui_location;
 
 private:
 	MouseInputStateHelper* pMouseinputStateHelper = nullptr;

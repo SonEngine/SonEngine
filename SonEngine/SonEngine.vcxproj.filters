@@ -144,6 +144,9 @@
     <ClCompile Include="ALight.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="ADoor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseApp.h">
@@ -342,6 +345,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="ALight.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ADoor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

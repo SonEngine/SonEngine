@@ -11,7 +11,8 @@ enum  ActorType {
     AT_PointCloud,
     AT_CubeMap,
     AT_Dot,
-    AT_Light
+    AT_Light,
+    AT_Door
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(ActorType, {
@@ -22,6 +23,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(ActorType, {
     {ActorType::AT_CubeMap, "ACubeMap"},
     {ActorType::AT_Dot, "ADot"},
     {ActorType::AT_Light, "ALight"},
+    {ActorType::AT_Door, "ADoor"},
     })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(PhysXMode, {
