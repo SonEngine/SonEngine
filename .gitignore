@@ -401,3 +401,4 @@ FodyWeavers.xsd
 videos/
 SonEngine/Textures/DDS/CubeMap_SkyEnvHDR.dds
 SonEngine/Build/textures.bin
+SonEngine/Textures/DDS/SkyEnvHDR_CubeMap.dds
