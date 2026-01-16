@@ -150,10 +150,11 @@ void Graphics::InitializeCommonState(const Microsoft::WRL::ComPtr<ID3D12Device5>
 	g_C2_RS.Finalize(device, L"C2_RS", D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	g_R4_C2_RS.Reset(6, 2);
-	g_R4_C2_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 3); // cubemap
-	g_R4_C2_RS[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 6); // albedo
-	g_R4_C2_RS[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 9, 1); // "반사"용 cubemap
-	g_R4_C2_RS[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 1); // depth only
+
+	g_R4_C2_RS[0].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 4); // cubemap
+	g_R4_C2_RS[1].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 6); // albedo
+	g_R4_C2_RS[2].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 10, 1); // "반사"용 cubemap
+	g_R4_C2_RS[3].InitAsDescriptorRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 11, 1); // depth only
 	g_R4_C2_RS[4].InitCBV(0); // local
 	g_R4_C2_RS[5].InitCBV(1); // global
 	g_R4_C2_RS.InitStaticSampler(0, wrapLinearSampler);

@@ -20,7 +20,8 @@ struct LocalConstant
     int cubeMapMipLevel;
     int useReflect;
     float heightScale;
-    float dummy[28];
+    float roughness;
+    float dummy[27];
 };
 
 

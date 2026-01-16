@@ -604,6 +604,14 @@ void RenderEngine::UpdateGUI()
 		cmd.lc = guiLocalConstant;
 		m_renderToMainCmdQueue->Push(std::move(cmd));
 	}
+	ImGui::Text("Roughness");
+	if (ImGui::SliderFloat("##Roughness", &guiLocalConstant.roughness, 0, 1))
+	{
+		CmdUpdateActorConstant cmd;
+		cmd.id = r_selecteId;
+		cmd.lc = guiLocalConstant;
+		m_renderToMainCmdQueue->Push(std::move(cmd));
+	}
 	ImGui::Text("Cubemap MipLevel");
 	if (ImGui::SliderInt("##Cubemap MipLevel", &guiLocalConstant.cubeMapMipLevel, 0, 5))
 	{
@@ -1346,7 +1354,7 @@ void RenderEngine::CreateTextures()
 	fallbackDDSPath = "Textures/Fallback/";
 
 	m_textureLoader = std::make_shared<TextureLoader>(texturePath, m_device);
-	m_textureLoader->InitHeap(30);
+	m_textureLoader->InitHeap(40);
 	m_textureLoader->LoadIdx();
 	m_textureLoader->LoadTextures(m_commandQueue);
 
@@ -1792,6 +1800,7 @@ void RenderEngine::ApplyImpl(const CmdUpdateActorConstant& c)
 	m_primitives[c.id]->SetCubeMapMipLevel(c.lc.cubeMapMipLevel);
 	m_primitives[c.id]->SetHeightScale(c.lc.heightScale);
 	m_primitives[c.id]->SetLocation(c.lc.model.Transpose().Translation());
+	m_primitives[c.id]->SetRoughness(c.lc.roughness);
 	//update.constant = m_primitives[c.id]->GetLocalConstant();
 	//update.meshType = MT_primitive;
 

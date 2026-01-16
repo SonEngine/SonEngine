@@ -211,7 +211,7 @@ private:
 	DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	//DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	std::string m_computeTextureName = "ComTex";
-	std::string m_cubeMapTextureName = "CubeMap_SkyDiffuseHDR";
+	std::string m_cubeMapTextureName = "SkyBrdf";
 	UINT computeTextureDIM = 1024 * 4;
 	UINT computeTextureDIMX;
 	UINT computeTextureDIMY;

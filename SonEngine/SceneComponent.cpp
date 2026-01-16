@@ -75,6 +75,11 @@ void SceneComponent::SetHeightScale(const float& newHeightScale)
 	localConstant.heightScale = newHeightScale;
 }
 
+void SceneComponent::SetRoughness(const float& newRoughness)
+{
+	localConstant.roughness = newRoughness;
+}
+
 void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation)
 {
 	localTransform.location += delLocation;

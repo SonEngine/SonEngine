@@ -28,6 +28,7 @@ public:
 	void SetRightDirection(const DirectX::SimpleMath::Vector3& newDir) { m_rightDirection = newDir; }
 	void SetCubeMapMipLevel(const int& newCubeMapMipLevel);
 	void SetHeightScale(const float& newHeightScale);
+	void SetRoughness(const float& newRoughness);
 	void AddLocation(const DirectX::SimpleMath::Vector3& delLocation);
 	void AddRotation(const DirectX::SimpleMath::Quaternion& delQ);
 
@@ -46,7 +47,6 @@ public:
 	DirectX::SimpleMath::Quaternion GetRotation()const { return worldTransform.quat * localTransform.quat; }
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
 	void GetChildrenComponents(std::vector<std::shared_ptr<SceneComponent>>& children) const;
-
 
 public:
 	// world->actor 호출

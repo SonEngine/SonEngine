@@ -178,9 +178,9 @@ void ModelLoader<PBRVertex, uint16_t>::ProcessMesh(std::vector<Mesh<PBRVertex, u
 		Vector3 normal = aiToVector3(n);
 		Vector3 tangent = aiToVector3(t);
 
-		Matrix inv = tr.Invert();
+		Matrix invTranspose = tr.Invert().Transpose();
 		pos = Vector3::Transform(pos, tr);
-		normal = Vector3::Transform(normal, inv);
+		normal = Vector3::Transform(normal, invTranspose);
 		tangent = Vector3::Transform(tangent, tr);
 
 		normal.Normalize();

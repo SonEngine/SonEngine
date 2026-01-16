@@ -5,7 +5,7 @@
       "class": "Actor",
       "name": "player",
       "transform": {
-        "pos": [ -1.5, 0.5, -1.5 ],
+        "pos": [ 0.0, 0.8, 0.0 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -24,23 +24,33 @@
           "type": "LocalConstant",
           "forceMip0": false,
           "updateConstants": true,
-          "useReflect": true
+          "useReflect": true,
+          "heightScale": 0.00,
+          "texTransform": {
+            "pos": [ 0.0, 0.0, 0.0 ],
+            "rot": [ 0, 0, 0, 1 ],
+            "scale": [ 3, 3, 1 ]
+          }
+        },
+        {
+          "type": "RenderMode",
+          "psoName": "pbrPSO"
         }
       ]
     },
     {
-      "class": "Actor",
-      "name": "sphere",
+      "class": "ACubeMap",
+      "name": "cubeMap",
       "transform": {
-        "pos": [ 0, 3, 0 ],
+        "pos": [ 0, 0, 0 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
       "components": [
         {
           "type": "StaticMesh",
-          "mesh": "sphere",
-          "material": "8k_earth_albedo"
+          "mesh": "cubeMap",
+          "material": "SkyEnvHDR_CubeMap"
         },
         {
           "type": "RigidBody",
@@ -51,34 +61,17 @@
           "type": "LocalConstant",
           "forceMip0": false,
           "updateConstants": false,
-          "useReflect": false
-        }
-      ]
-    },
-    {
-      "class": "Actor",
-      "name": "dynamicBox",
-      "transform": {
-        "pos": [ 3, 3, 0 ],
-        "rot": [ 0, 0, 0, 1 ],
-        "scale": [ 1, 1, 1 ]
-      },
-      "components": [
-        {
-          "type": "StaticMesh",
-          "mesh": "cube",
-          "material": "8k_earth_albedo"
+          "useReflect": false,
+          "heightScale": 0.00,
+          "texTransform": {
+            "pos": [ 0.0, 0.0, 0.0 ],
+            "rot": [ 0, 0, 0, 1 ],
+            "scale": [ 1, 1, 1 ]
+          }
         },
         {
-          "type": "RigidBody",
-          "simulate": true,
-          "mode": "PM_Dynamic"
-        },
-        {
-          "type": "LocalConstant",
-          "forceMip0": false,
-          "updateConstants": true,
-          "useReflect": false
+          "type": "RenderMode",
+          "psoName": "cubeMapPSO"
         }
       ]
     },
@@ -94,7 +87,7 @@
         {
           "type": "StaticMesh",
           "mesh": "plane",
-          "material": "8k_earth_albedo"
+          "material": "PavingStones145_2K-PNG_Albedo"
         },
         {
           "type": "RigidBody",
@@ -105,7 +98,135 @@
           "type": "LocalConstant",
           "forceMip0": false,
           "updateConstants": false,
-          "useReflect": false
+          "useReflect": false,
+          "heightScale": 0.00,
+          "texTransform": {
+            "pos": [ 0.0, 0.0, 0.0 ],
+            "rot": [ 0, 0, 0, 1 ],
+            "scale": [ 100, 100, 1 ]
+          }
+        },
+        {
+          "type": "RenderMode",
+          "psoName": "pbrPSO"
+        }
+      ]
+    },
+    {
+      "class": "Actor",
+      "name": "pbrSphereLeft",
+      "transform": {
+        "pos": [ -1.5, 0.8, 0.0 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "sphere",
+          "material": "worn-painted-metal_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": true,
+          "mode": "PM_Default"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": true,
+          "useReflect": false,
+          "heightScale": 0.02,
+          "texTransform": {
+            "pos": [ 0.0, 0.0, 0.0 ],
+            "rot": [ 0, 0, 0, 1 ],
+            "scale": [ 2, 2, 1 ]
+          }
+        },
+        {
+          "type": "RenderMode",
+          "psoName": "pbrPSO"
+        }
+      ]
+    },
+    {
+      "class": "APointCloud",
+      "name": "pointCloud",
+      "transform": {
+        "pos": [ 0, 0, 0 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "map",
+          "material": ""
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Default"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": false,
+          "useReflect": false,
+          "heightScale": 0.00,
+          "texTransform": {
+            "pos": [ 0.0, 0.0, 0.0 ],
+            "rot": [ 0, 0, 0, 1 ],
+            "scale": [ 1, 1, 1 ]
+          }
+        },
+        {
+          "type": "RenderMode",
+          "psoName": "pointCloudPSO"
+        }
+      ]
+    },
+    {
+      "class": "ALight",
+      "name": "light0",
+      "transform": {
+        "pos": [ -5, 5, -5 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "sphere",
+          "material": "PavingStones145_2K-PNG_Albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Default"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": true,
+          "useReflect": false,
+          "heightScale": 0.00,
+          "texTransform": {
+            "pos": [ 0.0, 0.0, 0.0 ],
+            "rot": [ 0, 0, 0, 1 ],
+            "scale": [ 100, 100, 1 ]
+          }
+        },
+        {
+          "type": "RenderMode",
+          "psoName": "pbrPSO"
+        },
+        {
+          "type": "LightInfo",
+          "dir": [ 0.0, 0.0, 0.0 ],
+          "view": [ 32, 32, 0.1, 100 ],
+          "brightness": [ 0.8, 0.8, 0.8, 1 ]
+
         }
       ]
     },
@@ -113,34 +234,7 @@
       "class": "AMovingPlatform",
       "name": "movingPlatform",
       "transform": {
-        "pos": [ -2, 0.6, 0 ],
-        "rot": [ 0, 0, 0, 1 ],
-        "scale": [ 1, 1, 1 ]
-      },
-      "components": [
-        {
-          "type": "StaticMesh",
-          "mesh": "cube",
-          "material": "worn-painted-metal_albedo"
-        },
-        {
-          "type": "RigidBody",
-          "simulate": false,
-          "mode": "PM_Dynamic"
-        },
-        {
-          "type": "LocalConstant",
-          "forceMip0": false,
-          "updateConstants": true,
-          "useReflect": false
-        }
-      ]
-    },
-    {
-      "class": "ATriggerBox",
-      "name": "triggerBox",
-      "transform": {
-        "pos": [ 0, 0.6, 0 ],
+        "pos": [ 3, 0.8, 0 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -153,17 +247,60 @@
         {
           "type": "RigidBody",
           "simulate": true,
-          "mode": "PM_Trigger"
+          "mode": "PM_Kinematic"
         },
         {
           "type": "LocalConstant",
           "forceMip0": false,
-          "updateConstants": false,
-          "useReflect": false
+          "updateConstants": true,
+          "useReflect": false,
+          "heightScale": 0.02,
+          "texTransform": {
+            "pos": [ 0.0, 0.0, 0.0 ],
+            "rot": [ 0, 0, 0, 1 ],
+            "scale": [ 2, 2, 1 ]
+          }
         },
         {
-          "type": "trigger",
-          "target": "movingPlatform"
+          "type": "RenderMode",
+          "psoName": "pbrPSO"
+        }
+      ]
+    },
+    {
+      "class": "ADoor",
+      "name": "door",
+      "transform": {
+        "pos": [ 1.5, 0.0, 0 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "cube",
+          "material": "large_castle_door_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Default"
+        },
+        {
+          "type": "LocalConstant",
+          "forceMip0": false,
+          "updateConstants": true,
+          "useReflect": false,
+          "heightScale": 0.0,
+          "texTransform": {
+            "pos": [ 0.0, 0.0, 0.0 ],
+            "rot": [ 0, 0, 0, 1 ],
+            "scale": [ 1, 1, 1 ]
+          }
+        },
+        {
+          "type": "RenderMode",
+          "psoName": "pbrPSO"
         }
       ]
     }

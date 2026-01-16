@@ -80,7 +80,8 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& com
 	DirectX::ResourceUploadBatch resourceUpload(m_device);
 	resourceUpload.Begin();
 
-	for (uint32_t i = 0; i < count; i++)
+
+	for (int i = 0; i < count; i++)
 	{
 		std::string filename = nameMap[i];
 		
