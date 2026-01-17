@@ -21,7 +21,8 @@ struct LocalConstant
     int useReflect;
     float heightScale;
     float roughness;
-    float dummy[27];
+    float metallic;
+    float dummy[26];
 };
 
 

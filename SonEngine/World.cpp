@@ -301,7 +301,8 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 							ad.heightScale = comp["heightScale"].get<float>();
 						if (comp.contains("roughness"))
 							ad.roughness = comp["roughness"].get<float>();
-
+						if (comp.contains("metallic"))
+							ad.metallic = comp["metallic"].get<float>();
 						if (comp.contains("texTransform"))
 						{
 							auto& tt = comp["texTransform"];

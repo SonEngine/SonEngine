@@ -79,7 +79,10 @@ void SceneComponent::SetRoughness(const float& newRoughness)
 {
 	localConstant.roughness = newRoughness;
 }
-
+void SceneComponent::SetMetallic(const float& newMetallic)
+{
+	localConstant.metallic = newMetallic;
+}
 void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation)
 {
 	localTransform.location += delLocation;

@@ -20,6 +20,7 @@ struct ActorData
 	bool useReflect;
 	float heightScale = 0.f;
 	float roughness = 0.f;
+	float metallic = 0.f;
 	LocalConstant lc;
 };
 

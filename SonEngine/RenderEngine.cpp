@@ -612,8 +612,8 @@ void RenderEngine::UpdateGUI()
 		cmd.lc = guiLocalConstant;
 		m_renderToMainCmdQueue->Push(std::move(cmd));
 	}
-	ImGui::Text("Cubemap MipLevel");
-	if (ImGui::SliderInt("##Cubemap MipLevel", &guiLocalConstant.cubeMapMipLevel, 0, 5))
+	ImGui::Text("Matallic");
+	if (ImGui::SliderFloat("##Matallic", &guiLocalConstant.metallic, 0.f, 1.f))
 	{
 		CmdUpdateActorConstant cmd;
 		cmd.id = r_selecteId;
@@ -1519,19 +1519,13 @@ void RenderEngine::DrawingWithMouse()
 	if(gui_renderPointCloud)
 		RenderCube(pointCloudPSO, pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
 	//Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	if (test)
-	{
-		
-		Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
-		Render(currentPbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
-		if (gui_renderPointCloud)
-			Render(pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
-		Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
-
-		Render("renderTexturePSO", i++, MT_finalize, false/*isFinal*/, true/*clear RT*/);
-	}
-
-	RenderGUI(true);
+	Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
+	Render(currentPbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+	if (gui_renderPointCloud)
+		Render(pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
+	//Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
+	Render("renderTexturePSO", i++, MT_finalize, true/*isFinal*/, true/*clear RT*/);
+	//RenderGUI(true);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetCurrentRtvCpuHandle() const
@@ -1801,6 +1795,7 @@ void RenderEngine::ApplyImpl(const CmdUpdateActorConstant& c)
 	m_primitives[c.id]->SetHeightScale(c.lc.heightScale);
 	m_primitives[c.id]->SetLocation(c.lc.model.Transpose().Translation());
 	m_primitives[c.id]->SetRoughness(c.lc.roughness);
+	m_primitives[c.id]->SetMetallic(c.lc.metallic);
 	//update.constant = m_primitives[c.id]->GetLocalConstant();
 	//update.meshType = MT_primitive;
 

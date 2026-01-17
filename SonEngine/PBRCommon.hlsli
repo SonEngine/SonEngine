@@ -9,7 +9,7 @@ TextureCube gCubeMapSpecular : register(t3);
 Texture2D gAlbedo : register(t4);
 Texture2D gAo : register(t5);
 Texture2D gHeight : register(t6);
-Texture2D gMetal : register(t7);
+Texture2D gMetallic : register(t7);
 Texture2D gNormal : register(t8);
 Texture2D gRoughness : register(t9);
 
@@ -45,7 +45,7 @@ struct psInput
 float2 IBL_BRDF(float3 n, float3 v, float roughness)
 {
     float nDotV = saturate(dot(n, v));
-    return gCubeMapBRDF.Sample(gWrapLinearSampler, float2(nDotV, roughness)).xy;
+    return gCubeMapBRDF.Sample(gClampLinearSampler, float2(nDotV, 1.f-roughness)).xy;
 }
 
 bool IsShadow(float4 modelPos, float bias)

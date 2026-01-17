@@ -28,4 +28,5 @@ void StaticMeshComponent::SetActorData(const ActorData& ad)
 	SetUpdateConstant(ad.updateConstants);
 	SetTextureName(ad.material);
 	SetRoughness(ad.roughness);
+	SetMetallic(ad.metallic);
 }

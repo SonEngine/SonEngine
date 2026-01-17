@@ -29,6 +29,7 @@ public:
 	void SetCubeMapMipLevel(const int& newCubeMapMipLevel);
 	void SetHeightScale(const float& newHeightScale);
 	void SetRoughness(const float& newRoughness);
+	void SetMetallic(const float& newMetalic);
 	void AddLocation(const DirectX::SimpleMath::Vector3& delLocation);
 	void AddRotation(const DirectX::SimpleMath::Quaternion& delQ);
 
