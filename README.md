@@ -6,7 +6,7 @@ DirectX 12을 사용한 로우레벨 3D 렌더링 엔진.
 ## 주요 기능
 
 ### 1. Physically Based Rendering (PBR)
-<img src="SonEngine/Images/BackBuffer_260117_150950.png" width="320" height="180"> <img src="SonEngine/Images/BackBuffer_260117_150117.png" width="320" height="180"> 
+<img src="SonEngine/Images/BackBuffer_260117_150950.png" width="190" height="100"> <img src="SonEngine/Images/BackBuffer_260117_150117.png" width="190" height="100"> <img src="SonEngine/Images/BackBuffer_260117_194411.png" width="190" height="100"> 
 
 ### 2. Point cloud rendering
 <img src="SonEngine/Images/BackBuffer_251214_163908.png" width="320" height="180"> <img src="SonEngine/Images/P1180209.JPG" width="320" height="180">
