@@ -54,8 +54,10 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 
 	pbrModelLoader->Load("sphere.glb");
 
-	auto tr = DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2);
-
+	
+	auto tr = DirectX::XMMatrixScaling(0.01f, 0.01f, 0.01f);
+	pbrModelLoader->Load("SF_Demon_head_shield_NakedSingularity.fbx", tr);
+	tr = DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2);
 	pbrModelLoader->Load("large_castle_door_4k.fbx", tr);
 	pbrModelLoader->Initialize(device, commandList);
 

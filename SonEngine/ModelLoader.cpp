@@ -82,7 +82,10 @@ void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 		meshesMap[name] = doorMesh;
 	}
 
+	std::shared_ptr<StaticMesh> shieldMesh = std::make_shared<StaticMesh>();
+	shieldMesh->Initialize<PBRVertex, uint16_t>(device, commandList, assets["SF_Demon_head_shield_NakedSingularity"].m_meshes);
 
+	meshesMap["shield"] = shieldMesh;
 	meshesMap["sphereTan"] = sphereTanMesh;
 	meshesMap["sphere"] = sphereMesh;
 	meshesMap["plane"] = planeMesh;

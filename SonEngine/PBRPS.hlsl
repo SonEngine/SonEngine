@@ -13,10 +13,11 @@ float4 main(psInput input) : SV_TARGET
     float3 tangentW = input.tangent;
     float3 albedo = gAlbedo.Sample(gWrapLinearSampler, uv).rgb;
     
+    //return float4(normalW, 1.f);
     //float roughness = gLocalCB.roughness;
     //float metallic = gLocalCB.metallic;
-    float metallic = gMetallic.Sample(gWrapLinearSampler, uv).r;
-    float roughness = gRoughness.Sample(gWrapLinearSampler, uv).r;
+    float roughness = gRoughness.Sample(gWrapLinearSampler, uv).b;
+    float metallic = gMetallic.Sample(gWrapLinearSampler, uv).g;
     float3 ambient = albedo.xyz * 0.1f;
     float3 N = NormalSample(tangentW, normalW, uv);
     float3 V = normalize((gPBRGCB.cameraPos - modelPos).xyz);
@@ -33,7 +34,6 @@ float4 main(psInput input) : SV_TARGET
     //{
     //    shadow = 1.f;
     //}
-    float3 Fdieletric = 0.04f;
     float3 F0 = lerp(Fdieletric, albedo, metallic);
     float3 ks = F0 + (1.f - F0) * pow(1.f - NoV, 5.f);
     float2 BRDF = IBL_BRDF(N, V, roughness);

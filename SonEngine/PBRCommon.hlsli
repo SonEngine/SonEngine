@@ -24,6 +24,8 @@ SamplerState gClampLinearSampler : register(s1);
 ConstantBuffer<LocalConstant> gLocalCB : register(b0);
 ConstantBuffer<PBRGlobalConstant> gPBRGCB : register(b1);
 
+static const float3 Fdieletric = 0.04f;
+
 struct vsInput
 {
     float3 pos : POSITION;
