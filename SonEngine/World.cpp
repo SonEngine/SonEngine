@@ -110,7 +110,7 @@ void World::InitCamera(int width, int height)
 	/*m_camera->SetActorLocation({ 0.f, 0.f, -1.f });
 	m_camera->UpdateCameraRotation(0, 0);*/
 	// BOOKMARK	
-	m_camera->SetActorLocation({ 0.f, 1.f, -1.5 });
+	m_camera->SetActorLocation({ 0.f, 1.f, -2.f });
 	m_camera->UpdateCameraRotation(0, 50);
 
 	m_camera->SetActorSpeed(5.f);

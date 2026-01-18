@@ -55,6 +55,8 @@ public:
 	D3D12_GPU_VIRTUAL_ADDRESS GetCubeGCBGPUAddress(int idx) const { return m_cubeMapGCB[idx]->GetGPUVirtualAddress(); }
 	D3D12_GPU_VIRTUAL_ADDRESS GetLightGCBGPUAddress(int idx) const { return m_lightGCB[idx]->GetGPUVirtualAddress(); }
 
+	PBRGlobalConstant GetGlobalConstant() const { return pbrGC; }
+
 public:
 	ID3D12CommandAllocator* GetAllocator(int idx) const { return m_commandAllocator[idx].Get(); }
 	ID3D12GraphicsCommandList* GetCommandList(int idx) const { return m_commandList[idx].Get(); }

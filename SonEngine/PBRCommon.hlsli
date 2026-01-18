@@ -59,9 +59,9 @@ float2 IBL_BRDF(float3 n, float3 v, float roughness)
     return gCubeMapBRDF.Sample(gClampLinearSampler, float2(nDotV, 1.f - roughness)).xy;
 }
 
-bool IsShadow(float4 modelPos, float bias)
+bool IsShadow(float3 modelPos, float bias)
 {
-    float4 light_svPosition = mul(modelPos, gPBRGCB.lights[0].view);
+    float4 light_svPosition = mul(float4(modelPos, 1.f), gPBRGCB.lights[0].view);
     light_svPosition = mul(light_svPosition, gPBRGCB.lights[0].proj);
     
     float3 l_ndc = light_svPosition.xyz / light_svPosition.w;
@@ -75,11 +75,11 @@ bool IsShadow(float4 modelPos, float bias)
         l_uv.y >= 0.f;
     
     float currentPixelDepth = l_ndc.z;
-    float shadowDepth = depthOnly.SampleLevel(gWrapLinearSampler, l_uv, 0.f).r;
+    float shadowDepth = depthOnly.SampleLevel(gClampLinearSampler, l_uv, 0.f).r;
     
     bool inShadow = (currentPixelDepth - shadowDepth) > bias;
 
-    if (inShadow && isInUV)
+    if (isInUV && inShadow)
     {
         return true;
     }
@@ -104,7 +104,7 @@ float3 NormalSample(float3 tangent, float3 normalW, float2 uv)
     return n;
 }
 
-float3 ComputePhongDirectLight(float4 modelPos, float3 N, float3 f)
+float3 ComputePhongDirectLight(float3 modelPos, float3 N, float3 f)
 {
     float3 direct = 0.f;
     for (int i = 0; i < NUM_LIGHTS; i++)

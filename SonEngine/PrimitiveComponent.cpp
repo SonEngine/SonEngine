@@ -64,6 +64,7 @@ void PrimitiveComponent::SetActorData(const ActorData& ad)
     SetUpdateConstant(ad.updateConstants);
     SetTextureName(ad.material);
     
+    UpdateUseReflect(ad.lc.useReflect);
     SetHeightScale(ad.lc.heightScale);
     SetRoughness(ad.lc.roughness);
     SetMetallic(ad.lc.metallic);

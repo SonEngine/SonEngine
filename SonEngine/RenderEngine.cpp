@@ -553,6 +553,9 @@ void RenderEngine::UpdateGUI()
 	int fps = int(1 / r_packet.deltaTime);
 	std::string fpsStr = "FPS : " + std::to_string(fps);
 	ImGui::Text(fpsStr.c_str());
+	Vector3 dir = r_currentFrameResource->GetGlobalConstant().cameraDir;
+	std::string str = "x : " + std::to_string(dir.x) + "y : " + std::to_string(dir.y) + "z : " + std::to_string(dir.z);
+	ImGui::Text(str.c_str());
 
 	ImGui::Checkbox("Change Mode", &test);
 	ImGui::Checkbox("Render PointCloud", &gui_renderPointCloud);
@@ -574,7 +577,6 @@ void RenderEngine::UpdateGUI()
 
 	/*ImGui::TextUnformatted("save miplevel");
 	ImGui::SliderInt("save miplevel", &saveMipLevel, 0, 5);*/
-
 	ImGui::SeparatorText("Local Constant");
 	
 	ImGui::Text(r_idToName[r_selecteId].c_str());
@@ -1523,9 +1525,9 @@ void RenderEngine::DrawingWithMouse()
 	Render(currentPbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
 	if (gui_renderPointCloud)
 		Render(pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
-	//Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
+	Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
 
-	bool renderGUI = false;
+	bool renderGUI = true;
 	Render("renderTexturePSO", i++, MT_finalize, !renderGUI/*isFinal*/, true/*clear RT*/);
 	if(renderGUI)
 		RenderGUI(true);

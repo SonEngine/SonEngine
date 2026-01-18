@@ -30,13 +30,16 @@ void ADoor::Initialize(const ActorData& ad)
 		SetRootComponent(root);
 
 		std::shared_ptr<StaticMeshComponent> cmp1 = std::make_shared<StaticMeshComponent>(this);
-		cmp1->SetLocation(Vector3(0.9f, 1.1f, 0.f));
+		cmp1->SetLocation(Vector3(0.9f, 1.1f, -0.013f));
 		cmp1->SetMesh(world->pbrModelLoader->GetMeshes("door1"));
 		cmp1->SetActorData(ad);
 
 		std::shared_ptr<StaticMeshComponent> cmp2 = std::make_shared<StaticMeshComponent>(this);
-		cmp2->SetMesh(world->pbrModelLoader->GetMeshes("door2"));
-		cmp2->SetLocation(Vector3(-0.9f, 1.1f, 0.f));
+		cmp2->SetMesh(world->pbrModelLoader->GetMeshes("door2")); // door Right
+		cmp2->SetLocation(Vector3(-0.989f, 1.1f, -0.013f));
+		auto mat = DirectX::XMMatrixRotationY(DirectX::XM_PIDIV4);
+		auto q = DirectX::SimpleMath::Quaternion::CreateFromRotationMatrix(mat);
+		cmp2->SetRotation(q);
 		cmp2->SetActorData(ad);
 
 		root->Attach(cmp1);

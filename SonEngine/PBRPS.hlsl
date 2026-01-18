@@ -22,6 +22,7 @@ float4 main(psInput input) : SV_TARGET
     float3 V = normalize((gPBRGCB.cameraPos - modelPos).xyz);
     float3 R = reflect(-V, N);
     
+    //return float4(albedo, 1.f);
     float NoV = saturate(dot(N, V));
     float3 F0 = lerp(Fdieletric, albedo, metallic);
     
@@ -30,19 +31,21 @@ float4 main(psInput input) : SV_TARGET
         return gCubeMapReflect.SampleLevel(gWrapLinearSampler, R, 0.f);
     }
     
-    //float shadow = 0.f;
-    //if(IsShadow(modelPos, 0.0005f))
-    //{
-    //    shadow = 1.f;
-    //}
+    float shadow = 0.f;
+    if (IsShadow(modelPos, 0.0005f))
+    {
+        shadow = 1.f;
+    }
     float3 pointLight = ComputePBRPointLight(albedo, F0, modelPos, N, V, roughness, metallic);
+    float3 phongLight = ComputePhongDirectLight(modelPos, N, F0);
     float3 IBLColor = IBL(F0, albedo, metallic, roughness, MAX_MIP, R, N, V, NoV);
     
-    float3 color = pointLight;
+    float3 color = ambient + (pointLight) * (1.f - shadow);
+    //float3 color = ambient + (IBLColor + pointLight) * (1.f - shadow);
     
     return float4(color, 1.f);
     //return float4(ambient + albedo * ComputePhongDirectLight(modelPos, N, f0), 1.f);
     
     //float3 direct = ComputePhongDirectLight(modelPos, N);
-    //return float4(ambient + albedo * direct* (1.f-shadow), 1.f);
+    //return float4(ambient + color * (1.f - shadow), 1.f);
 }
