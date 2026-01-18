@@ -253,20 +253,20 @@ namespace GraphicsUtils {
 		return actor;
 	}
 
-	inline std::shared_ptr<Actor> Utility::CreateActor(std::shared_ptr<StaticMesh> mesh, World* world, const ActorData& ad)
-	{
-		std::shared_ptr<Actor> actor = std::make_shared<Actor>(ad.name, world);
-		std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
-		cmp->SetMesh(mesh);
-		cmp->SetPhysX(ad.useSimulate);
-		cmp->SetPhysXMode(ad.mode);
-		actor->SetRootComponent(cmp);
-		actor->SetActorLocation(ad.pos);
-		actor->UpdateMipState(ad.forceMip0);
-		actor->SetTextureName(ad.material);
+	//inline std::shared_ptr<Actor> Utility::CreateActor(std::shared_ptr<StaticMesh> mesh, World* world, const ActorData& ad)
+	//{
+	//	std::shared_ptr<Actor> actor = std::make_shared<Actor>(ad.name, world);
+	//	std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(actor.get());
+	//	cmp->SetMesh(mesh);
+	//	cmp->SetPhysX(ad.useSimulate);
+	//	cmp->SetPhysXMode(ad.mode);
+	//	actor->SetRootComponent(cmp);
+	//	actor->SetActorLocation(ad.lc.pos);
+	//	actor->UpdateMipState(ad.forceMip0);
+	//	actor->SetTextureName(ad.material);
 
-		return actor;
-	}
+	//	return actor;
+	//}
 
 	template<typename V, typename I, typename MeshType>
 	inline std::shared_ptr<Actor> Utility::CreateActor(

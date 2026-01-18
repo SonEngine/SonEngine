@@ -180,9 +180,20 @@ void Actor::SetUpdateConstant(bool newState)
 
 void Actor::SetActorData(const ActorData& ad)
 {
-	SetActorLocation(ad.pos);
+	SetLocalConstant(ad.lc);
+	/*SetActorLocation(ad.pos);
 	UpdateMipState(ad.forceMip0);
-	UpdateUseReflect(ad.useReflect);
+	UpdateUseReflect(ad.useReflect);*/
+
+}
+
+void Actor::SetLocalConstant(const LocalConstant& newLocalConstant)
+{
+	if (m_rootComponent)
+	{
+		m_rootComponent->SetLocalConstant(newLocalConstant);
+	}
+
 }
 
 void Actor::SetTextureName(const std::string& newName)

@@ -5,7 +5,7 @@
       "class": "Actor",
       "name": "player",
       "transform": {
-        "pos": [ 3.0, 0.8, -0.5 ],
+        "pos": [ 0.0, 0.8, -0.5 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -44,7 +44,7 @@
       "class": "Actor",
       "name": "shield",
       "transform": {
-        "pos": [ 0.0, 0.8, -0.5 ],
+        "pos": [ 3.0, 0.8, -0.5 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -121,7 +121,7 @@
       "class": "ALight",
       "name": "light0",
       "transform": {
-        "pos": [ -5, 5, -5 ],
+        "pos": [ 11, 5, -5 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -146,7 +146,7 @@
           "texTransform": {
             "pos": [ 0.0, 0.0, 0.0 ],
             "rot": [ 0, 0, 0, 1 ],
-            "scale": [ 100, 100, 1 ]
+            "scale": [ 1, 1, 1 ]
           }
         },
         {
@@ -157,7 +157,9 @@
           "type": "LightInfo",
           "dir": [ 0.0, 0.0, 0.0 ],
           "view": [ 32, 32, 0.1, 100 ],
-          "brightness": [ 0.8, 0.8, 0.8, 1 ]
+          "brightness": [ 0.8, 0.8, 0.8, 1 ],
+          "color": [ 1, 1, 1, 1 ],
+          "intensity" : 200.0
         }
       ]
     }

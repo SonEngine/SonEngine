@@ -26,6 +26,8 @@ void LightComponent::InitLightInfo(const LightData& ld)
 	m_nearZ = ld.nearZ;
 	m_farZ = ld.farZ;
 	m_lightInfo->brightness = ld.brightness;
+	m_lightInfo->color = ld.color;
+	m_lightInfo->intensity = ld.intensity;
 
 	if (ld.dir == Vector3::Zero)
 		bUpdateDir = true;

@@ -53,6 +53,7 @@ public:
 	void UpdateUseReflect(int newUseReflect);
 	void SetUpdateConstant(bool newState);
 	void SetActorData(const ActorData& ad);
+	void SetLocalConstant(const LocalConstant& newLocalConstant);
 	void SetTextureName(const std::string& newName);
 	void SetHeightScale(const float& heightScale);
 	void SetPSOName(const std::string& newName);

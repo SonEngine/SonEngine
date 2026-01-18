@@ -41,10 +41,8 @@ void ADoor::Initialize(const ActorData& ad)
 
 		root->Attach(cmp1);
 		root->Attach(cmp2);
-		root->SetLocation(ad.pos);
-				
-		UpdateMipState(ad.forceMip0);
-		UpdateUseReflect(ad.useReflect);
+		
+		SetActorData(ad);
 	}
 }
 

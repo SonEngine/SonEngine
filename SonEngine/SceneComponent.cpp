@@ -31,6 +31,7 @@ void SceneComponent::SetRotateSpeed(const float& newSpeed)
 {
 	m_rotateSpeed = newSpeed;
 }
+
 void SceneComponent::UpdateWorldTransform(const Transform& tr)
 {
 	worldTransform = tr;
@@ -40,7 +41,18 @@ void SceneComponent::UpdateWorldTransform(const Transform& tr)
 void SceneComponent::SetLocalConstant(const LocalConstant& newConstant)
 {
 	localConstant = newConstant;
-	//SetLocation(localConstant.)
+	DirectX::SimpleMath::Matrix model = newConstant.model.Transpose();
+	
+	XMVECTOR s, q, t;
+	DirectX::XMMatrixDecompose(&s, &q, &t, model);
+	localTransform.location = t;
+	localTransform.quat = q;
+	localTransform.scale = s;
+
+	for (const auto& c : m_children)
+	{
+		c->UpdateWorldTransform(localTransform);
+	}
 }
 
 void SceneComponent::SetLocation(const DirectX::SimpleMath::Vector3& newLocation)

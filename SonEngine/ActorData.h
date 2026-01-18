@@ -11,16 +11,16 @@ struct ActorData
 	std::string mesh;
 	std::string material;
 	std::string psoName;
-	DirectX::SimpleMath::Vector3 pos;
+	//DirectX::SimpleMath::Vector3 pos;
 	bool useSimulate;
 	PhysXMode mode;
-	
-	bool forceMip0;
 	bool updateConstants;
+
+	/*bool forceMip0;
 	bool useReflect;
 	float heightScale = 0.f;
 	float roughness = 0.f;
-	float metallic = 0.f;
+	float metallic = 0.f;*/
 	LocalConstant lc;
 };
 
@@ -31,6 +31,8 @@ struct LightData
 	float nearZ;
 	float farZ;
 
+	float intensity;
 	Vector4 brightness;
+	Vector4 color;
 	Vector3 dir;
 };

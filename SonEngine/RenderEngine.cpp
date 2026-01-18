@@ -1524,8 +1524,11 @@ void RenderEngine::DrawingWithMouse()
 	if (gui_renderPointCloud)
 		Render(pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
 	//Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
-	Render("renderTexturePSO", i++, MT_finalize, true/*isFinal*/, true/*clear RT*/);
-	//RenderGUI(true);
+
+	bool renderGUI = false;
+	Render("renderTexturePSO", i++, MT_finalize, !renderGUI/*isFinal*/, true/*clear RT*/);
+	if(renderGUI)
+		RenderGUI(true);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderEngine::GetCurrentRtvCpuHandle() const

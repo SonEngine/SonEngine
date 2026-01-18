@@ -54,14 +54,14 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 
 	pbrModelLoader->Load("sphere.glb");
 
-	
+
 	auto tr = DirectX::XMMatrixScaling(0.01f, 0.01f, 0.01f);
 	pbrModelLoader->Load("SF_Demon_head_shield_NakedSingularity.fbx", tr);
 	tr = DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2);
 	pbrModelLoader->Load("large_castle_door_4k.fbx", tr);
 	pbrModelLoader->Initialize(device, commandList);
 
-	
+
 	simpleModelLoader->Initialize(device, commandList);
 
 	tr = DirectX::XMMatrixRotationZ(3.141592f) *
@@ -72,7 +72,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	pcModelLoader->Initialize(device, commandList);
 
 	LoadLevel(levelPath);
-	
+
 	std::shared_ptr<Actor> dot = utility->CreateActor2<SimpleVertex, uint16_t, StaticMesh, DotComponent>(
 		"dot",
 		std::vector{ GeometryGenerator::MakePoint() },
@@ -272,10 +272,18 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 			if (a.contains("transform"))
 			{
 				auto t = a["transform"];
-				if (t.contains("pos"))
-				{
-					ad.pos = ParseVec3(t["pos"]);
-				}
+				auto pos = ParseVec3(t["pos"]);
+				auto rot = ParseVec4(t["rot"]);
+				DirectX::SimpleMath::Quaternion q(rot);
+				auto scale = ParseVec3(t["scale"]);
+
+				DirectX::SimpleMath::Matrix model =
+					DirectX::XMMatrixScaling(scale.x, scale.y, scale.z) *
+					DirectX::XMMatrixRotationQuaternion(q) *
+					DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
+
+				ad.lc.model = model.Transpose();
+				ad.lc.modelInvTranspose = model.Invert();
 			}
 			if (a.contains("components"))
 			{
@@ -296,15 +304,15 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 					}
 					else if (type == "LocalConstant")
 					{
-						ad.forceMip0 = comp["forceMip0"].get<bool>();
+						ad.lc.forceMip0 = comp["forceMip0"].get<bool>();
 						ad.updateConstants = comp["updateConstants"].get<bool>();
-						ad.useReflect = comp["useReflect"].get<bool>();
+						ad.lc.useReflect = comp["useReflect"].get<bool>();
 						if (comp.contains("heightScale"))
-							ad.heightScale = comp["heightScale"].get<float>();
+							ad.lc.heightScale = comp["heightScale"].get<float>();
 						if (comp.contains("roughness"))
-							ad.roughness = comp["roughness"].get<float>();
+							ad.lc.roughness = comp["roughness"].get<float>();
 						if (comp.contains("metallic"))
-							ad.metallic = comp["metallic"].get<float>();
+							ad.lc.metallic = comp["metallic"].get<float>();
 						if (comp.contains("texTransform"))
 						{
 							auto& tt = comp["texTransform"];
@@ -312,7 +320,9 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 							{
 								Vector3 pos = ParseVec3(tt["pos"]);
 								Vector3 scale = ParseVec3(tt["scale"]);
-								Matrix texTransform = DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
+								Matrix texTransform = 
+									DirectX::XMMatrixScaling(scale.x, scale.y, scale.z) * 
+									DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 								ad.lc.texTransform = texTransform;
 							}
 						}
@@ -340,7 +350,8 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 							}
 						}
 						ld.brightness = ParseVec4(comp["brightness"]);
-
+						ld.color = ParseVec4(comp["color"]);
+						ld.intensity = comp["intensity"].get<float>();
 					}
 				}
 				switch (at)

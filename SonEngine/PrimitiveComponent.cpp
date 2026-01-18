@@ -2,6 +2,7 @@
 #include "Actor.h"
 #include "World.h"
 #include "PhysXEngine.h"
+#include "ActorData.h"
 
 PrimitiveComponent::PrimitiveComponent(Actor* owner)
     : SceneComponent(owner), m_visible(true)
@@ -52,4 +53,18 @@ void PrimitiveComponent::SyncFromPhysX(const physx::PxTransform& transform)
     SetLocation(loc);
     SetRotation(rot);
 
+}
+
+
+void PrimitiveComponent::SetActorData(const ActorData& ad)
+{
+    SetPhysX(ad.useSimulate);
+    SetPhysXMode(ad.mode);
+    SetPSOName(ad.psoName);
+    SetUpdateConstant(ad.updateConstants);
+    SetTextureName(ad.material);
+    
+    SetHeightScale(ad.lc.heightScale);
+    SetRoughness(ad.lc.roughness);
+    SetMetallic(ad.lc.metallic);
 }

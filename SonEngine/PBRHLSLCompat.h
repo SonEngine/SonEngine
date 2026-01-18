@@ -25,15 +25,17 @@ struct LocalConstant
     float dummy[26];
 };
 
-
 struct PBRLightInfo
 {
     XMFLOAT4 brightness;
     XMVECTOR location;
     XMVECTOR direction;
+    XMVECTOR color;
 
     Matrix view;
     Matrix proj;
+
+    float intensity;
 };
 
 struct PBRGlobalConstant

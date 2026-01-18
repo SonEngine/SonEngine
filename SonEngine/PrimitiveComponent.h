@@ -7,6 +7,7 @@
 #include "PhysXMode.h"
 
 class PrimitiveComponent;
+struct ActorData;
 
 DECLARE_DELEGATE_OneParam(ComponentBeginOverlapSignature, PrimitiveComponent*)
 DECLARE_DELEGATE_OneParam(ComponentEndOverlapSignature, PrimitiveComponent*)
@@ -23,7 +24,7 @@ public:
 	void SetPhysXMode(PhysXMode newMode) { m_physXMode = newMode; }
 	void SetTextureName(const std::string& newName) { m_textureName = newName; }
 	void SetPSOName(const std::string& newName) { m_psoName = newName; }
-
+	void SetActorData(const ActorData& ad);
 	bool IsVisible() const { return m_visible; }
 	bool IsKinematic() const { return m_physXMode == PhysXMode::PM_Kinematic; }
 
