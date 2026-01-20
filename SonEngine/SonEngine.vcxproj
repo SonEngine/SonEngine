@@ -163,6 +163,7 @@
     <ClCompile Include="ALight.cpp" />
     <ClCompile Include="AMovingPlatform.cpp" />
     <ClCompile Include="APointCloud.cpp" />
+    <ClCompile Include="ASkinnedMesh.cpp" />
     <ClCompile Include="BaseApp.cpp" />
     <ClCompile Include="BoundedQueue.cpp" />
     <ClCompile Include="Camera.cpp" />
@@ -196,6 +197,7 @@
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneComponent.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
+    <ClCompile Include="SkinnedMeshComponent.cpp" />
     <ClCompile Include="StaticMesh.cpp" />
     <ClCompile Include="StaticMeshComponent.cpp" />
     <ClCompile Include="pch.cpp">
@@ -218,6 +220,7 @@
     <ClInclude Include="ALight.h" />
     <ClInclude Include="AMovingPlatform.h" />
     <ClInclude Include="APointCloud.h" />
+    <ClInclude Include="ASkinnedMesh.h" />
     <ClInclude Include="Asset.h" />
     <ClInclude Include="BaseApp.h" />
     <ClInclude Include="BoundedQueue.h" />
@@ -260,6 +263,7 @@
     <ClInclude Include="SceneComponent.h" />
     <ClInclude Include="ShapeComponent.h" />
     <ClInclude Include="SimpleApp.h" />
+    <ClInclude Include="SkinnedMeshComponent.h" />
     <ClInclude Include="SphereComponent.h" />
     <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="StaticMeshComponent.h" />
@@ -413,6 +417,18 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
+    <FxCompile Include="SkinnedMeshDepthOnlyVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="SkinnedMeshVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="TestCS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.0</ShaderModel>
@@ -443,6 +459,7 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Asset.inl" />
     <None Include="BoxCubeMap.hlsli" />
     <None Include="CubeCommon.hlsli" />
     <None Include="Delegate.inl" />

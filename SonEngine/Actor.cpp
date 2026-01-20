@@ -178,6 +178,17 @@ void Actor::SetUpdateConstant(bool newState)
 	}
 }
 
+void Actor::UpdateAnimation(float deltaTime)
+{
+	if (m_rootComponent)
+	{
+		if (SkinnedMeshComponent* comp = dynamic_cast<SkinnedMeshComponent*>(m_rootComponent.get()))
+		{
+			comp->UpdateAnimation(deltaTime);
+		}
+	}
+}
+
 void Actor::SetActorData(const ActorData& ad)
 {
 	SetLocalConstant(ad.lc);

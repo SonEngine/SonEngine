@@ -52,6 +52,7 @@ public:
 
 	void UpdateUseReflect(int newUseReflect);
 	void SetUpdateConstant(bool newState);
+	void UpdateAnimation(float deltaTime);
 	void SetActorData(const ActorData& ad);
 	void SetLocalConstant(const LocalConstant& newLocalConstant);
 	void SetTextureName(const std::string& newName);

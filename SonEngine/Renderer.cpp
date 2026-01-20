@@ -14,6 +14,8 @@
 #include "CompiledShaders/PBRVS.h"
 #include "CompiledShaders/PBRPS.h"
 
+#include "CompiledShaders/SkinnedMeshVS.h"
+
 #include "CompiledShaders/PointCloudVS.h"
 #include "CompiledShaders/PointCloudGS.h"
 #include "CompiledShaders/PointCloudPS.h"
@@ -26,6 +28,8 @@
 
 #include "CompiledShaders/PBRBoxCubeMapVS.h"
 #include "CompiledShaders/PBRBoxCubeMapPS.h"
+
+#include "CompiledShaders/SkinnedMeshDepthOnlyVS.h"
 
 #include "CompiledShaders/DepthOnlyVS.h"
 #include "CompiledShaders/DepthOnlyPS.h"
@@ -65,7 +69,10 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	GraphicsPSO phongPSO(L"phong PSO");
 	GraphicsPSO pbrPSO(L"pbr PSO");
 	GraphicsPSO dsOnlyPbrPSO(L"dsOnlyPbr PSO");
+	GraphicsPSO skinnedMeshDsOnlyPbrPSO(L"skinnedMeshDsOnlyPbr PSO");
+
 	GraphicsPSO wirePbrPSO(L"wirePbr PSO");
+	GraphicsPSO skinnedMeshPSO(L"skinnedMesh PSO");
 
 	GraphicsPSO textPSO(L"text PSO");
 
@@ -119,7 +126,18 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 	};
 
+	D3D12_INPUT_ELEMENT_DESC skinnedMeshIL[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"BLENDWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"BLENDWEIGHT", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"BLENDINDICES", 1, DXGI_FORMAT_R8G8B8A8_UINT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 
+	};
 	D3D12_INPUT_ELEMENT_DESC pointCloudIL[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
@@ -211,6 +229,36 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	dsOnlyPbrPSO.Finalize(device);
 	m_PSOs["dsOnly_pbrPSO"] = dsOnlyPbrPSO;
 	psoNames.push_back("dsOnly_pbrPSO");
+
+	skinnedMeshDsOnlyPbrPSO.SetInputLayout(_countof(skinnedMeshIL), skinnedMeshIL);
+	skinnedMeshDsOnlyPbrPSO.SetRootSignature(g_R1_C3_RS);
+	skinnedMeshDsOnlyPbrPSO.SetRasterizerState(rasterizerDefault);
+	skinnedMeshDsOnlyPbrPSO.SetBlendState(blendNoColorWrite);
+	skinnedMeshDsOnlyPbrPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+	skinnedMeshDsOnlyPbrPSO.SetVertexShader(g_pSkinnedMeshDepthOnlyVS, sizeof(g_pSkinnedMeshDepthOnlyVS));
+	skinnedMeshDsOnlyPbrPSO.SetPixelShader(g_pDepthOnlyPS, sizeof(g_pDepthOnlyPS));
+	skinnedMeshDsOnlyPbrPSO.SetSampleMask(UINT_MAX);
+	skinnedMeshDsOnlyPbrPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
+	skinnedMeshDsOnlyPbrPSO.SetDepthTargetFormat(dsOnlyDsvFormat, 1, 0);
+	skinnedMeshDsOnlyPbrPSO.SetDepthStencilState(depthStateDefault);
+	skinnedMeshDsOnlyPbrPSO.Finalize(device);
+	m_PSOs["skinnedMeshDsOnlyPbrPSO"] = skinnedMeshDsOnlyPbrPSO;
+	psoNames.push_back("skinnedMeshDsOnlyPbrPSO");
+
+	skinnedMeshPSO.SetInputLayout(_countof(skinnedMeshIL), skinnedMeshIL);
+	skinnedMeshPSO.SetRootSignature(g_R4_C3_RS);
+	skinnedMeshPSO.SetRasterizerState(rasterizerDefault);
+	skinnedMeshPSO.SetBlendState(blendNoColorWrite);
+	skinnedMeshPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+	skinnedMeshPSO.SetVertexShader(g_pSkinnedMeshVS, sizeof(g_pSkinnedMeshVS));
+	skinnedMeshPSO.SetPixelShader(g_pPBRPS, sizeof(g_pPBRPS));
+	skinnedMeshPSO.SetSampleMask(UINT_MAX);
+	skinnedMeshPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
+	skinnedMeshPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
+	skinnedMeshPSO.SetDepthStencilState(depthStateDefault);
+	skinnedMeshPSO.Finalize(device);
+	m_PSOs["skinnedMeshPSO"] = skinnedMeshPSO;
+	psoNames.push_back("skinnedMeshPSO");
 
 	textPSO.SetInputLayout(_countof(textIL), textIL);
 	textPSO.SetRootSignature(g_commonRS);

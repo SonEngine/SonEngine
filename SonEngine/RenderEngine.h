@@ -128,6 +128,9 @@ private:
 	void ApplyImpl(const CmdUpdateActorConstant& c);
 
 private:
+	MeshType GetMeshType(PrimitiveComponent* comp);
+
+private:
 	ID3D12Device5* m_device;
 
 private:
@@ -242,10 +245,12 @@ private:
 	std::string currentPbrPSO = "pbrPSO";
 	std::string wirePbrPSO = "wire_pbrPSO";
 	std::string depthOnlyPbrPSO = "dsOnly_pbrPSO";
+	std::string skinnedDepthOnlyPbrPSO = "skinnedMeshDsOnlyPbrPSO";
 	std::string pbrPSO = "pbrPSO";
 	std::string pointCloudPSO = "pointCloudPSO";
+	std::string skinnedMeshPSO = "skinnedMeshPSO";
 
-	//FrameResource
+//FrameResource
 private:
 	static const int m_frameResourceCount = 3;
 	std::vector<std::shared_ptr<FrameResource>> m_frameResources;

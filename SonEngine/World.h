@@ -100,6 +100,7 @@ private:
 public:
 	std::unique_ptr<ModelLoader<Vertex, uint16_t>> modelLoader;
 	std::unique_ptr<ModelLoader<PBRVertex, uint16_t>> pbrModelLoader;
+	std::unique_ptr<ModelLoader<SkinnedVertex, uint32_t>> skinnedMeshLoader;
 	std::unique_ptr<ModelLoader<PointCloudVertex, uint16_t>> pcModelLoader;
 	std::unique_ptr<ModelLoader<SimpleVertex, uint16_t>> simpleModelLoader;
 	std::string levelPath;

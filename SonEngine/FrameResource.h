@@ -8,6 +8,7 @@
 #include "directxtk12/SimpleMath.h"
 
 #include "Proxy.h"
+#include "RenderCommand.h"
 
 #include "ViewProjInfo.h"
 #include "PBRHLSLCompat.h"
@@ -18,6 +19,7 @@
 struct LocalData {
 	// local constant buffer
 	Microsoft::WRL::ComPtr<ID3D12Resource> localCB;
+	Microsoft::WRL::ComPtr<ID3D12Resource> skinnedLCB;
 	std::string textureName;
 	std::string psoName;
 };
@@ -36,8 +38,9 @@ public:
 public:
 	//void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd);
 	void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd, const std::vector<std::shared_ptr<PBRLightInfo>>& lightInfos);
-	void AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy);
-	void UpdateLocalConstantBuffer(const LocalConstant& lc, uint32_t id);
+	void AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy, MeshType meshType);
+	void UpdateLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy, MeshType meshType);
+	//void UpdateLocalConstantBuffer(const LocalConstant& lc, uint32_t id, MeshType meshType);
 	void UpdateCubeGCView(const DirectX::SimpleMath::Vector3& loc);
 	void UpdateGlobalConstantBuffer(const PBRGlobalConstant& pgc);
 	void UpdatePBGlobalConstantBuffer(const PBGlobalConstant& pbgc);
@@ -113,6 +116,7 @@ public:
 
 	std::unordered_map<uint32_t, LocalData> m_localData;
 	std::unordered_map<uint32_t, void*> m_pCBs;
+	std::unordered_map<uint32_t, void*> m_pSCBs;
 
 private:
 	

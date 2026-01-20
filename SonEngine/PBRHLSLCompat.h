@@ -22,7 +22,12 @@ struct LocalConstant
     float heightScale;
     float roughness;
     float metallic;
-    float dummy[26];
+    float dummy[10];
+};
+
+struct SkinnedLocalConstant
+{
+    Matrix boneTransform[96];
 };
 
 struct PBRLightInfo

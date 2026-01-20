@@ -16,6 +16,7 @@
 #include "ACubeMap.h"
 #include "ALight.h"
 #include "ADot.h"
+#include "ASkinnedMesh.h"
 #include "ADoor.h"
 
 #include "ModelLoader.h"
@@ -31,7 +32,8 @@ World::World()
 	: modelLoader(std::make_unique<ModelLoader<Vertex, std::uint16_t>>()),
 	pbrModelLoader(std::make_unique<ModelLoader<PBRVertex, std::uint16_t>>()),
 	pcModelLoader(std::make_unique<ModelLoader<PointCloudVertex, std::uint16_t>>()),
-	simpleModelLoader(std::make_unique<ModelLoader<SimpleVertex, std::uint16_t>>())
+	simpleModelLoader(std::make_unique<ModelLoader<SimpleVertex, std::uint16_t>>()),
+	skinnedMeshLoader(std::make_unique<ModelLoader<SkinnedVertex, std::uint32_t>>())
 {
 	//m_camera = std::make_shared<Camera>();
 	levelPath = "Levels/simpleLevel.json";
@@ -50,25 +52,30 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	InitCamera(cameraWidth, cameraHeight);
 
 	modelLoader->Load("torus.fbx");
-	modelLoader->Initialize(device, commandList);
+	
 
 	pbrModelLoader->Load("sphere.glb");
 
-
 	auto tr = DirectX::XMMatrixScaling(0.01f, 0.01f, 0.01f);
-	pbrModelLoader->Load("SF_Demon_head_shield_NakedSingularity.fbx", tr);
+	pbrModelLoader->Load("SF_Demon_head_shield_NakedSingularity.fbx", tr, false);
+	//tr = DirectX::SimpleMath::Matrix();
+	skinnedMeshLoader->Load("Capoeira.fbx", tr, true);
+	skinnedMeshLoader->Load("maria.fbx", tr, true);
+
 	tr = DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2);
-	pbrModelLoader->Load("large_castle_door_4k.fbx", tr);
-	pbrModelLoader->Initialize(device, commandList);
-
-
-	simpleModelLoader->Initialize(device, commandList);
+	pbrModelLoader->Load("large_castle_door_4k.fbx", tr, false);
+	
 
 	tr = DirectX::XMMatrixRotationZ(3.141592f) *
 		DirectX::XMMatrixRotationX(-3.14f / 12.f) *
 		DirectX::XMMatrixTranslationFromVector(Vector3(0.f, 0.2f, 5.f));
 
 	pcModelLoader->LoadPointCloud("map.ply", tr);
+
+	modelLoader->Initialize(device, commandList);
+	pbrModelLoader->Initialize(device, commandList);
+	skinnedMeshLoader->Initialize(device, commandList);
+	simpleModelLoader->Initialize(device, commandList);
 	pcModelLoader->Initialize(device, commandList);
 
 	LoadLevel(levelPath);
@@ -110,7 +117,7 @@ void World::InitCamera(int width, int height)
 	/*m_camera->SetActorLocation({ 0.f, 0.f, -1.f });
 	m_camera->UpdateCameraRotation(0, 0);*/
 	// BOOKMARK	
-	m_camera->SetActorLocation({ 0.f, 1.f, -2.f });
+	m_camera->SetActorLocation({ 0.f, 1.f, -5.f });
 	m_camera->UpdateCameraRotation(0, 50);
 
 	m_camera->SetActorSpeed(5.f);
@@ -363,6 +370,7 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 						actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
 					else if (ad.psoName == "pbrPSO")
 						actor->Initialize(pbrModelLoader->GetMeshes(ad.mesh), ad);
+					
 
 					SpawnActor(actor);
 				}
@@ -427,6 +435,13 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 				{
 					std::shared_ptr<ADoor> actor = std::make_shared<ADoor>(ad.name, this);
 					actor->Initialize(ad);
+					SpawnActor(actor);
+				}
+				break;
+				case ActorType::AT_SkinnedMesh:
+				{
+					std::shared_ptr<ASkinnedMesh> actor = std::make_shared<ASkinnedMesh>(ad.name, this);
+					actor->Initialize(skinnedMeshLoader->GetMeshes(ad.mesh), ad);
 					SpawnActor(actor);
 				}
 				break;

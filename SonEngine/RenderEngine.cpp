@@ -13,6 +13,9 @@
 #include "GeometryGenerator.h"
 #include "PrimitiveComponent.h"
 #include "LightComponent.h"
+#include "SkinnedMeshComponent.h"
+#include "CubeMapComponent.h"
+#include "DotComponent.h"
 #include "ModelLoader.h"
 
 #include "Directxtk12/DDSTextureLoader.h"
@@ -84,10 +87,10 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_UAVCPUHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 		utility->CreateDescriptorHeap(1, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_SRVHeap, 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	}
-	
+
 	CreateSwapChain(factory, wnd);
 	CreateFonts();
-	
+
 	// Create SwapChain RTVs
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_swapChainRTVHeap->GetCPUDescriptorHandleForHeapStart());
 	for (int i = 0; i < m_swapChainBufferCount; i++)
@@ -243,7 +246,7 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 					if (proxy.addDirtyFlags[r_currentResourceIndex])
 					{
 						//std::cout << "Add In RenderThread - " << id << ", Index : " << r_currentResourceIndex << '\n';
-						r_currentFrameResource->AddLocalConstantBuffer(id, proxy);
+						r_currentFrameResource->AddLocalConstantBuffer(id, proxy, type);
 						proxy.addDirtyFlags[r_currentResourceIndex] = false;
 						r_idToName[id] = proxy.name;
 						r_nameToId[proxy.name] = id;
@@ -252,7 +255,7 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 					if (proxy.updateDirtyFlags[r_currentResourceIndex])
 					{
 						//std::cout << "Add In RenderThread - " << id << ", Index : " << r_currentResourceIndex << '\n';
-						r_currentFrameResource->UpdateLocalConstantBuffer(proxy.constant, id);
+						r_currentFrameResource->UpdateLocalConstantBuffer(id, proxy, type);
 						proxy.updateDirtyFlags[r_currentResourceIndex] = false;
 						if (id == 0)
 						{
@@ -381,11 +384,6 @@ void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 	static uint32_t id = 0;
 
 	CmdAddPrimitive add;
-	add.name = primitive->GetName();
-	add.id = id++;
-	add.textureName = primitive->GetTextureName();
-	add.psoName = primitive->GetPSOName();
-
 	if (StaticMeshComponent* staticMeshComp = dynamic_cast<StaticMeshComponent*>(primitive)) {
 		add.mesh = staticMeshComp->GetMeshPtr();
 		add.meshType = MT_primitive;
@@ -411,6 +409,25 @@ void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 		add.meshType = MT_primitive;
 		m_lightInfos.push_back(lightComp->GetLightInfo());
 	}
+	else if (SkinnedMeshComponent* skinnedComp = dynamic_cast<SkinnedMeshComponent*>(primitive))
+	{
+
+		CmdAddSkinnedMesh skinnedAdd;
+		skinnedAdd.name = primitive->GetName();
+		skinnedAdd.id = id++;
+		skinnedAdd.textureName = primitive->GetTextureName();
+		skinnedAdd.psoName = primitive->GetPSOName();
+		skinnedAdd.constant = primitive->GetLocalConstant();
+		skinnedAdd.mesh = skinnedComp->GetMeshPtr();
+		skinnedAdd.meshType = MT_skinnedMesh;
+		skinnedAdd.skinnedlc = skinnedComp->GetSkinnedLocalConstant();
+		m_renderCmdQueue->Push(std::move(skinnedAdd));
+		return;
+	}
+	add.name = primitive->GetName();
+	add.id = id++;
+	add.textureName = primitive->GetTextureName();
+	add.psoName = primitive->GetPSOName();
 	add.constant = primitive->GetLocalConstant();
 	m_renderCmdQueue->Push(std::move(add));
 
@@ -494,7 +511,7 @@ void RenderEngine::CreateDepthBuffers()
 		Renderer::dsOnlyFormat, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL,
 		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE, 0, L"depthOnyBuffer");
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_DSVHeap->GetCPUDescriptorHandleForHeapStart(),1, m_dsvDescriptorSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(m_DSVHeap->GetCPUDescriptorHandleForHeapStart(), 1, m_dsvDescriptorSize);
 	utility->CreateResourceView(m_depthOnlyBuffer, Renderer::dsOnlyDsvFormat, false, handle, DescriptorType::DSV);
 	//utility->CreateResourceView(m_depthOnlyBuffer, Renderer::dsOnlySrvFormat, false, handle, DescriptorType::SRV);
 
@@ -504,7 +521,7 @@ void RenderEngine::CreateDepthBuffers()
 	srvDesc.Texture2D.MipLevels = m_depthOnlyBuffer->GetDesc().MipLevels;
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	
+
 	m_textureLoader->AddTexture(m_depthOnlyBuffer, srvDesc, depthOnlyTextureName, false);
 
 	m_depthOnlyViewport = CD3DX12_VIEWPORT((FLOAT)0.F, 0.F, (FLOAT)(depthOnlyWidth), (FLOAT)depthOnlyHeight);
@@ -578,7 +595,7 @@ void RenderEngine::UpdateGUI()
 	/*ImGui::TextUnformatted("save miplevel");
 	ImGui::SliderInt("save miplevel", &saveMipLevel, 0, 5);*/
 	ImGui::SeparatorText("Local Constant");
-	
+
 	ImGui::Text(r_idToName[r_selecteId].c_str());
 	ImGui::SliderInt("##id", &r_selecteId, 0, r_idMax);
 	ImGui::Text("position");
@@ -759,22 +776,39 @@ void RenderEngine::Tick(float deltaTime)
 		PrimitiveComponent* prim = m_primitives[i];
 		if (prim->IsUpdateConstant())
 		{
-			std::string name = prim->GetName();
-			CmdUpdatePrimitive update;
-			update.id = i;
-			update.constant = m_primitives[i]->GetLocalConstant();
-			update.meshType = MT_primitive;
+			MeshType mt = GetMeshType(prim);
+			if (mt == MT_skinnedMesh)
+			{
+				std::string name = prim->GetName();
+				CmdUpdateSkinnedMesh update;
+				update.id = i;
+				update.constant = prim->GetLocalConstant();
+				if (SkinnedMeshComponent* skinnedComp = dynamic_cast<SkinnedMeshComponent*>(prim))
+				{
+					update.skinnedlc = skinnedComp->GetSkinnedLocalConstant();
+				}
+				update.meshType = mt;
+				m_renderCmdQueue->Push(update);
+			}
+			else
+			{
+				std::string name = prim->GetName();
+				CmdUpdatePrimitive update;
+				update.id = i;
+				update.constant = prim->GetLocalConstant();
+				update.meshType = mt;
+				m_renderCmdQueue->Push(update);
+			}
 
-			m_renderCmdQueue->Push(update);
 		}
-	}
-	{
-		std::lock_guard<std::mutex> lock(g_mtx);
-		frameReady = true;
-	}
-	// render thread 호출
-	cv.notify_one();
+		{
+			std::lock_guard<std::mutex> lock(g_mtx);
+			frameReady = true;
+		}
+		// render thread 호출
+		cv.notify_one();
 
+	}
 }
 
 void RenderEngine::RenderMeshes(const std::string& psoName, ID3D12GraphicsCommandList* commandList, MeshType meshType, RenderPassType rpType, int gcbIdx)
@@ -806,7 +840,7 @@ void RenderEngine::RenderMeshes(const std::string& psoName, ID3D12GraphicsComman
 						commandList->SetGraphicsRootConstantBufferView(4, ld.localCB->GetGPUVirtualAddress());
 						commandList->SetGraphicsRootConstantBufferView(5, r_currentFrameResource->GetGCBGPUAddress());
 					}
-					else if(rpType == RenderPassType::RPT_CubeMapPass)
+					else if (rpType == RenderPassType::RPT_CubeMapPass)
 					{
 						/*commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
 						commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(ld.textureName));
@@ -860,6 +894,26 @@ void RenderEngine::RenderMeshes(const std::string& psoName, ID3D12GraphicsComman
 						commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetCubeGCBGPUAddress(gcbIdx));
 					}
 					proxy.mesh->CubeMapRender(commandList);
+				}
+				else if (type == MT_skinnedMesh)
+				{
+					if (rpType == RenderPassType::RPT_Default) {
+						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(m_cubeMapTextureName));
+						commandList->SetGraphicsRootDescriptorTable(1, m_textureLoader->GetGPUHandle(ld.textureName));
+						commandList->SetGraphicsRootDescriptorTable(2, m_textureLoader->GetGPUHandle(playerCubeMapTextureName));
+						commandList->SetGraphicsRootDescriptorTable(3, m_textureLoader->GetGPUHandle(depthOnlyTextureName));
+						commandList->SetGraphicsRootConstantBufferView(4, ld.localCB->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootConstantBufferView(5, r_currentFrameResource->GetGCBGPUAddress());
+						commandList->SetGraphicsRootConstantBufferView(6, ld.skinnedLCB->GetGPUVirtualAddress());
+					}
+					else if (rpType == RenderPassType::RPT_DepthOnlyPass)
+					{
+						commandList->SetGraphicsRootDescriptorTable(0, m_textureLoader->GetGPUHandle(ld.textureName));
+						commandList->SetGraphicsRootConstantBufferView(1, ld.localCB->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootConstantBufferView(2, r_currentFrameResource->GetLightGCBGPUAddress(gcbIdx));
+						commandList->SetGraphicsRootConstantBufferView(3, ld.skinnedLCB->GetGPUVirtualAddress());
+					}
+					proxy.mesh->Render_(commandList);
 				}
 			}
 		}
@@ -941,7 +995,7 @@ void RenderEngine::Render(const std::string& psoName, int idx, MeshType meshType
 	}
 
 	RenderMeshes(psoName, commandList, meshType, RPT_Default);
-		
+
 	if (meshType == MT_finalize)
 	{
 		commandList->ResourceBarrier(
@@ -1356,7 +1410,7 @@ void RenderEngine::CreateTextures()
 	fallbackDDSPath = "Textures/Fallback/";
 
 	m_textureLoader = std::make_shared<TextureLoader>(texturePath, m_device);
-	m_textureLoader->InitHeap(40);
+	m_textureLoader->InitHeap(50);
 	m_textureLoader->LoadIdx();
 	m_textureLoader->LoadTextures(m_commandQueue);
 
@@ -1514,22 +1568,24 @@ void RenderEngine::DrawingWithMouse()
 	int i = 0;
 	// cubemap에 환경 cubemap, mesh 렌더링
 	DepthOnlyPass(depthOnlyPbrPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, true/*clear RT*/);
+	DepthOnlyPass(skinnedDepthOnlyPbrPSO, skinnedMeshPSO, i++, MT_skinnedMesh, false/*isFinal*/, false/*clear RT*/);
 
-	RenderCube(cubeMapPSO, phongPSO, i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
-	RenderCube(genCubeMapPSO, phongPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
-	RenderCube(genPBRCubeMapPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
-	if(gui_renderPointCloud)
-		RenderCube(pointCloudPSO, pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
+	//RenderCube(cubeMapPSO, phongPSO, i++, MT_cubeMap, false/*isFinal*/, true/*clear RT*/);
+	//RenderCube(genCubeMapPSO, phongPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+	//RenderCube(genPBRCubeMapPSO, pbrPSO, i++, MT_primitive, false/*isFinal*/, false/*clear RT*/);
+	//if(gui_renderPointCloud)
+	//	RenderCube(pointCloudPSO, pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
 	//Compute(computePSO, i++, false/*isFinal*/, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
-	Render(currentPbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, false/*clear RT*/);
-	if (gui_renderPointCloud)
-		Render(pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
+	//Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
+	Render(currentPbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
+	Render(skinnedMeshPSO, i++/*sequence*/, MT_skinnedMesh, false/*isFinal*/, false/*clear RT*/);
+	//if (gui_renderPointCloud)
+	//	Render(pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
 	Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
 
 	bool renderGUI = true;
 	Render("renderTexturePSO", i++, MT_finalize, !renderGUI/*isFinal*/, true/*clear RT*/);
-	if(renderGUI)
+	if (renderGUI)
 		RenderGUI(true);
 }
 
@@ -1805,6 +1861,34 @@ void RenderEngine::ApplyImpl(const CmdUpdateActorConstant& c)
 	//update.meshType = MT_primitive;
 
 	//m_renderCmdQueue->Push(update);
+}
+
+MeshType RenderEngine::GetMeshType(PrimitiveComponent* primitive)
+{
+	if (StaticMeshComponent* staticMeshComp = dynamic_cast<StaticMeshComponent*>(primitive)) {
+		return MT_primitive;
+	}
+	else if (PointCloudComponent* pointCloudComp = dynamic_cast<PointCloudComponent*>(primitive))
+	{
+		return MT_pointCloud;
+	}
+	else if (DotComponent* pointCloudComp = dynamic_cast<DotComponent*>(primitive))
+	{
+		return MT_pointCloud;
+	}
+	else if (CubeMapComponent* cubeMapComp = dynamic_cast<CubeMapComponent*>(primitive))
+	{
+		return MT_cubeMap;
+	}
+	else if (LightComponent* lightComp = dynamic_cast<LightComponent*>(primitive))
+	{
+		return MT_light;
+	}
+	else if (SkinnedMeshComponent* skinnedComp = dynamic_cast<SkinnedMeshComponent*>(primitive))
+	{
+		return MT_skinnedMesh;
+	}
+	return MT_primitive;
 }
 
 void RenderEngine::ClearTexture()

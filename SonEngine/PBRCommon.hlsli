@@ -43,6 +43,18 @@ struct vsInput
     float2 uv : TEXCOORD;
 };
 
+struct skinnedVsInput
+{
+    float3 pos : POSITION;
+    float3 normal : NORMAL;
+    float3 tangent : TANGENT;
+    float2 uv : TEXCOORD;
+    float4 blendWeight0 : BLENDWEIGHT0;
+    float4 blendWeight1 : BLENDWEIGHT1;
+    uint4 blendIndices0 : BLENDINDICES0;
+    uint4 blendIndices1 : BLENDINDICES1;
+};
+
 struct psInput
 {
     float3 worldPosition : Position0;

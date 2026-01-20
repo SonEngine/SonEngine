@@ -147,6 +147,12 @@
     <ClCompile Include="ADoor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="ASkinnedMesh.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinnedMeshComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseApp.h">
@@ -350,6 +356,12 @@
     <ClInclude Include="ADoor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="ASkinnedMesh.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SkinnedMeshComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultVS.hlsl" />
@@ -377,6 +389,8 @@
     <FxCompile Include="PBRBoxCubeMapVS.hlsl" />
     <FxCompile Include="DepthOnlyVS.hlsl" />
     <FxCompile Include="DepthOnlyPS.hlsl" />
+    <FxCompile Include="SkinnedMeshVS.hlsl" />
+    <FxCompile Include="SkinnedMeshDepthOnlyVS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />
@@ -407,6 +421,9 @@
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="DepthOnlyCommon.hlsli" />
+    <None Include="Asset.inl">
+      <Filter>헤더 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\earth_Albedo.dds">

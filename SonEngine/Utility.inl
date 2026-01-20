@@ -4,6 +4,7 @@
 #include "PointCloudComponent.h"
 #include "DotComponent.h"
 #include "CubeMapComponent.h"
+#include "SkinnedMeshComponent.h"
 #include "StaticMesh.h"
 #include "d3d12.h"
 #include "Utility.h"

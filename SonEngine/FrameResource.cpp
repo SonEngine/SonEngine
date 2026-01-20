@@ -38,6 +38,8 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 		reinterpret_cast<void**>(&pPbrGCB)
 	);
 
+
+
 	Graphics::utility->CreateConstantBuffer(
 		sizeof(PBGlobalConstant),
 		m_pbGCBuffer,
@@ -101,7 +103,7 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 	}
 }
 
-void FrameResource::AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy)
+void FrameResource::AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy, MeshType meshType)
 {
 	LocalData ld;
 	void* pLB;
@@ -113,16 +115,37 @@ void FrameResource::AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& pr
 	
 	ld.textureName = proxy.textureName;
 	ld.psoName = proxy.psoName;
-	m_localData[id] = ld;
+	
 	m_pCBs[id] = pLB;
 
 	memcpy(pLB, &proxy.constant, sizeof(LocalConstant));
+	
+	if (meshType == MT_skinnedMesh)
+	{
+		void* pSLCB;
+		Graphics::utility->CreateConstantBuffer(
+			sizeof(SkinnedLocalConstant),
+			ld.skinnedLCB,
+			reinterpret_cast<void**>(&pSLCB)
+		);
+		m_pSCBs[id] = pSLCB;
+
+		memcpy(pSLCB, &proxy.skinnedlc, sizeof(SkinnedLocalConstant));
+	}
+	m_localData[id] = ld;
+
 }
 
-void FrameResource::UpdateLocalConstantBuffer(const LocalConstant& lc, uint32_t id)
+void FrameResource::UpdateLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy, MeshType meshType)
 {
 	auto pLB = m_pCBs[id];
-	memcpy(pLB, &lc, sizeof(LocalConstant));
+	memcpy(pLB, &proxy.constant, sizeof(LocalConstant));
+
+	if (meshType == MT_skinnedMesh)
+	{
+		auto pSLCB = m_pSCBs[id];
+		memcpy(pSLCB, &proxy.skinnedlc, sizeof(SkinnedLocalConstant));
+	}
 }
 
 void FrameResource::UpdateCubeGCView(const DirectX::SimpleMath::Vector3& loc)

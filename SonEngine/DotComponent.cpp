@@ -6,7 +6,7 @@
 DotComponent::DotComponent(Actor* owner)
 	:PrimitiveComponent(owner)
 {
-	m_mesh = std::shared_ptr<StaticMesh>();
+	m_mesh = std::make_shared<StaticMesh>();
 }
 
 DotComponent::~DotComponent()

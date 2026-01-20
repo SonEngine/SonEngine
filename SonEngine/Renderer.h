@@ -23,6 +23,7 @@ namespace Renderer
     extern DXGI_FORMAT dsOnlyFormat;
     extern DXGI_FORMAT dsOnlyDsvFormat;
     extern DXGI_FORMAT dsOnlySrvFormat;
+    extern GraphicsPSO skinnedMeshDsOnlyPbrPSO;
 
     // PSO 초기화
     void Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device);

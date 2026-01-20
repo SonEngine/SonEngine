@@ -83,8 +83,12 @@ void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	}
 
 	std::shared_ptr<StaticMesh> shieldMesh = std::make_shared<StaticMesh>();
-	shieldMesh->Initialize<PBRVertex, uint16_t>(device, commandList, assets["SF_Demon_head_shield_NakedSingularity"].m_meshes);
+	shieldMesh->Initialize<PBRVertex, uint16_t>(device, commandList, { assets["SF_Demon_head_shield_NakedSingularity"].m_meshes[0] });
 
+	//std::shared_ptr<StaticMesh> mariaMesh = std::make_shared<StaticMesh>();
+	//mariaMesh->Initialize<PBRVertex, uint16_t>(device, commandList, assets["maria"].m_meshes );
+
+	//meshesMap["maria"] = mariaMesh;
 	meshesMap["shield"] = shieldMesh;
 	meshesMap["sphereTan"] = sphereTanMesh;
 	meshesMap["sphere"] = sphereMesh;
@@ -125,7 +129,32 @@ void ModelLoader<SimpleVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	meshesMap["point"] = pointMesh;
 }
 
-void ModelLoader<Vertex, uint16_t>::ProcessMesh(std::vector<Mesh<Vertex, uint16_t>>& meshes, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr)
+void ModelLoader<SkinnedVertex, uint16_t>::Initialize(ID3D12Device5* device,
+	ID3D12GraphicsCommandList* commandList)
+{
+	for (auto& [name, asset] : assets)
+	{
+		std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>();
+		mesh->Initialize<SkinnedVertex, uint16_t>(device, commandList, asset.m_meshes);
+
+		meshesMap[name] = mesh;
+	}
+}
+
+void ModelLoader<SkinnedVertex, uint32_t>::Initialize(ID3D12Device5* device,
+	ID3D12GraphicsCommandList* commandList)
+{
+	for (auto& [name, asset] : assets)
+	{
+		std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>();
+		mesh->Initialize<SkinnedVertex, uint32_t>(device, commandList, asset.m_meshes);
+
+		meshesMap[name] = mesh;
+	}
+}
+
+
+void ModelLoader<Vertex, uint16_t>::ProcessMesh(Asset<Vertex, uint16_t>& asset, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr, bool loadAnimation)
 {
 	Mesh<Vertex, uint16_t> meshData;
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
@@ -151,11 +180,10 @@ void ModelLoader<Vertex, uint16_t>::ProcessMesh(std::vector<Mesh<Vertex, uint16_
 		}
 	}
 
-	meshes.push_back(meshData);
+	asset.m_meshes.push_back(meshData);
 }
 
-
-void ModelLoader<PBRVertex, uint16_t>::ProcessMesh(std::vector<Mesh<PBRVertex, uint16_t>>& meshes, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr)
+void ModelLoader<PBRVertex, uint16_t>::ProcessMesh(Asset<PBRVertex, uint16_t>& asset, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr, bool loadAnimation)
 {
 	Mesh<PBRVertex, uint16_t> meshData;
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
@@ -202,5 +230,186 @@ void ModelLoader<PBRVertex, uint16_t>::ProcessMesh(std::vector<Mesh<PBRVertex, u
 		}
 	}
 
-	meshes.push_back(meshData);
+	asset.m_meshes.push_back(meshData);
+}
+
+void ModelLoader<SkinnedVertex, uint16_t>::ProcessMesh(Asset<SkinnedVertex, uint16_t>& asset, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr, bool loadAnimation)
+{
+	Mesh<SkinnedVertex, uint16_t> meshData;
+	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+		aiVector3D v = mesh->mVertices[i];
+		aiVector3D n = aiVector3D(0, 1, 0);
+		aiVector3D t = aiVector3D(1, 0, 0);
+		aiVector3D uv = aiVector3D(0, 0, 0);
+		if (mesh->HasNormals())
+		{
+			n = mesh->mNormals[i];
+		}
+		if (mesh->HasTangentsAndBitangents())
+		{
+			t = mesh->mTangents[i];
+		}
+		if (mesh->HasTextureCoords(0))
+		{
+			uv = mesh->mTextureCoords[0][i];
+		}
+		Vector3 vecUV = aiToVector3(uv);
+
+		Vector3 pos = aiToVector3(v);
+		Vector3 normal = aiToVector3(n);
+		Vector3 tangent = aiToVector3(t);
+
+		Matrix invTranspose = tr.Invert().Transpose();
+		pos = Vector3::Transform(pos, tr);
+		normal = Vector3::Transform(normal, invTranspose);
+		tangent = Vector3::Transform(tangent, tr);
+
+		normal.Normalize();
+		tangent.Normalize();
+
+		SkinnedVertex vertex;
+		vertex.position = pos;
+		vertex.normal = normal;
+		vertex.tangent = tangent;
+		vertex.texcoord = Vector2(vecUV.x, vecUV.y);
+
+		meshData.m_vertices.push_back({
+			vertex
+			});
+	}
+
+	for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+		aiFace face = mesh->mFaces[i];
+
+		for (unsigned int j = 0; j < face.mNumIndices; j++) {
+			meshData.m_indices.push_back(face.mIndices[j]);
+		}
+	}
+	std::vector<std::vector<float>> weights(meshData.m_vertices.size());
+	std::vector<std::vector<uint32_t>> indices(meshData.m_vertices.size());
+	if (loadAnimation && mesh->HasBones())
+	{
+		asset.animData.boneOffset.resize(asset.animData.boneNameToId.size());
+		asset.animData.boneTransform.resize(asset.animData.boneNameToId.size());
+
+		for (size_t i = 0; i < mesh->mNumBones; i++)
+		{
+			const aiBone* bone = mesh->mBones[i];
+			std::string boneName = bone->mName.C_Str();
+			uint32_t boneId = asset.animData.boneNameToId[boneName];
+			asset.animData.boneOffset[boneId] =
+				Matrix((float*)&bone->mOffsetMatrix).Transpose();
+			for (size_t j = 0; j < bone->mNumWeights; j++)
+			{				
+				auto weight = bone->mWeights[j];
+				weights[weight.mVertexId].push_back(weight.mWeight);
+				indices[weight.mVertexId].push_back(boneId);
+			}
+		}
+		for (size_t i = 0; i < meshData.m_vertices.size(); i++)
+		{
+			for (size_t j = 0; j < weights[i].size(); j++)
+			{
+				if (j >= 8)
+				{
+					continue;
+				}
+				meshData.m_vertices[i].blendWeights[j] = weights[i][j];
+				meshData.m_vertices[i].boneIndices[j] = indices[i][j];
+			}
+		}
+	}
+
+	asset.m_meshes.push_back(meshData);
+}
+
+
+void ModelLoader<SkinnedVertex, uint32_t>::ProcessMesh(Asset<SkinnedVertex, uint32_t>& asset, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr, bool loadAnimation)
+{
+	Mesh<SkinnedVertex, uint32_t> meshData;
+	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+		aiVector3D v = mesh->mVertices[i];
+		aiVector3D n = aiVector3D(0, 1, 0);
+		aiVector3D t = aiVector3D(1, 0, 0);
+		aiVector3D uv = aiVector3D(0, 0, 0);
+		if (mesh->HasNormals())
+		{
+			n = mesh->mNormals[i];
+		}
+		if (mesh->HasTangentsAndBitangents())
+		{
+			t = mesh->mTangents[i];
+		}
+		if (mesh->HasTextureCoords(0))
+		{
+			uv = mesh->mTextureCoords[0][i];
+		}
+		Vector3 vecUV = aiToVector3(uv);
+
+		Vector3 pos = aiToVector3(v);
+		Vector3 normal = aiToVector3(n);
+		Vector3 tangent = aiToVector3(t);
+
+		Matrix invTranspose = tr.Invert().Transpose();
+		pos = Vector3::Transform(pos, tr);
+		normal = Vector3::Transform(normal, invTranspose);
+		tangent = Vector3::Transform(tangent, tr);
+
+		normal.Normalize();
+		tangent.Normalize();
+
+		SkinnedVertex vertex;
+		vertex.position = pos;
+		vertex.normal = normal;
+		vertex.tangent = tangent;
+		vertex.texcoord = Vector2(vecUV.x, vecUV.y);
+
+		meshData.m_vertices.push_back({
+			vertex
+			});
+	}
+
+	for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+		aiFace face = mesh->mFaces[i];
+
+		for (unsigned int j = 0; j < face.mNumIndices; j++) {
+			meshData.m_indices.push_back(face.mIndices[j]);
+		}
+	}
+	std::vector<std::vector<float>> weights(meshData.m_vertices.size());
+	std::vector<std::vector<uint32_t>> indices(meshData.m_vertices.size());
+	if (loadAnimation && mesh->HasBones())
+	{
+		asset.animData.boneOffset.resize(asset.animData.boneNameToId.size());
+		asset.animData.boneTransform.resize(asset.animData.boneNameToId.size());
+
+		for (size_t i = 0; i < mesh->mNumBones; i++)
+		{
+			const aiBone* bone = mesh->mBones[i];
+			std::string boneName = bone->mName.C_Str();
+			uint32_t boneId = asset.animData.boneNameToId[boneName];
+			asset.animData.boneOffset[boneId] =
+				Matrix((float*)&bone->mOffsetMatrix).Transpose();
+			for (size_t j = 0; j < bone->mNumWeights; j++)
+			{
+				auto weight = bone->mWeights[j];
+				weights[weight.mVertexId].push_back(weight.mWeight);
+				indices[weight.mVertexId].push_back(boneId);
+			}
+		}
+		for (size_t i = 0; i < meshData.m_vertices.size(); i++)
+		{
+			for (size_t j = 0; j < weights[i].size(); j++)
+			{
+				if (j >= 8)
+				{
+					continue;
+				}
+				meshData.m_vertices[i].blendWeights[j] = weights[i][j];
+				meshData.m_vertices[i].boneIndices[j] = indices[i][j];
+			}
+		}
+	}
+
+	asset.m_meshes.push_back(meshData);
 }

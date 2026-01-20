@@ -11,7 +11,10 @@ public:
 	void Apply(const RenderCmd& cmd);
 
 	void ApplyImpl(const CmdAddPrimitive& c);
+	void ApplyImpl(const CmdAddSkinnedMesh& c);
 	void ApplyImpl(const CmdUpdatePrimitive& c);
+
+	void ApplyImpl(const CmdUpdateSkinnedMesh& c);
 
 public:
 	std::unordered_map<MeshType, std::unordered_map<uint32_t, PrimitiveProxy>> m_proxies;

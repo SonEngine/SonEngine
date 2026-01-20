@@ -18,6 +18,7 @@ struct PrimitiveProxy {
 	UINT id = 0;
 	std::shared_ptr<StaticMesh> mesh;
 	LocalConstant constant;
+	SkinnedLocalConstant skinnedlc;
 	std::vector<bool> addDirtyFlags;
 	std::vector<bool> updateDirtyFlags;
 	std::string name;
