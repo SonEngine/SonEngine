@@ -1,7 +1,9 @@
 # 3D Graphics Engine Project
 
 DirectX 12을 사용한 로우레벨 3D 렌더링 엔진.  
-렌더링 파이프라인 구성, 셰이더 처리, 모델 로딩 등을 직접 구현함.
+렌더링 파이프라인 구성, 셰이더 처리, 모델 및 애니메이션 로딩, 등을 직접 구현한 엔진입니다.
+
+<img src="SonEngine/Images/BackBuffer_260121_150928.png"> 
 
 ## 주요 기능
 
