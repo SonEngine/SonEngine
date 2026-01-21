@@ -119,7 +119,7 @@
       ]
     },
     {
-      "class": "Actor",
+      "class": "ASkinnedMesh",
       "name": "shield",
       "transform": {
         "pos": [ 6.0, 0.8, -0.5 ],
@@ -149,11 +149,12 @@
             "pos": [ 0.0, 0.0, 0.0 ],
             "rot": [ 0, 0, 0, 1 ],
             "scale": [ 1, 1, 1 ]
-          }
+          },
+          "animationSpeed": 10.0
         },
         {
           "type": "RenderMode",
-          "psoName": "pbrPSO"
+          "psoName": "skinnedMeshPSO"
         }
       ]
     },
@@ -208,7 +209,7 @@
         {
           "type": "StaticMesh",
           "mesh": "Capoeira",
-          "material": "maria_albedo"
+          "material": "Michelle_albedo"
         },
         {
           "type": "RigidBody",
@@ -227,7 +228,8 @@
             "pos": [ 0.0, 0.0, 0.0 ],
             "rot": [ 0, 0, 0, 1 ],
             "scale": [ 1, 1, 1 ]
-          }
+          },
+          "animationSpeed": 60.0
         },
         {
           "type": "RenderMode",

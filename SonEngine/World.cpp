@@ -57,10 +57,11 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	pbrModelLoader->Load("sphere.glb");
 
 	auto tr = DirectX::XMMatrixScaling(0.01f, 0.01f, 0.01f);
-	pbrModelLoader->Load("SF_Demon_head_shield_NakedSingularity.fbx", tr, false);
+	//pbrModelLoader->Load("SF_Demon_head_shield_NakedSingularity.fbx", tr, false);
 	//tr = DirectX::SimpleMath::Matrix();
 	skinnedMeshLoader->Load("Capoeira.fbx", tr, true);
 	skinnedMeshLoader->Load("maria.fbx", tr, true);
+	skinnedMeshLoader->Load("shield.fbx", tr, true);
 
 	tr = DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2);
 	pbrModelLoader->Load("large_castle_door_4k.fbx", tr, false);
@@ -332,6 +333,10 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 									DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 								ad.lc.texTransform = texTransform;
 							}
+						}
+						if (comp.contains("animationSpeed"))
+						{
+							ad.animationSpeed = comp["animationSpeed"];
 						}
 					}
 					else if (type == "RenderMode")

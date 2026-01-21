@@ -35,8 +35,7 @@ public:
 	std::vector<Mesh<V, I>> GetAsset(const std::string& assetName) const;
 	std::shared_ptr<StaticMesh> GetMeshes(const std::string& assetName) const;
 	DirectX::SimpleMath::Vector3 aiToVector3(aiVector3D vector);
-	SkinnedLocalConstant GetCurrentSLC(const int& frame, const std::string& assetName, const int& clipIdx);
-	
+	SkinnedLocalConstant GetCurrentSLC(const float& frame, const std::string& assetName, const int& clipIdx, bool updateRootPos);
 
 	DirectX::SimpleMath::Quaternion aiToQuaternion(aiQuaternion quat);
 	DirectX::SimpleMath::Vector4 aiToVector4(aiColor4D vector);
@@ -90,7 +89,7 @@ inline DirectX::SimpleMath::Vector3 ModelLoader<V, I>::aiToVector3(aiVector3D ve
 }
 
 template<typename V, typename I>
-inline SkinnedLocalConstant ModelLoader<V, I>::GetCurrentSLC(const int& frame, const std::string& assetName, const int & clipIdx)
+inline SkinnedLocalConstant ModelLoader<V, I>::GetCurrentSLC(const float& frame, const std::string& assetName, const int & clipIdx, bool updateRootPos)
 {
 	SkinnedLocalConstant slc;
 
@@ -100,7 +99,7 @@ inline SkinnedLocalConstant ModelLoader<V, I>::GetCurrentSLC(const int& frame, c
 		return slc;
 	}
 	Asset<V,I> & asset = assets[assetName];
-	return asset.Update(frame, clipIdx);
+	return asset.Update(frame, clipIdx, updateRootPos);
 	
 }
 

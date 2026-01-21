@@ -22,6 +22,7 @@ struct ActorData
 	float roughness = 0.f;
 	float metallic = 0.f;*/
 	LocalConstant lc;
+	float animationSpeed = 60.f;
 };
 
 struct LightData

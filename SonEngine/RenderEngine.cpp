@@ -1410,7 +1410,7 @@ void RenderEngine::CreateTextures()
 	fallbackDDSPath = "Textures/Fallback/";
 
 	m_textureLoader = std::make_shared<TextureLoader>(texturePath, m_device);
-	m_textureLoader->InitHeap(50);
+	m_textureLoader->InitHeap(100);
 	m_textureLoader->LoadIdx();
 	m_textureLoader->LoadTextures(m_commandQueue);
 

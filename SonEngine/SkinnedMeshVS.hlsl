@@ -37,14 +37,18 @@ psInput main(skinnedVsInput input)
     };
     
     float3 posL = 0.f;
-    for (uint i = 0; i < 8; i ++)
+    float3 normL = 0.f;
+    float3 tanL = 0.f;
+    for (uint i = 0; i < 8; i++)
     {
         posL += weights[i] * mul(float4(input.pos, 1.f), gBoneTransformCB.boneTransform[indices[i]]).xyz;
+        normL += weights[i] * mul(float4(input.normal, 0.f), gBoneTransformCB.boneTransform[indices[i]]).xyz;
+        tanL += weights[i] * mul(float4(input.tangent, 0.f), gBoneTransformCB.boneTransform[indices[i]]).xyz;
     }
- 
+    float3 normal = normalize(normL);
     //posW = mul()
     
-    float4 posH = float4(posL.xyz + input.normal * height, 1.f);
+    float4 posH = float4(posL.xyz + normal * height, 1.f);
     float4 posW = mul(posH, gLocalCB.model);
        
     output.modelPosition = posW;
@@ -53,8 +57,8 @@ psInput main(skinnedVsInput input)
     
     output.svPosition = posSV;
         
-    float3 normal = mul(float4(input.normal, 0.f), gLocalCB.modelInvTranspose).xyz;
-    float3 tangent = mul(float4(input.tangent, 0.f), gLocalCB.model).xyz;
+    normal = mul(float4(normal, 0.f), gLocalCB.modelInvTranspose).xyz;
+    float3 tangent = mul(float4(tanL, 0.f), gLocalCB.model).xyz;
     
     output.normal = normalize(normal);
     output.tangent = normalize(tangent);

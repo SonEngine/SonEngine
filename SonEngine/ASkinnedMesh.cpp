@@ -24,6 +24,7 @@ void ASkinnedMesh::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData&
 	cmp->SetMesh(mesh);
 	cmp->SetActorData(ad);
 
+
 	SetRootComponent(cmp);
 	SetActorData(ad);
 	UpdateAnimation(0.f);

@@ -3,13 +3,18 @@
 #include "Asset.h"
 
 template<typename V, typename I>
-inline SkinnedLocalConstant Asset<V, I>::Update(const int& frame, const int& clipIdx)
+inline SkinnedLocalConstant Asset<V, I>::Update(const float& frame, const int& clipIdx, bool updateRootPos)
 {
 	SkinnedLocalConstant slc;
 
 	const AnimationClip& clip = clips[clipIdx];
 
-	int currFrame = (int)(frame / 4.f);
+	int currFrame = (int)(frame);
+
+	int frame0 = (int)(frame);
+	int frame1 = frame0 + 1;
+	float alpha = frame - float(frame0);
+
 
 	for (uint32_t boneId = 0; boneId < animData.boneIdToName.size(); boneId++)
 	{
@@ -33,16 +38,32 @@ inline SkinnedLocalConstant Asset<V, I>::Update(const int& frame, const int& cli
 			: animData.accumulatedRootTransform;
 		
 		AnimationKey key = keys.size() > 0
-			? keys[currFrame % keys.size()]
+			? keys[frame0 % keys.size()]
 			: AnimationKey(); 
 
-		
+		AnimationKey nextKey = keys.size() > 0
+			? keys[frame1 % keys.size()]
+			: AnimationKey();
+
+		if (parentIdx < 0 && !updateRootPos)
+		{
+			key.pos.x = key.pos.z = 0.f;
+		}
+		XMVECTOR t = XMVectorLerp(key.pos, nextKey.pos, alpha);
+		XMVECTOR s = XMVectorLerp(key.scale, nextKey.scale, alpha);
+		XMVECTOR r = XMQuaternionNormalize(XMQuaternionSlerp(key.quat, nextKey.quat, alpha));
+
 		Matrix keyMat =
-			Matrix::CreateScale(key.scale) *
-			Matrix::CreateFromQuaternion(key.quat) *
-			Matrix::CreateTranslation(key.pos);
+			Matrix::CreateScale(s) *
+			Matrix::CreateFromQuaternion(r) *
+			Matrix::CreateTranslation(t); 
 
 
+		//Matrix keyMat =
+		//	Matrix::CreateScale(key.scale) *
+		//	Matrix::CreateFromQuaternion(key.quat) *
+		//	Matrix::CreateTranslation(key.pos);
+	
 		animData.boneTransform[boneId] = keyMat * parentMatrix;
 	}
 	for (uint32_t i = 0; i < animData.boneIdToName.size(); i++)

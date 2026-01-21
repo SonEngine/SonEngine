@@ -21,14 +21,13 @@ void SkinnedMeshComponent::SetMesh(std::shared_ptr<StaticMesh> newMesh)
 
 void SkinnedMeshComponent::UpdateAnimation(const float& deltaTime)
 {
-	static int frame = 0;
 	if (bUpdateAnim)
 	{
-		frame += 1;
 		if (Graphics::world)
 		{
+			m_currentFrame += m_animationSpeed * deltaTime;
 			using namespace Graphics;
-			m_skinnedLocalConstant = world->skinnedMeshLoader->GetCurrentSLC(frame, GetName(), 0);
+			m_skinnedLocalConstant = world->skinnedMeshLoader->GetCurrentSLC(m_currentFrame, GetName(), 0, bUpdateRoot);
 		}
 	}
 
@@ -39,4 +38,10 @@ void SkinnedMeshComponent::UpdateAnimation(const float& deltaTime)
 			comp->UpdateAnimation(deltaTime);
 		}
 	}
+}
+
+void SkinnedMeshComponent::SetActorData(const ActorData& ad)
+{
+	PrimitiveComponent::SetActorData(ad);
+	SetAnimationSpeed(ad.animationSpeed);
 }

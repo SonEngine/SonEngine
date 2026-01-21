@@ -49,6 +49,7 @@ public:
 	std::string name;
 
 	//SkinnedLocalConstant Update(const float& frame, const std::string& assetName, const int& clipIdx);
-	SkinnedLocalConstant Update(const int& frame, const int& clipIdx);
+	//SkinnedLocalConstant Update(const float& frame, const int& clipIdx);
+	SkinnedLocalConstant Update(const float& frame, const int& clipIdx, bool updateRootPos);
 };
 #include "Asset.inl"
