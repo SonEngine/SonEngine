@@ -571,8 +571,8 @@ void RenderEngine::UpdateGUI()
 	std::string fpsStr = "FPS : " + std::to_string(fps);
 	ImGui::Text(fpsStr.c_str());
 	Vector3 dir = r_currentFrameResource->GetGlobalConstant().cameraDir;
-	std::string str = "x : " + std::to_string(dir.x) + "y : " + std::to_string(dir.y) + "z : " + std::to_string(dir.z);
-	ImGui::Text(str.c_str());
+	//std::string str = "x : " + std::to_string(dir.x) + "y : " + std::to_string(dir.y) + "z : " + std::to_string(dir.z);
+	//ImGui::Text(str.c_str());
 
 	ImGui::Checkbox("Change Mode", &test);
 	ImGui::Checkbox("Render PointCloud", &gui_renderPointCloud);
