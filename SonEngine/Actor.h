@@ -24,6 +24,8 @@ public:
 	virtual void Tick(const float& deltaTime);
 
 public:
+	void UpdateRotation(const int& mouseDeltaX, const int& mouseDeltaY, const float& deltaTime);
+	void UpdateCameraInfo(const int& width, const int& height);
 	void SetActorLocation(const DirectX::SimpleMath::Vector3& newLocation);
 	//void SetActorRotation(const DirectX::SimpleMath::Matrix& newMat);
 	void SetActorRotation(const DirectX::SimpleMath::Quaternion& newQuat);
@@ -43,10 +45,13 @@ public:
 public:
 	DirectX::SimpleMath::Vector3 GetActorLocation() const;
 	DirectX::SimpleMath::Vector3 GetActorFrontDir() const;
+	DirectX::SimpleMath::Vector3 GetCameraLocation() const;
+	DirectX::SimpleMath::Matrix GetProjMatrix() const;
 	DirectX::SimpleMath::Vector3 GetActorUpDir() const;
 	DirectX::SimpleMath::Vector3 GetActorRightDir() const;
 	float GetActorSpeed() const;
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
+	DirectX::SimpleMath::Matrix GetCameraViewMatrix() const;
 
 	void UpdateMipState(int newForceMip0);
 

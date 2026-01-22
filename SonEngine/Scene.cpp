@@ -5,12 +5,17 @@ Scene::Scene(const uint32_t frCount):
 {
 }
 
-void Scene::Apply(const RenderCmd& cmd)
+void Scene::Apply(const AddCmd& cmd)
 {
-	std::visit([&](auto&& c) { ApplyImpl(c); }, cmd);
+	std::visit([&](auto&& c) { ApplyAddImpl(c); }, cmd);
 }
 
-void Scene::ApplyImpl(const CmdAddPrimitive& c)
+void Scene::Apply(const UpdateCmd& cmd)
+{
+	std::visit([&](auto&& c) { ApplyUpdateImpl(c); }, cmd);
+}
+
+void Scene::ApplyAddImpl(const CmdAddPrimitive& c)
 {
 	PrimitiveProxy p;
 	p.id = c.id;
@@ -25,7 +30,7 @@ void Scene::ApplyImpl(const CmdAddPrimitive& c)
 	m_proxies[c.meshType][c.id] = p;
 }
 
-void Scene::ApplyImpl(const CmdAddSkinnedMesh& c)
+void Scene::ApplyAddImpl(const CmdAddSkinnedMesh& c)
 {
 	PrimitiveProxy p;
 	p.id = c.id;
@@ -42,7 +47,7 @@ void Scene::ApplyImpl(const CmdAddSkinnedMesh& c)
 }
 
 
-void Scene::ApplyImpl(const CmdUpdatePrimitive& c)
+void Scene::ApplyUpdateImpl(const CmdUpdatePrimitive& c)
 {
 	auto it = m_proxies[c.meshType].find(c.id);
 	if (it != m_proxies[c.meshType].end())
@@ -54,7 +59,7 @@ void Scene::ApplyImpl(const CmdUpdatePrimitive& c)
 	}
 }
 
-void Scene::ApplyImpl(const CmdUpdateSkinnedMesh& c)
+void Scene::ApplyUpdateImpl(const CmdUpdateSkinnedMesh& c)
 {
 	auto it = m_proxies[c.meshType].find(c.id);
 	if (it != m_proxies[c.meshType].end())

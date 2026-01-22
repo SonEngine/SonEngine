@@ -50,9 +50,18 @@ struct CmdUpdateSkinnedMesh {
 	SkinnedLocalConstant skinnedlc;
 };
 
-using RenderCmd = std::variant<
+//using RenderCmd = std::variant<
+//	CmdAddPrimitive,
+//	CmdAddSkinnedMesh,
+//	CmdUpdatePrimitive,
+//	CmdUpdateSkinnedMesh
+//>;
+using AddCmd = std::variant<
 	CmdAddPrimitive,
-	CmdAddSkinnedMesh,
+	CmdAddSkinnedMesh
+>;
+
+using UpdateCmd = std::variant<
 	CmdUpdatePrimitive,
 	CmdUpdateSkinnedMesh
 >;

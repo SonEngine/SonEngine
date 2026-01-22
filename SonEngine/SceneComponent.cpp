@@ -1,6 +1,7 @@
 ﻿#include "SceneComponent.h"
 #include "directxtk12/SimpleMath.h"
 #include "StaticMeshComponent.h"
+#include "CameraComponent.h"
 
 using DirectX::SimpleMath::Vector3;
 
@@ -20,6 +21,7 @@ SceneComponent::~SceneComponent()
 
 void SceneComponent::Attach(std::shared_ptr<SceneComponent> sceneComp)
 {
+	sceneComp->m_parent = this;
 	m_children.push_back(sceneComp);
 }
 
@@ -53,6 +55,44 @@ void SceneComponent::SetLocalConstant(const LocalConstant& newConstant)
 	{
 		c->UpdateWorldTransform(localTransform);
 	}
+}
+
+void SceneComponent::UpdateRotation(const int& mouseDeltaX, const int& mouseDeltaY, const float& deltaTime)
+{
+	float delX = mouseDeltaX * m_rotateSpeed * deltaTime;
+	float delY = mouseDeltaY * m_rotateSpeed * deltaTime;
+	xAngle += delX;
+	if (xAngle >= 360) {
+		xAngle -= 360;
+	}
+	if (xAngle <= -360) {
+		xAngle += 360;
+	}
+
+	float xRadian = DirectX::XMConvertToRadians(xAngle);
+
+	DirectX::SimpleMath::Matrix m_rotation = DirectX::XMMatrixRotationY(xRadian);
+	DirectX::SimpleMath::Quaternion yRotQ = DirectX::SimpleMath::Quaternion::CreateFromRotationMatrix(m_rotation);
+	
+	DirectX::SimpleMath::Vector3 m_frontDir = DirectX::SimpleMath::Vector3::Transform(GetBaseFrontDirection(), m_rotation);
+	DirectX::SimpleMath::Vector3 m_rightDir = GetBaseUpDirection().Cross(m_frontDir);;
+
+	if (yAngle + delY >= maxYAngle)
+		delY = maxYAngle - yAngle;
+	else if (yAngle + delY <= minYAngle)
+		delY = minYAngle - yAngle;
+
+	yAngle += delY;
+	//std::cout << yAngle << '\n';
+	float yRadian = DirectX::XMConvertToRadians(yAngle);
+
+
+	m_rotation = DirectX::XMMatrixRotationAxis(m_rightDir, yRadian);
+	m_frontDir = DirectX::SimpleMath::Vector3::Transform(m_frontDir, m_rotation);
+
+	SetFrontDirection(m_frontDir);
+	SetRightDirection(m_rightDir);
+	SetRotation(yRotQ);
 }
 
 void SceneComponent::SetLocation(const DirectX::SimpleMath::Vector3& newLocation)
@@ -105,6 +145,7 @@ void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation
 		c->UpdateWorldTransform(localTransform);
 	}
 }
+
 void SceneComponent::AddRotation(const DirectX::SimpleMath::Quaternion& delQ)
 {
 	localTransform.quat *= delQ;
@@ -118,6 +159,19 @@ void SceneComponent::AddRotation(const DirectX::SimpleMath::Quaternion& delQ)
 
 DirectX::SimpleMath::Matrix SceneComponent::GetViewMatrix() const
 {
+	if (m_parent)
+	{
+		return XMMatrixLookToLH(GetLocation(), m_parent->m_frontDirection, m_parent->m_upDirection);
+	}
+	return XMMatrixLookToLH(GetLocation(), m_frontDirection, m_upDirection);
+}
+
+DirectX::SimpleMath::Matrix SceneComponent::GetCameraViewMatrix() const
+{
+	for (const auto& c : m_children)
+	{
+		return c->GetViewMatrix();
+	}
 	return XMMatrixLookToLH(GetLocation(), m_frontDirection, m_upDirection);
 }
 
@@ -132,6 +186,30 @@ void SceneComponent::OnRegister()
 	{
 		c->OnRegister();
 	}
+}
+
+DirectX::SimpleMath::Vector3 SceneComponent::GetCameraLocation() const
+{
+	for (const auto& c : m_children)
+	{
+		if (CameraComponent* cameraComp = dynamic_cast<CameraComponent*>(c.get()))
+		{
+			return c->GetLocation();
+		}
+	}
+	return DirectX::SimpleMath::Vector3::Zero;
+}
+
+DirectX::SimpleMath::Matrix SceneComponent::GetProjMatrix() const
+{
+	for (const auto& c : m_children)
+	{
+		if (CameraComponent* cameraComp = dynamic_cast<CameraComponent*>(c.get()))
+		{
+			return c->GetProjMatrix();
+		}
+	}
+	return DirectX::SimpleMath::Matrix();
 }
 
 void SceneComponent::UpdateConstantLocation()
@@ -186,5 +264,15 @@ void SceneComponent::UpdateTexTransform(const DirectX::SimpleMath::Matrix& texTr
 	for (const auto& c : m_children)
 	{
 		c->UpdateTexTransform(texTransform);
+	}
+}
+void  SceneComponent::UpdateCameraInfo(const int& width, const int& height)
+{
+	for (const auto& c : m_children)
+	{
+		if (CameraComponent* cameraComp = dynamic_cast<CameraComponent*>(c.get()))
+		{
+			return c->UpdateCameraInfo(width, height);
+		}
 	}
 }

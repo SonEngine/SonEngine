@@ -8,13 +8,17 @@ class Scene {
 public:
 	Scene(const uint32_t frCount = 3);
 
-	void Apply(const RenderCmd& cmd);
+	void Apply(const AddCmd& cmd);
 
-	void ApplyImpl(const CmdAddPrimitive& c);
-	void ApplyImpl(const CmdAddSkinnedMesh& c);
-	void ApplyImpl(const CmdUpdatePrimitive& c);
+	void Apply(const UpdateCmd& cmd);
 
-	void ApplyImpl(const CmdUpdateSkinnedMesh& c);
+	//void Apply(const RenderCmd& cmd);
+
+	void ApplyAddImpl(const CmdAddPrimitive& c);
+	void ApplyAddImpl(const CmdAddSkinnedMesh& c);
+	void ApplyUpdateImpl(const CmdUpdatePrimitive& c);
+
+	void ApplyUpdateImpl(const CmdUpdateSkinnedMesh& c);
 
 public:
 	std::unordered_map<MeshType, std::unordered_map<uint32_t, PrimitiveProxy>> m_proxies;

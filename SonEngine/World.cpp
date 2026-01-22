@@ -47,22 +47,30 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 {
 	m_renderEngine = renderEngine;
 	//finalRenderTexName = "hdrTex";
+	m_cameraWidth = cameraWidth;
+	m_cameraHeight = cameraHeight;
 
 	m_camera = std::make_shared<Camera>();
 	InitCamera(cameraWidth, cameraHeight);
 
 	modelLoader->Load("torus.fbx");
 	
-
 	pbrModelLoader->Load("sphere.glb");
 
 	auto tr = DirectX::XMMatrixScaling(0.01f, 0.01f, 0.01f);
-	//pbrModelLoader->Load("SF_Demon_head_shield_NakedSingularity.fbx", tr, false);
-	//tr = DirectX::SimpleMath::Matrix();
+	auto unrealTR = 
+		DirectX::XMMatrixScaling(0.01f, 0.01f, 0.01f) * 
+		DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2)*
+		DirectX::XMMatrixRotationY(DirectX::XM_PI);
+
 	skinnedMeshLoader->Load("Capoeira.fbx", tr, true);
 	skinnedMeshLoader->Load("maria.fbx", tr, true);
 	skinnedMeshLoader->Load("shield.fbx", tr, true);
-
+	skinnedMeshLoader->Load("SK_Mannequin.fbx", unrealTR, true);
+	skinnedMeshLoader->LoadAnimation("FPP_Dag_AttackD.fbx", "SK_Mannequin");
+	skinnedMeshLoader->Load("fpp_arm/MaleArm2.fbx", unrealTR, true);
+	//skinnedMeshLoader->LoadAnimation("fpp_arm/animations/MaleArm_Male_FPP_Dag_AttackD.fbx", "MaleArm2");
+	skinnedMeshLoader->LoadAnimations("fpp_arm/animations", "MaleArm2");
 	tr = DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2);
 	pbrModelLoader->Load("large_castle_door_4k.fbx", tr, false);
 	
@@ -115,11 +123,11 @@ void World::InitCamera(int width, int height)
 	m_camera->m_height = height;
 	m_camera->SetCameraMode(CameraMode::CM_Perspective);
 	m_camera->Initialize();
-	/*m_camera->SetActorLocation({ 0.f, 0.f, -1.f });
-	m_camera->UpdateCameraRotation(0, 0);*/
+	m_camera->SetActorLocation({ 10.f, 1.f, -0.5f });
+	//m_camera->UpdateCameraRotation(0, 0, 1/240.f);
 	// BOOKMARK	
-	m_camera->SetActorLocation({ 0.f, 1.f, -5.f });
-	m_camera->UpdateCameraRotation(0, 50);
+	//m_camera->SetActorLocation({ 0.f, 1.f, -5.f });
+	//m_camera->UpdateCameraRotation(0, 50, 1/240.f);
 
 	m_camera->SetActorSpeed(5.f);
 }
@@ -131,11 +139,20 @@ void World::UpdateCamera(int width, int height)
 		std::cout << "UpdateCamera() - Camera가 할당되지 않았습니다\n";
 		return;
 	}
+	m_cameraWidth = width;
+	m_cameraHeight = height;
 
 	m_camera->m_width = width;
 	m_camera->m_height = height;
 	m_camera->m_aspectRatio = width / (float)height;
 	m_camera->UpdateProjMatrix();
+
+
+	auto playerIt = m_actors.find("player");
+	if (playerIt != m_actors.end())
+	{
+		playerIt->second->UpdateCameraInfo(width, height);
+	}
 }
 
 void World::PrintCameraInfo()
@@ -164,24 +181,23 @@ void World::Tick(float deltaTime)
 	// view 회전 업데이트
 	if (isFocused && isFPSMode)
 	{
-
 		// update camera
-		m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY);
-
+		m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY, deltaTime);
 		m_camera->UpdateCameraLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
-
+		
+		auto playerIt = m_actors.find("player");
+		if (playerIt != m_actors.end())
+		{
+			playerIt->second->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_actors["player"].get()));
+			playerIt->second->UpdateRotation(mouseDeltaX, mouseDeltaY, deltaTime);
+		}
 		mouseDeltaX = 0;
 		mouseDeltaY = 0;
-
 		//m_camera->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
 	}
 	else
 	{
-		auto p = m_actors.find("player");
-		if (p != m_actors.end())
-		{
-			m_actors["player"]->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_actors["player"].get()));
-		}
+		//
 	}
 
 	for (auto& [name, A] : m_actors)
@@ -192,17 +208,28 @@ void World::Tick(float deltaTime)
 
 ViewProjInfo World::GetViewProjInfo()
 {
-	ViewProjInfo info;
+	ViewProjInfo cameraInfo;
 	if (m_camera)
 	{
-		info = {
+		cameraInfo = {
 			m_camera->GetActorFrontDir(),
 			m_camera->GetActorLocation(),
 			m_camera->GetViewMatrix(),
 			m_camera->GetProjMatrix()
 		};
 	}
-	return info;
+	ViewProjInfo playerInfo;
+
+	if (m_player)
+	{
+		playerInfo = {
+			m_player->GetActorFrontDir(),
+			m_player->GetCameraLocation(),
+			m_player->GetCameraViewMatrix(),
+			m_player->GetProjMatrix()
+		};
+	}
+	return playerInfo;
 }
 
 void World::RegisterPrimitive(PrimitiveComponent* primitive, bool usePhysX)
@@ -272,6 +299,7 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 		{
 			ActorType at = a["class"].get<ActorType>();
 			ActorData ad;
+			AnimData animData;
 			LightData ld;
 			std::string targetName;
 
@@ -312,9 +340,12 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 					}
 					else if (type == "LocalConstant")
 					{
-						ad.lc.forceMip0 = comp["forceMip0"].get<bool>();
-						ad.updateConstants = comp["updateConstants"].get<bool>();
-						ad.lc.useReflect = comp["useReflect"].get<bool>();
+						if (comp.contains("forceMip0"))
+							ad.lc.forceMip0 = comp["forceMip0"].get<bool>();
+						if (comp.contains("updateConstants"))
+							ad.updateConstants = comp["updateConstants"].get<bool>();
+						if (comp.contains("useReflect"))
+							ad.lc.useReflect = comp["useReflect"].get<bool>();
 						if (comp.contains("heightScale"))
 							ad.lc.heightScale = comp["heightScale"].get<float>();
 						if (comp.contains("roughness"))
@@ -334,10 +365,7 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 								ad.lc.texTransform = texTransform;
 							}
 						}
-						if (comp.contains("animationSpeed"))
-						{
-							ad.animationSpeed = comp["animationSpeed"];
-						}
+						
 					}
 					else if (type == "RenderMode")
 					{
@@ -365,6 +393,19 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 						ld.color = ParseVec4(comp["color"]);
 						ld.intensity = comp["intensity"].get<float>();
 					}
+					else if (type == "Animation")
+					{
+						if (comp.contains("animationSpeed"))
+						{
+							animData.animationSpeed = comp["animationSpeed"].get<float>();
+							
+							
+						}
+						if (comp.contains("animationName"))
+							animData.name = comp["animationName"].get<std::string>();
+						if (comp.contains("playAnimation"))
+							animData.playAnimation = comp["playAnimation"].get<bool>();
+					}
 				}
 				switch (at)
 				{
@@ -376,18 +417,23 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 					else if (ad.psoName == "pbrPSO")
 						actor->Initialize(pbrModelLoader->GetMeshes(ad.mesh), ad);
 					
-
+					if (ad.name == "player")
+					{
+						m_player = actor;
+					}
 					SpawnActor(actor);
 				}
 				break;
 				case ActorType::AT_ATriggerBox:
 				{
 					std::shared_ptr<ATriggerBox> actor = std::make_shared<ATriggerBox>(ad.name, this);
+
 					if (ad.psoName == "phongPSO")
 						actor->Initialize(modelLoader->GetMeshes(ad.mesh), ad);
 					else if (ad.psoName == "pbrPSO")
 						actor->Initialize(pbrModelLoader->GetMeshes(ad.mesh), ad);
 
+					
 					SpawnActor(actor);
 					auto target = m_actors.find(targetName);
 					if (target != m_actors.end())
@@ -446,8 +492,12 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 				case ActorType::AT_SkinnedMesh:
 				{
 					std::shared_ptr<ASkinnedMesh> actor = std::make_shared<ASkinnedMesh>(ad.name, this);
-					actor->Initialize(skinnedMeshLoader->GetMeshes(ad.mesh), ad);
+					actor->Initialize(skinnedMeshLoader->GetMeshes(ad.mesh), ad, animData);
 					SpawnActor(actor);
+					if (ad.name == "player")
+					{
+						m_player = actor;
+					}
 				}
 				break;
 				}

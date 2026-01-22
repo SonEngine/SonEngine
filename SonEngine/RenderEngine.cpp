@@ -48,7 +48,13 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 	dlModel->Initialize("DL/models/mlp.pt");*/
 
 	m_frameQueue = std::make_shared<BoundedQueue<FramePacket>>(m_frameResourceCount);
-	m_renderCmdQueue = std::make_shared<BoundedQueue<RenderCmd>>(1024);
+	m_renderAddCmdQueue.resize(actorCount);
+	m_renderUpdateCmdQueue.resize(actorCount);
+	for (size_t i = 0; i < actorCount; i++)
+	{
+		m_renderAddCmdQueue[i] = std::make_shared<BoundedQueue<AddCmd>>(m_frameResourceCount);
+		m_renderUpdateCmdQueue[i] = std::make_shared<BoundedQueue<UpdateCmd>>(m_frameResourceCount);
+	}
 	m_renderToMainCmdQueue = std::make_shared<BoundedQueue<GameCmd>>(1024);
 
 	pMouseinputStateHelper = mouseInputState;
@@ -234,9 +240,16 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 			r_currentFrameResource->UpdatePBGlobalConstantBuffer(r_packet.pbgc);
 
 			//DrainRenderCommands
-			while (m_renderCmdQueue->TryPop(r_cmd))
+			for (size_t i = 0; i < actorCount; i++)
 			{
-				m_scene->Apply(r_cmd);
+				if (m_renderAddCmdQueue[i]->TryPop(r_addCmd))
+				{
+					m_scene->Apply(r_addCmd);
+				}
+				if (m_renderUpdateCmdQueue[i]->TryPop(r_updateCmd))
+				{
+					m_scene->Apply(r_updateCmd);
+				}
 			}
 
 			for (auto& [type, proxies] : m_scene->m_proxies)
@@ -421,7 +434,7 @@ void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 		skinnedAdd.mesh = skinnedComp->GetMeshPtr();
 		skinnedAdd.meshType = MT_skinnedMesh;
 		skinnedAdd.skinnedlc = skinnedComp->GetSkinnedLocalConstant();
-		m_renderCmdQueue->Push(std::move(skinnedAdd));
+		m_renderAddCmdQueue[skinnedAdd.id]->Push(std::move(skinnedAdd));
 		return;
 	}
 	add.name = primitive->GetName();
@@ -429,7 +442,7 @@ void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 	add.textureName = primitive->GetTextureName();
 	add.psoName = primitive->GetPSOName();
 	add.constant = primitive->GetLocalConstant();
-	m_renderCmdQueue->Push(std::move(add));
+	m_renderAddCmdQueue[add.id]->Push(std::move(add));
 
 	/*m_primitives.push_back(primitive);
 	for (auto& fr : m_frameResources)
@@ -766,10 +779,12 @@ void RenderEngine::Tick(float deltaTime)
 			UpdatePBGlobalConstantBuffer(m_guiWidth, pMouseinputStateHelper->GetInputState());
 			prevMousePt = currMousPt;
 		}
+
 		m_frameQueue->Push(std::move(packet));
 	}
 
 	// Local Constants
+	int id = m_frameId % m_frameResourceCount;
 
 	for (int i = 0; i < m_primitives.size(); i++)
 	{
@@ -788,7 +803,7 @@ void RenderEngine::Tick(float deltaTime)
 					update.skinnedlc = skinnedComp->GetSkinnedLocalConstant();
 				}
 				update.meshType = mt;
-				m_renderCmdQueue->Push(update);
+				m_renderUpdateCmdQueue[i]->Push(std::move(update));
 			}
 			else
 			{
@@ -797,9 +812,8 @@ void RenderEngine::Tick(float deltaTime)
 				update.id = i;
 				update.constant = prim->GetLocalConstant();
 				update.meshType = mt;
-				m_renderCmdQueue->Push(update);
+				m_renderUpdateCmdQueue[i]->Push(std::move(update));
 			}
-
 		}
 		{
 			std::lock_guard<std::mutex> lock(g_mtx);

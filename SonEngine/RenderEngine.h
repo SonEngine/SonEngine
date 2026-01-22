@@ -315,13 +315,17 @@ private:
 
 private:
 	std::shared_ptr<BoundedQueue<FramePacket>> m_frameQueue;
-	std::shared_ptr<BoundedQueue<RenderCmd>> m_renderCmdQueue;
+	std::vector<std::shared_ptr<BoundedQueue<AddCmd>>> m_renderAddCmdQueue;
+	std::vector<std::shared_ptr<BoundedQueue<UpdateCmd>>> m_renderUpdateCmdQueue;
 	std::shared_ptr<BoundedQueue<GameCmd>> m_renderToMainCmdQueue;
 	uint64_t m_frameId = 0;
 	FramePacket packet;
 	FramePacket r_packet;
-	RenderCmd r_cmd;
+	AddCmd r_addCmd;
+	UpdateCmd r_updateCmd;
 	GameCmd g_cmd;
+
+	int actorCount = 20;
 
 	std::unordered_map<uint32_t, std::string> r_idToName;
 	std::unordered_map<std::string, uint32_t> r_nameToId;

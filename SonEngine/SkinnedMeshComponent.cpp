@@ -27,7 +27,7 @@ void SkinnedMeshComponent::UpdateAnimation(const float& deltaTime)
 		{
 			m_currentFrame += m_animationSpeed * deltaTime;
 			using namespace Graphics;
-			m_skinnedLocalConstant = world->skinnedMeshLoader->GetCurrentSLC(m_currentFrame, GetName(), 0, bUpdateRoot);
+			m_skinnedLocalConstant = world->skinnedMeshLoader->GetCurrentSLC(m_currentFrame, m_animationName, 0, bUpdateRoot);
 		}
 	}
 
@@ -40,8 +40,9 @@ void SkinnedMeshComponent::UpdateAnimation(const float& deltaTime)
 	}
 }
 
-void SkinnedMeshComponent::SetActorData(const ActorData& ad)
+void SkinnedMeshComponent::SetAnimationData(const AnimData& animData)
 {
-	PrimitiveComponent::SetActorData(ad);
-	SetAnimationSpeed(ad.animationSpeed);
+	SetAnimationSpeed(animData.animationSpeed);
+	SetAnimationName(animData.name);
+	SetPlayAnimation(animData.playAnimation);
 }

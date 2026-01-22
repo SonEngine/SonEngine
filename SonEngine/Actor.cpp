@@ -2,6 +2,7 @@
 #include "StaticMeshComponent.h"
 #include "World.h"
 #include "StaticMesh.h"
+#include "CameraComponent.h"
 
 using DirectX::SimpleMath::Vector3;
 
@@ -17,16 +18,42 @@ Actor::Actor(std::string actorName, World* world)
 
 void Actor::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
 {
-	std::shared_ptr<StaticMeshComponent> cmp = std::make_shared<StaticMeshComponent>(this);
-	cmp->SetMesh(mesh);
-	cmp->SetActorData(ad);
+	std::shared_ptr<StaticMeshComponent> root = std::make_shared<StaticMeshComponent>(this);
+	root->SetMesh(mesh);
+	root->SetActorData(ad);
+	SetRootComponent(root);
 
-	SetRootComponent(cmp);
+	if (ad.name == "player" )
+	{
+		if (Graphics::world)
+		{
+			std::shared_ptr<CameraComponent> cameraCmp = std::make_shared<CameraComponent>(this);
+			cameraCmp->Initialize(70.f, Graphics::world->m_cameraWidth, Graphics::world->m_cameraHeight, 0.1f, 1000.f);
+			cameraCmp->SetLocation(Vector3(0, 0.f, -1.f));
+			root->Attach(cameraCmp);
+		}
+	}
 	SetActorData(ad);
 }
 
 void Actor::Tick(const float& deltaTime)
 {
+}
+
+void Actor::UpdateRotation(const int& mouseDeltaX, const int& mouseDeltaY, const float& deltaTime)
+{
+	if (m_rootComponent)
+	{
+		m_rootComponent->UpdateRotation(mouseDeltaX, mouseDeltaY, deltaTime);
+	}
+}
+
+void Actor::UpdateCameraInfo(const int& width, const int& height)
+{
+	if (m_rootComponent)
+	{
+		m_rootComponent->UpdateCameraInfo(width, height);
+	}
 }
 
 void Actor::SetActorLocation(const DirectX::SimpleMath::Vector3& newLocation)
@@ -105,6 +132,28 @@ DirectX::SimpleMath::Vector3 Actor::GetActorFrontDir() const
 	}
 }
 
+DirectX::SimpleMath::Vector3 Actor::GetCameraLocation() const
+{
+	if (m_rootComponent)
+	{
+		return m_rootComponent->GetCameraLocation();
+	}
+	else {
+		return DirectX::SimpleMath::Vector3::Zero;
+	}
+}
+
+DirectX::SimpleMath::Matrix Actor::GetProjMatrix() const
+{
+	if (m_rootComponent)
+	{
+		return m_rootComponent->GetProjMatrix();
+	}
+	else {
+		return DirectX::SimpleMath::Matrix();
+	}
+}
+
 DirectX::SimpleMath::Vector3 Actor::GetActorUpDir() const
 {
 	if (m_rootComponent)
@@ -150,6 +199,16 @@ DirectX::SimpleMath::Matrix Actor::GetViewMatrix() const
 	}
 }
 
+DirectX::SimpleMath::Matrix Actor::GetCameraViewMatrix() const
+{
+	if (m_rootComponent)
+	{
+		return m_rootComponent->GetCameraViewMatrix();
+	}
+	else {
+		return DirectX::SimpleMath::Matrix();
+	}
+}
 void Actor::UpdateMipState(int newForceMip0)
 {
 	if (m_rootComponent)

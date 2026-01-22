@@ -39,6 +39,7 @@ public:
 	//void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd);
 	void Initialize(ID3D12Device5* device, const UINT& width, const UINT& height, const UINT& textCount, HWND mainHwnd, const std::vector<std::shared_ptr<PBRLightInfo>>& lightInfos);
 	void AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy, MeshType meshType);
+	void UpdateLocalConstantBuffer(uint32_t id, const LocalConstant& constant);
 	void UpdateLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy, MeshType meshType);
 	//void UpdateLocalConstantBuffer(const LocalConstant& lc, uint32_t id, MeshType meshType);
 	void UpdateCubeGCView(const DirectX::SimpleMath::Vector3& loc);

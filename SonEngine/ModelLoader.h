@@ -16,6 +16,7 @@
 #include "Vertex.h"
 #include "Asset.h"
 #include "StaticMesh.h"
+#include <omp.h>
 
 
 template<typename V, typename I>
@@ -48,6 +49,9 @@ private:
 
 public:
 	void Load(std::string filename, DirectX::SimpleMath::Matrix tr = DirectX::SimpleMath::Matrix(), bool loadAnimation = false);
+	void LoadAnimations(std::string folderPath, std::string targetAssetName);
+	void LoadAnimation(std::string filePath, std::string targetAssetName, bool useBasePath = true);
+	//void LoadAnimation(std::string filename, std::string targetAssetName);
 	const aiNode* FindParent(Asset<V, I>& asset, const aiNode* node);
 	void ProcessNode(Asset<V, I>& asset, aiNode* node, const aiScene* scene, DirectX::SimpleMath::Matrix tr, bool loadAnimation);
 	void ProcessMesh(Asset<V, I>& asset, aiMesh* mesh, const aiScene* scene, DirectX::SimpleMath::Matrix tr, bool loadAnimation);
@@ -93,9 +97,13 @@ inline SkinnedLocalConstant ModelLoader<V, I>::GetCurrentSLC(const float& frame,
 {
 	SkinnedLocalConstant slc;
 
-	if (assets[assetName].clips.size() < (size_t)clipIdx)
+	if (assets.find(assetName) == assets.end())
 	{
-		std::cout << "SkinnedLocalConstant ModelLoader<SkinnedVertex, uint16_t>::GetCurrentSLC() clip empty\n";
+		return slc;
+	}
+	if (assets[assetName].clips.size() <= (size_t)clipIdx)
+	{
+		//std::cout << "SkinnedLocalConstant ModelLoader<SkinnedVertex, uint16_t>::GetCurrentSLC() clip empty\n";
 		return slc;
 	}
 	Asset<V,I> & asset = assets[assetName];
@@ -217,6 +225,83 @@ inline void ModelLoader<V, I>::Load(std::string filename, DirectX::SimpleMath::M
 		}
 	}
 	std::filesystem::path p = filename;
+	assets[p.stem().string()] = asset;
+}
+
+template<typename V, typename I>
+inline void ModelLoader<V, I>::LoadAnimations(std::string folderPath, std::string targetAssetName)
+{
+	namespace fs = std::filesystem;
+
+	fs::path dirPath = fs::path(basePath+folderPath);
+
+	std::vector<std::string> files;
+	for (const auto& e : fs::directory_iterator(dirPath)) {
+		if (e.is_regular_file()) 
+			files.push_back(e.path().string());
+	}
+		
+	//omp_set_num_threads(4);
+#pragma omp parallel for
+	for (int i = 0; i < static_cast<int>(files.size()); ++i) {
+		LoadAnimation(files[i], targetAssetName, false);
+	}
+}
+
+template<typename V, typename I>
+inline void ModelLoader<V, I>::LoadAnimation(std::string filePath, std::string targetAssetName, bool useBasePath)
+{
+	Assimp::Importer importer;
+	std::string path = useBasePath ? (basePath + filePath) : filePath;
+	const aiScene* scene = importer.ReadFile(path,
+		aiProcess_ConvertToLeftHanded | aiProcess_Triangulate);
+
+	if (scene == nullptr)
+	{
+		return;
+	}
+	Asset<V, I> asset;
+	auto targetAsset = assets.find(targetAssetName);
+	if (targetAsset == assets.end())
+	{
+		std::cout << "Failed to load animation - " << filePath << '\n';
+		return;
+	}
+	asset.animData = targetAsset->second.animData;
+
+	for (uint32_t i = 0; i < scene->mNumAnimations; i++)
+	{
+		const aiAnimation* ani = scene->mAnimations[i];
+
+		AnimationClip clip;
+		clip.duration = (float)ani->mDuration;
+		clip.tickPerSec = ani->mTicksPerSecond;
+		clip.keys.resize(asset.animData.boneNameToId.size());
+		clip.numChannels = ani->mNumChannels;
+
+		for (int c = 0; c < ani->mNumChannels; c++)
+		{
+			const aiNodeAnim* nodeAnim = ani->mChannels[c];
+			auto it = asset.animData.boneNameToId.find(nodeAnim->mNodeName.C_Str());
+			if (it == asset.animData.boneNameToId.end())
+			{
+				//std::cout << "hi ";
+				continue;
+
+			}
+			uint32_t boneId = it->second;
+			clip.keys[boneId].resize(nodeAnim->mNumPositionKeys);
+
+			for (int k = 0; k < nodeAnim->mNumPositionKeys; k++)
+			{
+				clip.keys[boneId][k].pos = aiToVector3(nodeAnim->mPositionKeys[k].mValue);
+				clip.keys[boneId][k].quat = aiToQuaternion(nodeAnim->mRotationKeys[k].mValue);
+				clip.keys[boneId][k].scale = aiToVector3(nodeAnim->mScalingKeys[k].mValue);
+			}
+		}
+		asset.clips.push_back(clip);
+	}
+	std::filesystem::path p = filePath;
 	assets[p.stem().string()] = asset;
 }
 

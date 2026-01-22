@@ -135,6 +135,7 @@ void ModelLoader<SkinnedVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	for (auto& [name, asset] : assets)
 	{
 		std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>();
+	
 		mesh->Initialize<SkinnedVertex, uint16_t>(device, commandList, asset.m_meshes);
 
 		meshesMap[name] = mesh;
@@ -146,9 +147,12 @@ void ModelLoader<SkinnedVertex, uint32_t>::Initialize(ID3D12Device5* device,
 {
 	for (auto& [name, asset] : assets)
 	{
+		if (asset.m_meshes.empty())
+		{
+			continue;
+		}
 		std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>();
 		mesh->Initialize<SkinnedVertex, uint32_t>(device, commandList, asset.m_meshes);
-
 		meshesMap[name] = mesh;
 	}
 }

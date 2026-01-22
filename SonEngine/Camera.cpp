@@ -22,10 +22,10 @@ void Camera::UpdateCameraLocation(const DirectX::SimpleMath::Vector3& delLoc)
 	Actor::UpdateActorLocation(delLoc);
 }
 
-void Camera::UpdateCameraRotation(const int & mouseDeltaX, const int& mouseDeltaY)
+void Camera::UpdateCameraRotation(const int & mouseDeltaX, const int& mouseDeltaY, const float& deltaTime)
 {
-	float delX = mouseDeltaX * m_rotateSpeed;
-	float delY = mouseDeltaY * m_rotateSpeed;
+	float delX = mouseDeltaX * m_rotateSpeed * deltaTime;
+	float delY = mouseDeltaY * m_rotateSpeed * deltaTime;
 	xAngle += delX;
 	if (xAngle >= 360) {
 		xAngle -= 360;

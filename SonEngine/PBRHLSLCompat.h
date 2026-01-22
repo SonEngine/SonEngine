@@ -27,7 +27,7 @@ struct LocalConstant
 
 struct SkinnedLocalConstant
 {
-    Matrix boneTransform[96];
+    Matrix boneTransform[300];
 };
 
 struct PBRLightInfo

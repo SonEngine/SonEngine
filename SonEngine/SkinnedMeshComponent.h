@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "PrimitiveComponent.h"
+#include "ActorData.h"
 
 class StaticMesh;
 
@@ -19,9 +20,11 @@ public:
 	SkinnedLocalConstant GetSkinnedLocalConstant() { return m_skinnedLocalConstant; }
 
 public:
-	void SetActorData(const ActorData& ad) override;
 	void SetAnimationSpeed(const float& newSpeed) { m_animationSpeed = newSpeed; }
+	void SetAnimationName(const std::string& newName) { m_animationName = newName; }
 	void UpdateAnimation(const float& deltaTime);
+	void SetAnimationData(const AnimData& animData);
+	void SetPlayAnimation(const bool& playAnimation) { bUpdateAnim = playAnimation; }
 
 private:
 	bool bUpdateAnim = true;
@@ -30,4 +33,5 @@ private:
 	float m_animationSpeed = 60.f;
 	std::shared_ptr<StaticMesh> m_mesh;
 	SkinnedLocalConstant m_skinnedLocalConstant;
+	std::string m_animationName;
 };

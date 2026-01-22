@@ -3,7 +3,7 @@
   "actors": [
     {
       "class": "Actor",
-      "name": "player",
+      "name": "sphere",
       "transform": {
         "pos": [ 3.0, 0.8, -0.5 ],
         "rot": [ 0, 0, 0, 1 ],
@@ -17,17 +17,12 @@
         },
         {
           "type": "RigidBody",
-          "simulate": true,
-          "mode": "PM_Kinematic"
+          "simulate": false,
+          "mode": "PM_Default"
         },
         {
           "type": "LocalConstant",
-          "forceMip0": false,
           "updateConstants": true,
-          "useReflect": false,
-          "heightScale": 0.00,
-          "roughness": 0.2,
-          "metallic": 0.8,
           "texTransform": {
             "pos": [ 0.0, 0.0, 0.0 ],
             "rot": [ 0, 0, 0, 1 ],
@@ -55,18 +50,7 @@
           "material": "PavingStones145_2K-PNG_Albedo"
         },
         {
-          "type": "RigidBody",
-          "simulate": false,
-          "mode": "PM_Default"
-        },
-        {
           "type": "LocalConstant",
-          "forceMip0": false,
-          "updateConstants": false,
-          "useReflect": false,
-          "heightScale": 0.00,
-          "roughness": 0.2,
-          "metallic": 0.8,
           "texTransform": {
             "pos": [ 0.0, 0.0, 0.0 ],
             "rot": [ 0, 0, 0, 1 ],
@@ -92,25 +76,6 @@
           "type": "StaticMesh",
           "mesh": "map",
           "material": ""
-        },
-        {
-          "type": "RigidBody",
-          "simulate": false,
-          "mode": "PM_Default"
-        },
-        {
-          "type": "LocalConstant",
-          "forceMip0": false,
-          "updateConstants": false,
-          "useReflect": false,
-          "heightScale": 0.00,
-          "roughness": 0.2,
-          "metallic": 0.8,
-          "texTransform": {
-            "pos": [ 0.0, 0.0, 0.0 ],
-            "rot": [ 0, 0, 0, 1 ],
-            "scale": [ 1, 1, 1 ]
-          }
         },
         {
           "type": "RenderMode",
@@ -139,22 +104,85 @@
         },
         {
           "type": "LocalConstant",
-          "forceMip0": false,
-          "updateConstants": true,
-          "useReflect": false,
-          "heightScale": 0.00,
-          "roughness": 0.2,
-          "metallic": 0.8,
-          "texTransform": {
-            "pos": [ 0.0, 0.0, 0.0 ],
-            "rot": [ 0, 0, 0, 1 ],
-            "scale": [ 1, 1, 1 ]
-          },
-          "animationSpeed": 10.0
+          "updateConstants": true
         },
         {
           "type": "RenderMode",
           "psoName": "skinnedMeshPSO"
+        },
+        {
+          "type": "Animation",
+          "animationSpeed": 10.0,
+          "animationName": "shield"
+        }
+      ]
+    },
+    {
+      "class": "ASkinnedMesh",
+      "name": "SK_Mannequin",
+      "transform": {
+        "pos": [ 8.0, 0.0, -0.5 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "SK_Mannequin",
+          "material": "M_UE4Man_Body_Albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": true,
+          "mode": "PM_Kinematic"
+        },
+        {
+          "type": "LocalConstant",
+          "updateConstants": true
+        },
+        {
+          "type": "RenderMode",
+          "psoName": "skinnedMeshPSO"
+        },
+        {
+          "type": "Animation",
+          "animationSpeed": 60.0,
+          "animationName": "FPP_Dag_AttackD"
+        }
+      ]
+    },
+    {
+      "class": "ASkinnedMesh",
+      "name": "player",
+      "transform": {
+        "pos": [ 10.0, 0.0, -0.5 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "MaleArm2",
+          "material": "CC_body_mt_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Default"
+        },
+        {
+          "type": "LocalConstant",
+          "updateConstants": true
+        },
+        {
+          "type": "RenderMode",
+          "psoName": "skinnedMeshPSO"
+        },
+        {
+          "type": "Animation",
+          "animationSpeed": 60.0,
+          "animationName": "MaleArm_Male_FPP_Dag_AttackD",
+          "playAnimation": true
         }
       ]
     },
@@ -179,17 +207,7 @@
         },
         {
           "type": "LocalConstant",
-          "forceMip0": false,
-          "updateConstants": true,
-          "useReflect": false,
-          "heightScale": 0.00,
-          "roughness": 0.2,
-          "metallic": 0.8,
-          "texTransform": {
-            "pos": [ 0.0, 0.0, 0.0 ],
-            "rot": [ 0, 0, 0, 1 ],
-            "scale": [ 1, 1, 1 ]
-          }
+          "updateConstants": true
         },
         {
           "type": "RenderMode",
@@ -218,22 +236,16 @@
         },
         {
           "type": "LocalConstant",
-          "forceMip0": false,
-          "updateConstants": true,
-          "useReflect": false,
-          "heightScale": 0.00,
-          "roughness": 0.2,
-          "metallic": 0.8,
-          "texTransform": {
-            "pos": [ 0.0, 0.0, 0.0 ],
-            "rot": [ 0, 0, 0, 1 ],
-            "scale": [ 1, 1, 1 ]
-          },
-          "animationSpeed": 60.0
+          "updateConstants": true          
         },
         {
           "type": "RenderMode",
           "psoName": "skinnedMeshPSO"
+        },
+        {
+          "type": "Animation",
+          "animationSpeed": 60.0,
+          "animationName": "Capoeira"
         }
       ]
     },
@@ -255,19 +267,6 @@
           "type": "RigidBody",
           "simulate": false,
           "mode": "PM_Default"
-        },
-        {
-          "type": "LocalConstant",
-          "forceMip0": false,
-          "updateConstants": false,
-          "useReflect": false,
-          "heightScale": 0.00,
-          "roughness": 0.0,
-          "texTransform": {
-            "pos": [ 0.0, 0.0, 0.0 ],
-            "rot": [ 0, 0, 0, 1 ],
-            "scale": [ 1, 1, 1 ]
-          }
         },
         {
           "type": "RenderMode",

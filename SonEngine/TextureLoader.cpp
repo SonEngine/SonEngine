@@ -5,6 +5,7 @@
 
 #include "Renderer.h"
 #include "Utility.h"
+#include <omp.h>
 
 namespace fs = std::filesystem;
 
@@ -72,23 +73,40 @@ void TextureLoader::LoadIdx()
 
 void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue)
 {
-	std::ifstream bin(binPath, std::ios::binary);
-
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart());
-	srvOffset = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	DirectX::ResourceUploadBatch resourceUpload(m_device);
-	resourceUpload.Begin();
-
-
+	std::vector< Microsoft::WRL::ComPtr<ID3D12CommandQueue>> queues(count);
+	D3D12_COMMAND_QUEUE_DESC queueDesc;
+	ZeroMemory(&queueDesc, sizeof(queueDesc));
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	for (int i = 0; i < count; i++)
 	{
+		ThrowIfFailed(
+			m_device->CreateCommandQueue(
+				&queueDesc,
+				IID_PPV_ARGS(&queues[i]))
+		);
+	}
+
+
+	srvOffset = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	textures.resize(count);
+	
+	omp_set_num_threads(4);
+
+#pragma omp parallel for
+	for (int i = 0; i < count; i++)
+	{
+		std::ifstream bin(binPath, std::ios::binary);
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(heap->GetCPUDescriptorHandleForHeapStart(), i, srvOffset);
+		DirectX::ResourceUploadBatch resourceUpload(m_device);
+		resourceUpload.Begin();
+
 		std::string filename = nameMap[i];
 		
 		bool isCubeMap = filename.find("CubeMap") != std::string::npos;
 		bool isAlbedo = (filename.find("albedo") != std::string::npos) ||
 			(filename.find("Albedo") != std::string::npos);
-		TextureInfo info = textureMap[filename];
+		TextureInfo info = textureMap.at(filename);
 		uint64_t size = info.size;
 		std::vector<uint8_t> texture(size);
 		bin.seekg(info.offset);
@@ -135,12 +153,14 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& com
 			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		
 		m_device->CreateShaderResourceView(t.Get(), &srvDesc, handle);
-		textures.push_back(t);
+		textures[i] = t;
 
-		handle.Offset(1, srvOffset);
+		//handle.Offset(1, srvOffset);
+
+		auto uploadResourcesFinished = resourceUpload.End(queues[i].Get());
+		uploadResourcesFinished.wait();
 	}
-	auto uploadResourcesFinished = resourceUpload.End(commandQueue.Get());
-	uploadResourcesFinished.wait();
+	
 }
 
 void TextureLoader::AddTexture(Microsoft::WRL::ComPtr<ID3D12Resource> & texture, std::string & filename, bool isCubeMap)

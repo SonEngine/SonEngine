@@ -14,7 +14,7 @@ public:
 
 public:
 	
-	void Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad) override;
+	void Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad, const AnimData& animData);
 
 public:
 	void Tick(const float& deltaTime) override;

@@ -21,6 +21,7 @@ public:
 	void SetRotateSpeed(const float& newSpeed);
 	void UpdateWorldTransform(const Transform& tr);
 	void SetLocalConstant(const LocalConstant& newConstant);
+	void UpdateRotation(const int& mouseDeltaX, const int& mouseDeltaY, const float& deltaTime);
 	void SetLocation(const DirectX::SimpleMath::Vector3& newLocation);
 	void SetRotation(const DirectX::SimpleMath::Quaternion& newQuat);
 	void SetFrontDirection(const DirectX::SimpleMath::Vector3& newDir) { m_frontDirection = newDir; }
@@ -47,7 +48,11 @@ public:
 	DirectX::SimpleMath::Vector3 GetLocation()const { return worldTransform.location + localTransform.location; }
 	DirectX::SimpleMath::Quaternion GetRotation()const { return worldTransform.quat * localTransform.quat; }
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
+	DirectX::SimpleMath::Matrix GetCameraViewMatrix() const;
 	void GetChildrenComponents(std::vector<std::shared_ptr<SceneComponent>>& children) const;
+
+	DirectX::SimpleMath::Vector3 GetCameraLocation() const;
+	virtual	DirectX::SimpleMath::Matrix GetProjMatrix() const;
 
 public:
 	// world->actor 호출
@@ -58,7 +63,8 @@ public:
 	void UpdateMipState(int newForceMip0);
 	void UpdateUseReflect(int newUseReflect);
 	void UpdateTexTransform(const DirectX::SimpleMath::Matrix& texTransform);
-	
+	virtual void UpdateCameraInfo(const int& width, const int& height);
+
 protected:
 	//DirectX::SimpleMath::Vector3 m_location;
 	//DirectX::SimpleMath::Matrix m_rotation;
@@ -72,11 +78,17 @@ protected:
 	DirectX::SimpleMath::Vector3 m_rightDirection;
 
 protected:
-	float m_speed = 1.f;
-	float m_rotateSpeed = 1.f;
+	float m_speed = 10.f;
+	float m_rotateSpeed = 60.f;
 	LocalConstant localConstant;
+	float xAngle = 0.f;
+	float yAngle = 0.f;
+
+	float maxYAngle = 89.f;
+	float minYAngle = -89.f;
+
 
 protected:
-	std::shared_ptr<SceneComponent> m_parent;
+	SceneComponent* m_parent = nullptr;
 	std::vector<std::shared_ptr<SceneComponent>> m_children;
 };

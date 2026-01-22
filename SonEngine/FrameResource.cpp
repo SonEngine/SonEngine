@@ -136,6 +136,15 @@ void FrameResource::AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& pr
 
 }
 
+void FrameResource::UpdateLocalConstantBuffer(uint32_t id, const LocalConstant& constant)
+{
+	auto it = m_pCBs.find(id);
+	if (it == m_pCBs.end())
+		return;
+	auto pLB = m_pCBs[id];
+	memcpy(pLB, &constant, sizeof(LocalConstant));
+}
+
 void FrameResource::UpdateLocalConstantBuffer(uint32_t id, const PrimitiveProxy& proxy, MeshType meshType)
 {
 	auto pLB = m_pCBs[id];

@@ -85,5 +85,6 @@ bool BoundedQueue<T>::TryPop(T& packet)
 }
 
 template class BoundedQueue<FramePacket>; 
-template class BoundedQueue<RenderCmd>; 
+template class BoundedQueue<AddCmd>;
+template class BoundedQueue<UpdateCmd>;
 template class BoundedQueue<GameCmd>;

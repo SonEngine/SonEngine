@@ -144,7 +144,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;c10.lib;torch.lib;torch_cpu.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(LibTorch)\libtorch\lib;$(CUDA_PATH)\lib\x64</AdditionalLibraryDirectories>
     </Link>
     <FxCompile>
@@ -167,6 +167,7 @@
     <ClCompile Include="BaseApp.cpp" />
     <ClCompile Include="BoundedQueue.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraComponent.cpp" />
     <ClCompile Include="CubeMapComponent.cpp" />
     <ClCompile Include="DLModel.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -225,6 +226,7 @@
     <ClInclude Include="BaseApp.h" />
     <ClInclude Include="BoundedQueue.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraComponent.h" />
     <ClInclude Include="CubeMapComponent.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="dds.h" />

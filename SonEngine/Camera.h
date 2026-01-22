@@ -16,7 +16,8 @@ public:
 
 public:
 	void UpdateCameraLocation(const DirectX::SimpleMath::Vector3& delLoc);
-	void UpdateCameraRotation(const int& mouseDeltaX, const int& mouseDeltaY);
+	void UpdateCameraRotation(const int& mouseDeltaX, const int& mouseDeltaY, const float& deltaTime);
+	//void UpdateCameraRotation(const int& mouseDeltaX, const int& mouseDeltaY);
 	void UpdateProjMatrix();
 
 public:
@@ -35,7 +36,7 @@ protected:
 	float maxYAngle = 89.f;
 	float minYAngle = -89.f;
 
-	float m_rotateSpeed = 0.3f;
+	float m_rotateSpeed = 60.f;
 
 	// Projection 
 public:

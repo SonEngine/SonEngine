@@ -36,6 +36,10 @@ public:
 
 	void PrintCameraInfo();
 
+	int m_cameraWidth;
+	int m_cameraHeight;
+
+
 public:
 	void SetInputState(size_t key, bool isKeyDown);
 	bool LoadLevel(const std::filesystem::path & levelPath);

@@ -105,7 +105,7 @@ void ConvertWICToDDS(const std::wstring& textureFolder, const std::wstring& texc
 		}
 		bool isAlbedo = (filename.find(L"albedo") != std::wstring::npos);
 
-		std::wstring format = isAlbedo ? L"BC7_UNORM_SRGB" : L"BC7_UNORM";
+		std::wstring format = isAlbedo ? L"BC7_UNORM_SRGB" : L"BC3_UNORM";
 
 		std::wstring command =
 			texconvPath + L" -f " + format +
