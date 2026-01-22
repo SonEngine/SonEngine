@@ -54,6 +54,8 @@ public:
 	DirectX::SimpleMath::Vector3 GetCameraLocation() const;
 	virtual	DirectX::SimpleMath::Matrix GetProjMatrix() const;
 
+	void UpdateConstantTransform();
+
 public:
 	// world->actor 호출
 	virtual void OnRegister();

@@ -45,7 +45,7 @@ namespace Core {
         int m_width;
         int m_height;
         HWND m_mainWnd;
-        bool isFPSMode = false;
+        bool isFPSMode = true;
         bool resizeDirty = false;
         bool captureDirty = false;
 

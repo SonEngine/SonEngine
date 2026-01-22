@@ -39,6 +39,7 @@ vcpkg install assimp:x64-windows
 vcpkg install boost-serialization:x64-windows
 vcpkg install physx:x64-windows
 vcpkg install physx:x64-windows
+vcpkg install nlohmann-json:x64-windows
 ```
 ### Libtorch 설치 후 PATH 설정
 본 프로젝트는 **빌드 구성** 에 따라 서로 다른 Libtorch 폴더를 사용합니다.
