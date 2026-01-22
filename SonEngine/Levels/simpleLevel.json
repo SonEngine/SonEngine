@@ -22,7 +22,7 @@
         },
         {
           "type": "LocalConstant",
-          "updateConstants": true,
+          "updateConstants": false,
           "texTransform": {
             "pos": [ 0.0, 0.0, 0.0 ],
             "rot": [ 0, 0, 0, 1 ],
@@ -296,7 +296,7 @@
         {
           "type": "LocalConstant",
           "forceMip0": false,
-          "updateConstants": true,
+          "updateConstants": false,
           "useReflect": false,
           "heightScale": 0.00,
           "roughness": 0.0,

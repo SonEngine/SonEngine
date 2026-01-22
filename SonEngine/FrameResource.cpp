@@ -117,7 +117,6 @@ void FrameResource::AddLocalConstantBuffer(uint32_t id, const PrimitiveProxy& pr
 	ld.psoName = proxy.psoName;
 	
 	m_pCBs[id] = pLB;
-
 	memcpy(pLB, &proxy.constant, sizeof(LocalConstant));
 	
 	if (meshType == MT_skinnedMesh)

@@ -196,7 +196,7 @@ inline void ModelLoader<V, I>::Load(std::string filename, DirectX::SimpleMath::M
 
 			AnimationClip clip;
 			clip.duration = (float)ani->mDuration;
-			clip.tickPerSec = ani->mTicksPerSecond;
+			clip.tickPerSec = (float)ani->mTicksPerSecond;
 			clip.keys.resize(asset.animData.boneNameToId.size());
 			clip.numChannels = ani->mNumChannels;
 
@@ -275,7 +275,7 @@ inline void ModelLoader<V, I>::LoadAnimation(std::string filePath, std::string t
 
 		AnimationClip clip;
 		clip.duration = (float)ani->mDuration;
-		clip.tickPerSec = ani->mTicksPerSecond;
+		clip.tickPerSec = (float)ani->mTicksPerSecond;
 		clip.keys.resize(asset.animData.boneNameToId.size());
 		clip.numChannels = ani->mNumChannels;
 

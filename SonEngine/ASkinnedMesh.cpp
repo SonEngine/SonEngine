@@ -29,13 +29,15 @@ void ASkinnedMesh::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData&
 	if (ad.name == "player" && Graphics::world)
 	{
 		std::shared_ptr<CameraComponent> cameraCmp = std::make_shared<CameraComponent>(this);
-		cameraCmp->Initialize(70.f, Graphics::world->m_cameraWidth, Graphics::world->m_cameraHeight, 0.1f, 1000.f);
+		cameraCmp->Initialize(70.f, (float)Graphics::world->m_cameraWidth, (float)Graphics::world->m_cameraHeight, 0.1f, 1000.f);
 		cameraCmp->SetLocation(Vector3(0, 1.6f, 0.f));
 		root->Attach(cameraCmp);
 	}
 	SetRootComponent(root);
 	SetActorData(ad);
 	UpdateAnimation(0.f);
+	/*auto mat = DirectX::SimpleMath::Matrix::CreateRotationY(DirectX::XM_PIDIV2);
+	SetActorRotation(DirectX::SimpleMath::Quaternion::CreateFromRotationMatrix(mat));*/
 }
 
 void ASkinnedMesh::Tick(const float& deltaTime)

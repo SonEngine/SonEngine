@@ -28,7 +28,7 @@ void Actor::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
 		if (Graphics::world)
 		{
 			std::shared_ptr<CameraComponent> cameraCmp = std::make_shared<CameraComponent>(this);
-			cameraCmp->Initialize(70.f, Graphics::world->m_cameraWidth, Graphics::world->m_cameraHeight, 0.1f, 1000.f);
+			cameraCmp->Initialize(70.f, (float)Graphics::world->m_cameraWidth, (float)Graphics::world->m_cameraHeight, 0.1f, 1000.f);
 			cameraCmp->SetLocation(Vector3(0, 0.f, -1.f));
 			root->Attach(cameraCmp);
 		}

@@ -23,6 +23,7 @@ void SceneComponent::Attach(std::shared_ptr<SceneComponent> sceneComp)
 {
 	sceneComp->m_parent = this;
 	m_children.push_back(sceneComp);
+	sceneComp->UpdateWorldTransform(localTransform);
 }
 
 void SceneComponent::SetSpeed(const float& newSpeed)
@@ -112,6 +113,7 @@ void SceneComponent::SetLocation(const DirectX::SimpleMath::Vector3& newLocation
 
 void SceneComponent::SetRotation(const DirectX::SimpleMath::Quaternion& newQuat)
 {
+//TODO front direction도 회전 시켜야 함
 	localTransform.quat = newQuat;
 	//UpdateConstantRotation();
 	UpdateConstantTransform();
@@ -221,8 +223,9 @@ DirectX::SimpleMath::Matrix SceneComponent::GetProjMatrix() const
 
 void SceneComponent::UpdateConstantTransform()
 {
-	auto matrix = localTransform.ToMatrix() * worldTransform.ToMatrix();
-	localConstant.model = matrix;
+	auto mat = localTransform.ToMatrix() * worldTransform.ToMatrix();
+	
+	localConstant.model = mat;
 
 	localConstant.modelInvTranspose = localConstant.model.Invert();
 	localConstant.model = localConstant.model.Transpose();

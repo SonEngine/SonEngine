@@ -2,6 +2,8 @@
 
 #include "Actor.h"
 #include "ActorData.h"
+#include "StaticMeshComponent.h"
+
 //#include "StaticMesh.h"
 
 class StaticMesh;
@@ -27,4 +29,10 @@ private:
 	float m_speed = 1.f;
 	DirectX::SimpleMath::Vector3 m_movingDir = DirectX::SimpleMath::Vector3(1, 0, 0);
 	bool isTriggered = false;
+	float rotationSpeed = 90.f;
+
+private:
+	std::shared_ptr<StaticMeshComponent> root;
+	std::shared_ptr<StaticMeshComponent> doorRight;
+	std::shared_ptr<StaticMeshComponent> doorLeft;
 };

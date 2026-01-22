@@ -43,9 +43,9 @@ void LightComponent::InitLightInfo(const LightData& ld)
 //	m_lightInfo = lightInfo;
 //}
 
-void LightComponent::UpdateConstantLocation()
+void LightComponent::UpdateConstantTransform()
 {
-	SceneComponent::UpdateConstantLocation();
+	SceneComponent::UpdateConstantTransform();
 	
 	Vector3 newLocation = SceneComponent::GetLocation();
 	m_lightInfo->location = newLocation;

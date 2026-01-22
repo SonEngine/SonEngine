@@ -15,6 +15,8 @@ struct Transform {
 		mat.m[3][1] = location.y;
 		mat.m[3][2] = location.z;
 
-		return DirectX::SimpleMath::Matrix::CreateScale(scale) * mat;
+		return DirectX::SimpleMath::Matrix::CreateScale(scale) * 
+			DirectX::SimpleMath::Matrix::CreateFromQuaternion(quat)*
+			DirectX::SimpleMath::Matrix::CreateTranslation(location);
 	}
 };

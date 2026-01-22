@@ -18,7 +18,7 @@ public:
 	//void InitLightInfo(float viewWidth, float vewHeight, float nearZ, float farZ);
 	//void SetLightInfo(const PBRLightInfo& lightInfo);
 
-	virtual void UpdateConstantLocation() override;
+	virtual void UpdateConstantTransform() override;
 
 public:
 	StaticMesh* GetMesh() const { return m_mesh.get(); }

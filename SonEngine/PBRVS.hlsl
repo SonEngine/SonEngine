@@ -21,6 +21,7 @@ psInput main(vsInput input)
     output.svPosition = position;
         
     float3 normal = mul(float4(input.normal, 0.f), gLocalCB.modelInvTranspose).xyz;
+    //float3 normal = mul(float4(input.normal, 0.f), gLocalCB.model).xyz;
     float3 tangent = mul(float4(input.tangent, 0.f), gLocalCB.model).xyz;
     
     output.normal = normalize(normal);

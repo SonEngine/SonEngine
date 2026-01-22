@@ -91,8 +91,8 @@ private:
 	int mouseDeltaY = 0;
 
 public:
-	bool isFocused = false;
-	bool isFPSMode = false;
+	bool isFocused = true;
+	bool isFPSMode = true;
 
 public:
 	std::atomic<bool> isRunning = true;

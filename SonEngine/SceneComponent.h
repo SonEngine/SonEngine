@@ -45,7 +45,7 @@ public:
 	DirectX::SimpleMath::Vector3 GetUpDirection() const { return m_upDirection; }
 	DirectX::SimpleMath::Vector3 GetRightDirection()const { return m_rightDirection; }
 	
-	DirectX::SimpleMath::Vector3 GetLocation()const { return worldTransform.location + localTransform.location; }
+	DirectX::SimpleMath::Vector3 GetLocation()const { return localConstant.model.Transpose().Translation(); }
 	DirectX::SimpleMath::Quaternion GetRotation()const { return worldTransform.quat * localTransform.quat; }
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
 	DirectX::SimpleMath::Matrix GetCameraViewMatrix() const;
@@ -54,7 +54,7 @@ public:
 	DirectX::SimpleMath::Vector3 GetCameraLocation() const;
 	virtual	DirectX::SimpleMath::Matrix GetProjMatrix() const;
 
-	void UpdateConstantTransform();
+	virtual void UpdateConstantTransform();
 
 public:
 	// world->actor 호출

@@ -115,7 +115,7 @@ Mesh<Vertex, uint16_t> GeometryGenerator::MakeCube(float x, float y, float z)
 	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indices;
 
-	for (size_t i = 0; i < vSet.size(); i++)
+	for (uint16_t i = 0; i < vSet.size(); i++)
 	{
 		auto& [v0, v1, v2, v3] = vSet[i];
 
@@ -449,7 +449,7 @@ Mesh<PBRVertex, uint16_t> GeometryGenerator::PBRCube(float halfX, float halfY, f
 		DirectX::XMMatrixRotationX(-DirectX::XM_PI) * DirectX::XMMatrixTranslation(0,-halfY,0), // 아래
 	};
 
-	size_t offset = 0;
+	uint16_t offset = 0;
 	for (size_t i = 0; i < 6; i++)
 	{
 		Mesh<PBRVertex, uint16_t> m =

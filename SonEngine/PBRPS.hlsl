@@ -40,6 +40,7 @@ float4 main(psInput input) : SV_TARGET
     float3 phongLight = ComputePhongDirectLight(modelPos, N, F0);
     float3 IBLColor = IBL(F0, albedo, metallic, roughness, MAX_MIP, R, N, V, NoV);
     
+    //float3 color = IBLColor;
     float3 color = ambient + (pointLight) * (1.f - shadow);
     //float3 color = ambient + (IBLColor + pointLight) * (1.f - shadow);
     

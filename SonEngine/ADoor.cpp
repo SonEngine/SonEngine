@@ -1,5 +1,4 @@
 ﻿#include "ADoor.h"
-#include "StaticMeshComponent.h"
 #include "StaticMesh.h"
 #include "GeometryGenerator.h"
 #include "GraphicsCommon.h"
@@ -24,26 +23,26 @@ void ADoor::Initialize(const ActorData& ad)
 
 	if (world)
 	{
-		std::shared_ptr<StaticMeshComponent> root = std::make_shared<StaticMeshComponent>(this);
+		 root = std::make_shared<StaticMeshComponent>(this);
 		root->SetMesh(world->pbrModelLoader->GetMeshes("door0"));
 		root->SetActorData(ad);
 		SetRootComponent(root);
 
-		std::shared_ptr<StaticMeshComponent> cmp1 = std::make_shared<StaticMeshComponent>(this);
-		cmp1->SetLocation(Vector3(0.9f, 1.1f, -0.013f));
-		cmp1->SetMesh(world->pbrModelLoader->GetMeshes("door1"));
-		cmp1->SetActorData(ad);
+		doorRight = std::make_shared<StaticMeshComponent>(this);
+		doorRight->SetLocation(Vector3(0.9f, 1.1f, -0.013f));
+		doorRight->SetMesh(world->pbrModelLoader->GetMeshes("door1"));
+		doorRight->SetActorData(ad);
 
-		std::shared_ptr<StaticMeshComponent> cmp2 = std::make_shared<StaticMeshComponent>(this);
-		cmp2->SetMesh(world->pbrModelLoader->GetMeshes("door2")); // door Right
-		cmp2->SetLocation(Vector3(-0.989f, 1.1f, -0.013f));
+		doorLeft = std::make_shared<StaticMeshComponent>(this);
+		doorLeft->SetMesh(world->pbrModelLoader->GetMeshes("door2")); // door Left
+		doorLeft->SetLocation(Vector3(-0.989f, 1.1f, -0.013f));
 		auto mat = DirectX::XMMatrixRotationY(DirectX::XM_PIDIV4);
 		auto q = DirectX::SimpleMath::Quaternion::CreateFromRotationMatrix(mat);
-		cmp2->SetRotation(q);
-		cmp2->SetActorData(ad);
+		doorLeft->SetRotation(q);
+		doorLeft->SetActorData(ad);
 
-		root->Attach(cmp1);
-		root->Attach(cmp2);
+		root->Attach(doorLeft);
+		root->Attach(doorRight);
 		
 		SetActorData(ad);
 	}
@@ -51,4 +50,9 @@ void ADoor::Initialize(const ActorData& ad)
 
 void ADoor::Tick(const float& deltaTime)
 {
+	float degree = rotationSpeed * deltaTime;
+	float radian =  DirectX::XMConvertToRadians(degree);
+	auto mat = DirectX::XMMatrixRotationY(radian);
+	auto q = DirectX::SimpleMath::Quaternion::CreateFromRotationMatrix(mat);
+	doorLeft->AddRotation(q);
 }
