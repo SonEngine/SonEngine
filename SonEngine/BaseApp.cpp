@@ -119,6 +119,8 @@ bool BaseApp::InitWindow()
 	ShowWindow(m_mainWnd, SW_SHOWDEFAULT);
 	UpdateWindow(m_mainWnd);
 
+	ShowCursor(false);
+
 	return true;
 }
 

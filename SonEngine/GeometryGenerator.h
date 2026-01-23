@@ -26,6 +26,8 @@ struct GeometryGenerator
 
 	static Mesh<SimpleVertex, uint16_t> MakePoint();
 
+	static Mesh<PositionVertex, uint16_t> MakePositionPoint();
+
 	
 
 	

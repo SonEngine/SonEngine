@@ -32,6 +32,7 @@ namespace Graphics
     extern RootSignature g_videoRS;
     extern RootSignature g_U1_C1_RS;
     extern RootSignature g_R1_RS;
+    extern RootSignature g_C1_RS;
     extern RootSignature g_R1_C2_RS;
     extern RootSignature g_R1_C3_RS;
     extern RootSignature g_R2_C2_RS;

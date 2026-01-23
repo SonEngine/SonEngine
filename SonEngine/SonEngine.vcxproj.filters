@@ -156,6 +156,9 @@
     <ClCompile Include="CameraComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="CollisionComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseApp.h">
@@ -368,6 +371,9 @@
     <ClInclude Include="CameraComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="CollisionComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefaultVS.hlsl" />
@@ -397,6 +403,9 @@
     <FxCompile Include="DepthOnlyPS.hlsl" />
     <FxCompile Include="SkinnedMeshVS.hlsl" />
     <FxCompile Include="SkinnedMeshDepthOnlyVS.hlsl" />
+    <FxCompile Include="CollisionVS.hlsl" />
+    <FxCompile Include="CollisionGS.hlsl" />
+    <FxCompile Include="CollisionPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PhongCommon.hlsli" />
@@ -430,6 +439,7 @@
     <None Include="Asset.inl">
       <Filter>헤더 파일</Filter>
     </None>
+    <None Include="CollisionCommon.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Textures\earth_Albedo.dds">

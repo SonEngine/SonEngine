@@ -1,5 +1,6 @@
 ﻿#include "ASkinnedMesh.h"
 #include "SkinnedMeshComponent.h"
+#include "CollisionComponent.h"
 #include "CameraComponent.h"
 #include "StaticMesh.h"
 #include "GeometryGenerator.h"
@@ -33,11 +34,18 @@ void ASkinnedMesh::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData&
 		cameraCmp->SetLocation(Vector3(0, 1.6f, 0.f));
 		root->Attach(cameraCmp);
 	}
+	if (Graphics::world)
+	{
+		std::shared_ptr<CollisionComponent> collisionCmp = std::make_shared<CollisionComponent>(this);
+		collisionCmp->SetMesh(Graphics::world->dotModelLoader->GetMeshes("point"));
+		collisionCmp->SetActorData(ad);
+		root->Attach(collisionCmp);
+	}
+	
+
 	SetRootComponent(root);
 	SetActorData(ad);
 	UpdateAnimation(0.f);
-	/*auto mat = DirectX::SimpleMath::Matrix::CreateRotationY(DirectX::XM_PIDIV2);
-	SetActorRotation(DirectX::SimpleMath::Quaternion::CreateFromRotationMatrix(mat));*/
 }
 
 void ASkinnedMesh::Tick(const float& deltaTime)

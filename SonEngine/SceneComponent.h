@@ -7,6 +7,7 @@
 #include "directxtk12/SimpleMath.h"
 #include "Transform.h"
 #include "PBRHLSLCompat.h"
+#include "PhysXMode.h"
 
 // transform
 class SceneComponent : public ActorComponent {
@@ -24,6 +25,7 @@ public:
 	void UpdateRotation(const int& mouseDeltaX, const int& mouseDeltaY, const float& deltaTime);
 	void SetLocation(const DirectX::SimpleMath::Vector3& newLocation);
 	void SetRotation(const DirectX::SimpleMath::Quaternion& newQuat);
+	void SetLocalTransform(const Transform& newTransform);
 	void SetFrontDirection(const DirectX::SimpleMath::Vector3& newDir) { m_frontDirection = newDir; }
 	void SetUpDirection(const DirectX::SimpleMath::Vector3& newDir) {m_upDirection = newDir;}
 	void SetRightDirection(const DirectX::SimpleMath::Vector3& newDir) { m_rightDirection = newDir; }
@@ -31,12 +33,16 @@ public:
 	void SetHeightScale(const float& newHeightScale);
 	void SetRoughness(const float& newRoughness);
 	void SetMetallic(const float& newMetalic);
+	void SetCollisionScale(const Vector3& newScale);
+	void SetCollisionShape(const PhysXShape& newShape);
 	void AddLocation(const DirectX::SimpleMath::Vector3& delLocation);
 	void AddRotation(const DirectX::SimpleMath::Quaternion& delQ);
 
 public:
 	float GetSpeed() const { return m_speed; }
 	float GetRotateSpeed() const { return m_rotateSpeed; }
+	virtual DirectX::SimpleMath::Vector3 GetCollisionScale() const;
+	DirectX::SimpleMath::Quaternion GetCollisionRotation() const;
 	LocalConstant GetLocalConstant() { return localConstant; }
 
 	DirectX::SimpleMath::Vector3 GetFrontDirection() const { return m_frontDirection; }
@@ -45,8 +51,9 @@ public:
 	DirectX::SimpleMath::Vector3 GetUpDirection() const { return m_upDirection; }
 	DirectX::SimpleMath::Vector3 GetRightDirection()const { return m_rightDirection; }
 	
-	DirectX::SimpleMath::Vector3 GetLocation()const { return localConstant.model.Transpose().Translation(); }
-	DirectX::SimpleMath::Quaternion GetRotation()const { return worldTransform.quat * localTransform.quat; }
+	DirectX::SimpleMath::Vector3 GetLocation() const { return localConstant.model.Transpose().Translation(); }
+	DirectX::SimpleMath::Vector3 GetCollisionLocation() const;
+	DirectX::SimpleMath::Quaternion GetRotation() const;
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
 	DirectX::SimpleMath::Matrix GetCameraViewMatrix() const;
 	void GetChildrenComponents(std::vector<std::shared_ptr<SceneComponent>>& children) const;

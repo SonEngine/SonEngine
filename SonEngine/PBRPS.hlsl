@@ -14,7 +14,7 @@ float4 main(psInput input) : SV_TARGET
     
     //float roughness = gLocalCB.roughness;
     //float metallic = gLocalCB.metallic;
-    float metallic = gMetallic.Sample(gWrapLinearSampler, uv).g;
+    float metallic = gMetallic.Sample(gWrapLinearSampler, uv).b;
     float roughness = gRoughness.Sample(gWrapLinearSampler, uv).g;
     float3 ambient = albedo.xyz * 0.1f;
     

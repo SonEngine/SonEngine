@@ -3,6 +3,8 @@
 #include "World.h"
 #include "StaticMesh.h"
 #include "CameraComponent.h"
+#include "CollisionComponent.h"
+#include "ModelLoader.h"
 
 using DirectX::SimpleMath::Vector3;
 
@@ -32,6 +34,14 @@ void Actor::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad)
 			cameraCmp->SetLocation(Vector3(0, 0.f, -1.f));
 			root->Attach(cameraCmp);
 		}
+	}
+	if (Graphics::world && ad.useSimulate)
+	{
+		std::shared_ptr<CollisionComponent> collisionCmp = std::make_shared<CollisionComponent>(this);
+		collisionCmp->SetMesh(Graphics::world->dotModelLoader->GetMeshes("point"));
+		
+		collisionCmp->SetActorData(ad);
+		root->Attach(collisionCmp);
 	}
 	SetActorData(ad);
 }

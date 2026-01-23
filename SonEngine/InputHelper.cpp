@@ -32,34 +32,41 @@ bool Input::InputHelper::GetInputState(size_t wParam)
 Vector3 Input::InputHelper::ExecuteCommands(const float& deltaTime ,const Actor* actor)
 {
 	Vector3 delPosition;
-	Vector3 eyeDirection = actor->GetActorFrontDir();
 	Vector3 upDirection = actor->GetActorUpDir();
 	Vector3 rightDirection = actor->GetActorRightDir();
-	float speed = actor->GetActorSpeed();
+	Vector3 eyeDirection = rightDirection.Cross(upDirection);
 
-	if (GetInputState(upKey))
+	//float speed = actor->GetActorSpeed();
+
+	/*if (GetInputState(upKey))
 	{
 		delPosition += upDirection * speed * deltaTime;
 	}
 	if (GetInputState(downKey))
 	{
 		delPosition += -upDirection * speed * deltaTime;
-	}
+	}*/
+	Vector3 dir = Vector3::Zero;
 	if (GetInputState(forwardKey))
 	{
-		delPosition += eyeDirection * speed * deltaTime;
+		dir += eyeDirection;
+		//delPosition += eyeDirection * speed * deltaTime;
 	}
 	if (GetInputState(backwardKey))
 	{
-		delPosition += -eyeDirection * speed * deltaTime;
+		dir += -eyeDirection;
+		//delPosition += -eyeDirection * speed * deltaTime;
 	}
 	if (GetInputState(rightKey))
 	{
-		delPosition += rightDirection * speed * deltaTime;
+		dir += +rightDirection;
+		//delPosition += rightDirection * speed * deltaTime;
 	}
 	if (GetInputState(leftKey))
 	{
-		delPosition += -rightDirection * speed * deltaTime;
+		dir += -rightDirection;
 	}
-	return delPosition;
+	dir.Normalize();
+	//delPosition += dir * speed * deltaTime;
+	return dir;
 }

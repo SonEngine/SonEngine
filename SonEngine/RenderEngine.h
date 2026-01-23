@@ -249,6 +249,7 @@ private:
 	std::string pbrPSO = "pbrPSO";
 	std::string pointCloudPSO = "pointCloudPSO";
 	std::string skinnedMeshPSO = "skinnedMeshPSO";
+	std::string collisionPSO = "collisionPSO";
 
 //FrameResource
 private:
@@ -325,7 +326,7 @@ private:
 	UpdateCmd r_updateCmd;
 	GameCmd g_cmd;
 
-	int actorCount = 20;
+	int actorCount = 100;
 
 	std::unordered_map<uint32_t, std::string> r_idToName;
 	std::unordered_map<std::string, uint32_t> r_nameToId;

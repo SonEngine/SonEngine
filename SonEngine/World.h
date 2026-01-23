@@ -26,7 +26,7 @@ public:
 	void Initialize(int cameraWidth, int cameraHeight, class RenderEngine* renderEngine, ID3D12Device5* device, ID3D12GraphicsCommandList* commandList);
 	void InitializePhysics(class PhysXEngine* renderEngine);
 
-	void SpawnActor(const std::shared_ptr<Actor>& actor);
+	void SpawnActor(std::shared_ptr<Actor> actor);
 
 	//void SpawnActor(const std::shared_ptr<Actor>& actor);
 	void InitCamera(int width, int height);
@@ -103,6 +103,7 @@ private:
 
 public:
 	std::unique_ptr<ModelLoader<Vertex, uint16_t>> modelLoader;
+	std::unique_ptr<ModelLoader<PositionVertex, uint16_t>> dotModelLoader;
 	std::unique_ptr<ModelLoader<PBRVertex, uint16_t>> pbrModelLoader;
 	std::unique_ptr<ModelLoader<SkinnedVertex, uint32_t>> skinnedMeshLoader;
 	std::unique_ptr<ModelLoader<PointCloudVertex, uint16_t>> pcModelLoader;

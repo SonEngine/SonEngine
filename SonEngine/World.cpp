@@ -33,7 +33,8 @@ World::World()
 	pbrModelLoader(std::make_unique<ModelLoader<PBRVertex, std::uint16_t>>()),
 	pcModelLoader(std::make_unique<ModelLoader<PointCloudVertex, std::uint16_t>>()),
 	simpleModelLoader(std::make_unique<ModelLoader<SimpleVertex, std::uint16_t>>()),
-	skinnedMeshLoader(std::make_unique<ModelLoader<SkinnedVertex, std::uint32_t>>())
+	skinnedMeshLoader(std::make_unique<ModelLoader<SkinnedVertex, std::uint32_t>>()),
+	dotModelLoader(std::make_unique<ModelLoader<PositionVertex, std::uint16_t>>())
 {
 	//m_camera = std::make_shared<Camera>();
 	levelPath = "Levels/simpleLevel.json";
@@ -86,6 +87,7 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	skinnedMeshLoader->Initialize(device, commandList);
 	simpleModelLoader->Initialize(device, commandList);
 	pcModelLoader->Initialize(device, commandList);
+	dotModelLoader->Initialize(device, commandList);
 
 	LoadLevel(levelPath);
 
@@ -105,10 +107,11 @@ void World::InitializePhysics(PhysXEngine* engine)
 	m_physXEngine = engine;
 }
 
-void World::SpawnActor(const std::shared_ptr<Actor>& actor)
+void World::SpawnActor(std::shared_ptr<Actor> actor)
 {
-	m_actors[actor->GetName()] = actor;
-	actor->OnRegister();
+	std::string name = actor->GetName();
+	m_actors[name] = std::move(actor);
+	m_actors[name]->OnRegister();
 }
 
 void World::InitCamera(int width, int height)
@@ -188,8 +191,14 @@ void World::Tick(float deltaTime)
 		auto playerIt = m_actors.find("player");
 		if (playerIt != m_actors.end())
 		{
-			playerIt->second->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_actors["player"].get()));
+			Vector3 dir = m_inputHelper.ExecuteCommands(deltaTime, m_actors["player"].get());
+			physx::PxVec3 dirPx(dir.x, dir.y, dir.z);
+			float speed = playerIt->second->GetActorSpeed();
 			playerIt->second->UpdateRotation(mouseDeltaX, mouseDeltaY, deltaTime);
+			if (m_physXEngine)
+			{
+				m_physXEngine->TickPlayerController(deltaTime, dirPx, speed);
+			}
 		}
 		mouseDeltaX = 0;
 		mouseDeltaY = 0;
@@ -337,6 +346,16 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 					{
 						ad.useSimulate = comp["simulate"].get<bool>();
 						ad.mode = comp["mode"].get<PhysXMode>();
+						if (comp.contains("transform"))
+						{
+							auto& t = comp["transform"];
+							auto pos = ParseVec3(t["pos"]);
+							auto scale = ParseVec3(t["scale"]);
+							ad.collisionLocation = pos;
+							ad.lc.collisionScale = scale;
+						}
+						if (comp.contains("shape"))
+							ad.lc.collisionShape = comp["shape"].get<PhysXShape>();
 					}
 					else if (type == "LocalConstant")
 					{
@@ -365,7 +384,6 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 								ad.lc.texTransform = texTransform;
 							}
 						}
-						
 					}
 					else if (type == "RenderMode")
 					{
@@ -398,8 +416,6 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 						if (comp.contains("animationSpeed"))
 						{
 							animData.animationSpeed = comp["animationSpeed"].get<float>();
-							
-							
 						}
 						if (comp.contains("animationName"))
 							animData.name = comp["animationName"].get<std::string>();

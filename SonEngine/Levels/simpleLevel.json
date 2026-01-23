@@ -5,7 +5,7 @@
       "class": "Actor",
       "name": "sphere",
       "transform": {
-        "pos": [ 3.0, 0.8, -0.5 ],
+        "pos": [ 0.0, 1.8, 2 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -17,12 +17,12 @@
         },
         {
           "type": "RigidBody",
-          "simulate": false,
-          "mode": "PM_Default"
+          "simulate": true,
+          "mode": "PM_Static"
         },
         {
           "type": "LocalConstant",
-          "updateConstants": false,
+          "updateConstants": true,
           "texTransform": {
             "pos": [ 0.0, 0.0, 0.0 ],
             "rot": [ 0, 0, 0, 1 ],
@@ -119,7 +119,7 @@
     },
     {
       "class": "ASkinnedMesh",
-      "name": "SK_Mannequin",
+      "name": "ue4",
       "transform": {
         "pos": [ 8.0, 0.0, -0.5 ],
         "rot": [ 0, 0, 0, 1 ],
@@ -134,7 +134,12 @@
         {
           "type": "RigidBody",
           "simulate": true,
-          "mode": "PM_Kinematic"
+          "mode": "PM_Static",
+          "transform": {
+            "pos": [ 0.0, 0.9, 0 ],
+            "scale": [ 0.5, 0.9, 0.5 ]
+          },
+          "shape": "cube"
         },
         {
           "type": "LocalConstant",
@@ -155,7 +160,7 @@
       "class": "ASkinnedMesh",
       "name": "player",
       "transform": {
-        "pos": [ 10.0, 0.0, -0.5 ],
+        "pos": [ 0.0, 0.0, -2 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -167,8 +172,13 @@
         },
         {
           "type": "RigidBody",
-          "simulate": false,
-          "mode": "PM_Default"
+          "simulate": true,
+          "mode": "PM_Player",
+          "transform": {
+            "pos": [ 0.0, 0.9, 0 ],
+            "scale": [ 0.5, 0.9, 0.5 ]
+          },
+          "shape": "cube"
         },
         {
           "type": "LocalConstant",
@@ -181,7 +191,7 @@
         {
           "type": "Animation",
           "animationSpeed": 60.0,
-          "animationName": "MaleArm_Male_FPP_Dag_AttackD",
+          "animationName": "MaleArm_Male_FPP_Dag_Idle",
           "playAnimation": true
         }
       ]
@@ -190,7 +200,7 @@
       "class": "ADoor",
       "name": "door",
       "transform": {
-        "pos": [ -3.0, 0.0, 0 ],
+        "pos": [ 0.0, 0.1, 0 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -202,8 +212,8 @@
         },
         {
           "type": "RigidBody",
-          "simulate": false,
-          "mode": "PM_Default"
+          "simulate": true,
+          "mode": "PM_Kinematic"
         },
         {
           "type": "LocalConstant",
@@ -211,7 +221,12 @@
         },
         {
           "type": "RenderMode",
-          "psoName": "pbrPSO"
+          "psoName": "pbrPSO",
+          "transform": {
+            "pos": [ 0.0, 0.0, 0 ],
+            "scale": [ 0.5, 0.5, 0.5 ]
+          },
+          "shape": "cube"
         }
       ]
     },
@@ -219,7 +234,7 @@
       "class": "ASkinnedMesh",
       "name": "Capoeira",
       "transform": {
-        "pos": [ 0, 0, 0.0, 0 ],
+        "pos": [ -3, 0, 0.0 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -236,7 +251,7 @@
         },
         {
           "type": "LocalConstant",
-          "updateConstants": true          
+          "updateConstants": true
         },
         {
           "type": "RenderMode",
@@ -296,7 +311,7 @@
         {
           "type": "LocalConstant",
           "forceMip0": false,
-          "updateConstants": false,
+          "updateConstants": true,
           "useReflect": false,
           "heightScale": 0.00,
           "roughness": 0.0,

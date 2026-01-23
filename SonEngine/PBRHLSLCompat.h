@@ -20,9 +20,13 @@ struct LocalConstant
     int cubeMapMipLevel;
     int useReflect;
     float heightScale;
+
     float roughness;
     float metallic;
-    float dummy[10];
+    
+    XMVECTOR collisionScale;
+    int collisionShape;
+
 };
 
 struct SkinnedLocalConstant

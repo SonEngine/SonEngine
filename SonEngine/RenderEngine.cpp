@@ -14,6 +14,7 @@
 #include "PrimitiveComponent.h"
 #include "LightComponent.h"
 #include "SkinnedMeshComponent.h"
+#include "CollisionComponent.h"
 #include "CubeMapComponent.h"
 #include "DotComponent.h"
 #include "ModelLoader.h"
@@ -47,6 +48,7 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 	/*dlModel = std::make_shared<DLModel>();
 	dlModel->Initialize("DL/models/mlp.pt");*/
 
+	// TODO actorcount 개수 조절
 	m_frameQueue = std::make_shared<BoundedQueue<FramePacket>>(m_frameResourceCount);
 	m_renderAddCmdQueue.resize(actorCount);
 	m_renderUpdateCmdQueue.resize(actorCount);
@@ -411,6 +413,11 @@ void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 		add.mesh = pointCloudComp->GetMeshPtr();
 		add.meshType = MT_finalize;
 	}
+	else if (CollisionComponent* collisionComp = dynamic_cast<CollisionComponent*>(primitive))
+	{
+		add.mesh = collisionComp->GetMeshPtr();
+		add.meshType = MT_collision;
+	}
 	else if (CubeMapComponent* cubeMapComp = dynamic_cast<CubeMapComponent*>(primitive))
 	{
 		add.mesh = cubeMapComp->GetMeshPtr();
@@ -424,7 +431,6 @@ void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 	}
 	else if (SkinnedMeshComponent* skinnedComp = dynamic_cast<SkinnedMeshComponent*>(primitive))
 	{
-
 		CmdAddSkinnedMesh skinnedAdd;
 		skinnedAdd.name = primitive->GetName();
 		skinnedAdd.id = id++;
@@ -443,10 +449,6 @@ void RenderEngine::RegisterPrimitive(PrimitiveComponent* primitive)
 	add.psoName = primitive->GetPSOName();
 	add.constant = primitive->GetLocalConstant();
 	m_renderAddCmdQueue[add.id]->Push(std::move(add));
-
-	/*m_primitives.push_back(primitive);
-	for (auto& fr : m_frameResources)
-		fr->proxyDirty = true;*/
 }
 
 void RenderEngine::CreateCommandObjects()
@@ -929,7 +931,19 @@ void RenderEngine::RenderMeshes(const std::string& psoName, ID3D12GraphicsComman
 					}
 					proxy.mesh->Render_(commandList);
 				}
+				else if (type == MT_collision)
+				{
+					if (rpType == RenderPassType::RPT_Default) 
+					{
+						commandList->SetGraphicsRootConstantBufferView(0, ld.localCB->GetGPUVirtualAddress());
+						commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
+
+					}
+					proxy.mesh->RenderDot(commandList);
+
+				}
 			}
+
 		}
 	}
 }
@@ -1593,6 +1607,7 @@ void RenderEngine::DrawingWithMouse()
 	//Render(phongPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
 	Render(currentPbrPSO, i++/*sequence*/, MT_primitive, false/*isFinal*/, true/*clear RT*/);
 	Render(skinnedMeshPSO, i++/*sequence*/, MT_skinnedMesh, false/*isFinal*/, false/*clear RT*/);
+	Render(collisionPSO, i++/*sequence*/, MT_collision, false/*isFinal*/, false/*clear RT*/);
 	//if (gui_renderPointCloud)
 	//	Render(pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
 	Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
@@ -1893,6 +1908,10 @@ MeshType RenderEngine::GetMeshType(PrimitiveComponent* primitive)
 	else if (CubeMapComponent* cubeMapComp = dynamic_cast<CubeMapComponent*>(primitive))
 	{
 		return MT_cubeMap;
+	}
+	else if (CollisionComponent* cubeMapComp = dynamic_cast<CollisionComponent*>(primitive))
+	{
+		return MT_collision;
 	}
 	else if (LightComponent* lightComp = dynamic_cast<LightComponent*>(primitive))
 	{

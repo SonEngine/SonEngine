@@ -288,6 +288,20 @@ Mesh<SimpleVertex, uint16_t> GeometryGenerator::MakePoint()
 	return mesh;
 }
 
+Mesh<PositionVertex, uint16_t> GeometryGenerator::MakePositionPoint()
+{
+
+	Mesh<PositionVertex, uint16_t> mesh;
+	std::vector< PositionVertex> vertices;
+	std::vector< uint16_t> indices;
+
+	vertices.push_back({ Vector3(0,0,0) });
+	mesh.m_vertices = vertices;
+	mesh.m_indices = indices;
+
+	return mesh;
+}
+
 Mesh<PBRVertex, uint16_t> GeometryGenerator::PBRPlane(float halfX, float halfZ, int cX, int cZ)
 {
 	std::vector<PBRVertex> vertices;

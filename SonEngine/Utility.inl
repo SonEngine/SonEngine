@@ -5,6 +5,7 @@
 #include "DotComponent.h"
 #include "CubeMapComponent.h"
 #include "SkinnedMeshComponent.h"
+#include "CollisionComponent.h"
 #include "StaticMesh.h"
 #include "d3d12.h"
 #include "Utility.h"

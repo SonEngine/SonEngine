@@ -30,10 +30,17 @@ NLOHMANN_JSON_SERIALIZE_ENUM(ActorType, {
 
 NLOHMANN_JSON_SERIALIZE_ENUM(PhysXMode, {
     {PhysXMode::PM_Default,    "PM_Default"},
+    {PhysXMode::PM_Static,   "PM_Static"},
+    {PhysXMode::PM_Player,   "PM_Player"},
     {PhysXMode::PM_Dynamic,   "PM_Dynamic"},
     {PhysXMode::PM_Kinematic, "PM_Kinematic"},
-    {PhysXMode::PM_Trigger, "PM_Trigger"},
+    {PhysXMode::PM_Trigger, "PM_Trigger"}
     })
+
+NLOHMANN_JSON_SERIALIZE_ENUM(PhysXShape, {
+    {PhysXShape::PS_cube,    "cube"},
+    {PhysXShape::PS_sphere,   "sphere"}
+        })
 
 static DirectX::SimpleMath::Vector3 ParseVec3(const nlohmann::json & j)
 {

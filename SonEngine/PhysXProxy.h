@@ -7,7 +7,8 @@
 struct PhysXProxy 
 {
 	PrimitiveComponent* primitive;
-	physx::PxRigidDynamic* body;
+	physx::PxRigidDynamic* dynamicBody;
+	physx::PxRigidStatic* staticBody;
 	std::string name;
 	bool simulate;
 };

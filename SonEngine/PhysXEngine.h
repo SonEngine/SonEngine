@@ -36,8 +36,14 @@ protected:
 	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) override;
 	void SetKinematicMode(PrimitiveComponent* prim, physx::PxRigidDynamic* dyn);
 	void SetDynamicMode(PrimitiveComponent* prim, physx::PxRigidDynamic* dyn);
+	void CreatePlayerController(PrimitiveComponent* primitive, physx::PxScene* scene, physx::PxPhysics* physics, physx::PxMaterial* material);
+	//void CreatePlayerController(physx::PxScene* scene, physx::PxPhysics* physics, physx::PxMaterial* material);
 	void onAdvance(const physx::PxRigidBody* const*, const physx::PxTransform*, const physx::PxU32) override {}
 	
+public:
+	void TickPlayerController(float dt, const physx::PxVec3& inputDir, float moveSpeed);
+
+
 private:
 	physx::PxDefaultAllocator gAllocator;
 	physx::PxDefaultErrorCallback gErrorCallback;
@@ -50,10 +56,17 @@ private:
 	physx::PxReal stackZ = 10.0f;
 
 private:
+	physx::PxControllerManager* gControllerMgr;
+	physx::PxCapsuleController* gPlayerController;
+
+private:
 	std::vector< PhysXProxy> proxyArr;
 
 private:
 	class PrimitiveComponent* grabbedPrimitive = nullptr;
 	class physx::PxRigidDynamic* grabbedDynamic = nullptr;
 	physx::PxF32 grabbedDistance = 0;
+
+	class PrimitiveComponent* playerPrimitive = nullptr;
+
 };

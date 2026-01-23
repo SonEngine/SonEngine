@@ -17,7 +17,11 @@ struct ActorData
 		lc.forceMip0 = false;
 		lc.roughness = 0.2f;
 		lc.metallic = 0.8f;
+		lc.collisionScale = Vector3(0.5, 0.5, 0.5);
+		lc.collisionShape = PhysXShape::PS_cube;
+		collisionLocation = Vector3::Zero;
 	};
+
 	std::string name;
 	std::string mesh;
 	std::string material;
@@ -26,6 +30,7 @@ struct ActorData
 	bool useSimulate;
 	PhysXMode mode = PhysXMode::PM_Default;
 	bool updateConstants;
+	Vector3 collisionLocation;
 
 	LocalConstant lc;
 };

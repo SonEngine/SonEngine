@@ -20,6 +20,10 @@
 #include "CompiledShaders/PointCloudGS.h"
 #include "CompiledShaders/PointCloudPS.h"
 
+#include "CompiledShaders/CollisionVS.h"
+#include "CompiledShaders/CollisionGS.h"
+#include "CompiledShaders/CollisionPS.h"
+
 #include "CompiledShaders/CubeMapVS.h"
 #include "CompiledShaders/CubeMapPS.h"
 
@@ -70,6 +74,7 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	GraphicsPSO pbrPSO(L"pbr PSO");
 	GraphicsPSO dsOnlyPbrPSO(L"dsOnlyPbr PSO");
 	GraphicsPSO skinnedMeshDsOnlyPbrPSO(L"skinnedMeshDsOnlyPbr PSO");
+	GraphicsPSO collisionPSO(L"collision PSO");
 
 	GraphicsPSO wirePbrPSO(L"wirePbr PSO");
 	GraphicsPSO skinnedMeshPSO(L"skinnedMesh PSO");
@@ -156,6 +161,22 @@ void Renderer::Initialize(const Microsoft::WRL::ComPtr<ID3D12Device5>& device)
 	defaultPSO.Finalize(device);
 	m_PSOs["defaultPSO"] = defaultPSO;
 	psoNames.push_back("defaultPSO");
+
+	collisionPSO.SetInputLayout(_countof(posOnlyIL), posOnlyIL);
+	collisionPSO.SetRootSignature(g_C2_RS);
+	collisionPSO.SetRasterizerState(rasterizerDefault);
+	collisionPSO.SetBlendState(blendNoColorWrite);
+	collisionPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+	collisionPSO.SetVertexShader(g_pCollisionVS, sizeof(g_pCollisionVS));
+	collisionPSO.SetGeometryShader(g_pCollisionGS, sizeof(g_pCollisionGS));
+	collisionPSO.SetPixelShader(g_pCollisionPS, sizeof(g_pCollisionPS));
+	collisionPSO.SetSampleMask(UINT_MAX);
+	collisionPSO.SetRenderTargetFormat(hdrFormat, dsBufferFormat, 1, 0);
+	collisionPSO.SetDepthTargetFormat(dsBufferFormat, 1, 0);
+	collisionPSO.SetDepthStencilState(depthStateDefault);
+	collisionPSO.Finalize(device);
+	m_PSOs["collisionPSO"] = collisionPSO;
+	psoNames.push_back("collisionPSO");
 
 	videoPSO.SetInputLayout(_countof(simpleIL), simpleIL);
 	videoPSO.SetRootSignature(g_videoRS);

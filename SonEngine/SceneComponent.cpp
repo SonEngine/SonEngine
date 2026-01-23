@@ -1,6 +1,7 @@
 ﻿#include "SceneComponent.h"
 #include "directxtk12/SimpleMath.h"
 #include "StaticMeshComponent.h"
+#include "CollisionComponent.h"
 #include "CameraComponent.h"
 
 using DirectX::SimpleMath::Vector3;
@@ -124,6 +125,19 @@ void SceneComponent::SetRotation(const DirectX::SimpleMath::Quaternion& newQuat)
 	}
 }
 
+void SceneComponent::SetLocalTransform(const Transform& newTransform)
+{
+	//TODO front direction도 회전 시켜야 함
+	localTransform = newTransform;
+	//UpdateConstantRotation();
+	UpdateConstantTransform();
+
+	for (const auto& c : m_children)
+	{
+		c->UpdateWorldTransform(localTransform);
+	}
+}
+
 void SceneComponent::SetCubeMapMipLevel(const int& newCubeMapMipLevel)
 {
 	localConstant.cubeMapMipLevel = newCubeMapMipLevel;
@@ -141,6 +155,14 @@ void SceneComponent::SetRoughness(const float& newRoughness)
 void SceneComponent::SetMetallic(const float& newMetallic)
 {
 	localConstant.metallic = newMetallic;
+}
+void SceneComponent::SetCollisionScale(const Vector3& newScale)
+{
+	localConstant.collisionScale = newScale;
+}
+void SceneComponent::SetCollisionShape(const PhysXShape& newShape)
+{
+	localConstant.collisionShape = newShape;
 }
 void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation)
 {
@@ -165,6 +187,48 @@ void SceneComponent::AddRotation(const DirectX::SimpleMath::Quaternion& delQ)
 		c->UpdateWorldTransform(localTransform);
 	}
 }
+
+DirectX::SimpleMath::Vector3 SceneComponent::GetCollisionScale() const
+{
+	for (const auto& c : m_children)
+	{
+		if (CollisionComponent* collisionCmp = dynamic_cast<CollisionComponent*>(c.get()))
+			return collisionCmp->GetCollisionScale();
+	}
+}
+
+DirectX::SimpleMath::Quaternion SceneComponent::GetCollisionRotation() const
+{
+	for (const auto& c : m_children)
+	{
+		if (CollisionComponent* collisionCmp = dynamic_cast<CollisionComponent*>(c.get()))
+			return collisionCmp->GetRotation();
+	}
+	return GetRotation();
+}
+
+DirectX::SimpleMath::Vector3 SceneComponent::GetCollisionLocation() const
+{
+	for (const auto& c : m_children)
+	{
+		if(CollisionComponent* collisionCmp = dynamic_cast<CollisionComponent*>(c.get()))
+			return collisionCmp->GetLocation();
+	}
+	return GetLocation();
+}
+
+DirectX::SimpleMath::Quaternion SceneComponent::GetRotation() const
+{
+	Matrix M = localConstant.model.Transpose();
+	Vector3 scale;
+	Quaternion rot;
+	Vector3 translation;
+
+	bool ok = M.Decompose(scale, rot, translation); 
+	
+	return rot;
+}
+
 
 DirectX::SimpleMath::Matrix SceneComponent::GetViewMatrix() const
 {

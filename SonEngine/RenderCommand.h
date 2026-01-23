@@ -12,6 +12,7 @@ enum MeshType {
 	MT_cubeMap,
 	MT_light,
 	MT_skinnedMesh,
+	MT_collision,
 	MT_finalize
 };
 

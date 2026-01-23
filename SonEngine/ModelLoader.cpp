@@ -108,6 +108,19 @@ void ModelLoader<PointCloudVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	meshesMap["map"] = mapMesh;
 }
 
+void ModelLoader<PositionVertex, uint16_t>::Initialize(ID3D12Device5* device,
+	ID3D12GraphicsCommandList* commandList)
+{
+	
+	Asset<PositionVertex, uint16_t> point;
+	point.m_meshes.push_back({ GeometryGenerator::MakePositionPoint() });
+
+	std::shared_ptr<StaticMesh> pointMesh = std::make_shared<StaticMesh>();
+	pointMesh->InitializePC<PositionVertex, uint16_t>(device, commandList, point.m_meshes);
+
+	meshesMap["point"] = pointMesh;
+}
+
 void ModelLoader<SimpleVertex, uint16_t>::Initialize(ID3D12Device5* device,
 	ID3D12GraphicsCommandList* commandList)
 {

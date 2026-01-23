@@ -94,7 +94,7 @@ void PhysXEngine::Tick(float deltaTime)
 	{
 		if (proxy.simulate)
 		{
-			proxy.primitive->SyncFromPhysX(proxy.body->getGlobalPose());
+			proxy.primitive->SyncFromPhysX(proxy.dynamicBody->getGlobalPose());
 		}
 	}
 
@@ -108,6 +108,8 @@ void PhysXEngine::Tick(float deltaTime)
 
 			PxVec3 origin = VectorToPxVec(world->GetViewProjInfo().viewLocation);
 			PxVec3 unitDir = VectorToPxVec(world->GetViewProjInfo().viewDirection);
+			origin += unitDir * 0.5f;
+
 			PxReal maxDistance = 3.f;
 
 			PxRaycastBuffer hit;
@@ -121,9 +123,9 @@ void PhysXEngine::Tick(float deltaTime)
 
 				PrimitiveComponent* prim = static_cast<PrimitiveComponent*>(shape->userData);
 				if (prim && ha) {
-					grabbedPrimitive = prim;
 					if (grabbedDynamic = ha->is<PxRigidDynamic>())
 					{
+						grabbedPrimitive = prim;
 						SetKinematicMode(grabbedPrimitive, grabbedDynamic);
 					}
 				}
@@ -137,6 +139,7 @@ void PhysXEngine::Tick(float deltaTime)
 			}
 		}
 	}
+	//TODO :
 	if (grabbedPrimitive) {
 		PxVec3 origin = VectorToPxVec(world->GetViewProjInfo().viewLocation);
 		PxVec3 unitDir = VectorToPxVec(world->GetViewProjInfo().viewDirection);
@@ -155,58 +158,78 @@ void PhysXEngine::RegisterPrimitive(class PrimitiveComponent* primitive, bool us
 	if (primitive == nullptr)
 		return;
 
+	if (!usePhysx)
+		return;
+
 	std::string name = primitive->GetName();
 
-	DirectX::SimpleMath::Vector3 loc = primitive->GetLocation();
-	DirectX::SimpleMath::Quaternion rot = primitive->GetRotation();
-
+	DirectX::SimpleMath::Vector3 loc = primitive->GetCollisionLocation();
+	DirectX::SimpleMath::Quaternion rot = primitive->GetCollisionRotation();
+	DirectX::SimpleMath::Vector3 scale = primitive->GetCollisionScale();
 	PxTransform t = PxTransform(PxVec3(loc.x, loc.y, loc.z), PxQuat(rot.x, rot.y, rot.z, rot.w));
-	PxReal halfExtent = 0.5f;
 	PxFilterData filterData;
 	filterData.word0 = 1;
 
-	PxShape* shape = gPhysics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
+	PxShape* shape = gPhysics->createShape(PxBoxGeometry(scale.x, scale.y, scale.z), *gMaterial);
 	shape->userData = primitive;
 	shape->setSimulationFilterData(filterData);
 
-	PxRigidDynamic* body = gPhysics->createRigidDynamic(t);
+	PhysXProxy proxy;
+
+
 	PhysXMode mode = primitive->GetPhysXMode();
+	if (mode == PM_Static)
+	{
+		physx::PxRigidStatic* body = gPhysics->createRigidStatic(t);
+		body->setName(name.c_str());
+		body->attachShape(*shape);
+		proxy.staticBody = body;
 
-	if (mode == PM_Dynamic)
-	{
-		// dynamic 전용
-		body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
-	}
-	else if (mode == PM_Kinematic)
-	{
-		body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-		body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
-	}
-	else if (mode == PM_Trigger)
-	{
-		shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
-		shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
-		body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
-	}
-	body->setName(name.c_str());
-	body->attachShape(*shape);
-
-	PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
-
-	if (usePhysx && body)
-	{
 		gScene->addActor(*body);
 	}
+	else if (mode == PM_Player)
+	{
+		CreatePlayerController(primitive, gScene, gPhysics, gMaterial);
+	}
+	else
+	{
+		physx::PxRigidDynamic* body = gPhysics->createRigidDynamic(t);
+		if (mode == PM_Dynamic)
+		{
+			// dynamic 전용
+			body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
+		}
+		else if (mode == PM_Kinematic)
+		{
+			body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+			body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
 
-	shape->release();
+		}
+		else if (mode == PM_Trigger)
+		{
+			shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+			shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
+			body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
 
-	PhysXProxy proxy;
-	proxy.body = body;
-	proxy.primitive = primitive;
-	proxy.name = name;
-	proxy.simulate = usePhysx;
+		}
 
-	proxyArr.push_back(proxy);
+		body->setName(name.c_str());
+		body->attachShape(*shape);
+		proxy.dynamicBody = body;
+		PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+
+		if (usePhysx && body)
+		{
+			gScene->addActor(*body);
+		}
+		proxy.primitive = primitive;
+		proxy.name = name;
+		proxy.simulate = usePhysx;
+
+		proxyArr.push_back(proxy);
+
+	}
+	shape->release();	
 }
 
 void PhysXEngine::SyncKinematics()
@@ -215,10 +238,10 @@ void PhysXEngine::SyncKinematics()
 	{
 		if (proxy.primitive->IsKinematic())
 		{
-			if (proxy.body)
+			if (proxy.dynamicBody)
 			{
 				PxTransform t = proxy.primitive->GetPxTransform();
-				proxy.body->setKinematicTarget(t);
+				proxy.dynamicBody->setKinematicTarget(t);
 			}
 		}
 	}
@@ -295,4 +318,61 @@ void PhysXEngine::SetDynamicMode(PrimitiveComponent* prim, PxRigidDynamic* dyn)
 	prim->SetPhysXMode(PhysXMode::PM_Dynamic);
 	dyn->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
 	dyn->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
+}
+
+void PhysXEngine::CreatePlayerController(class PrimitiveComponent* primitive, PxScene* scene, PxPhysics* physics, PxMaterial* material)
+{
+	gControllerMgr = PxCreateControllerManager(*scene);
+	playerPrimitive = primitive;
+
+	std::string name = primitive->GetName();
+	DirectX::SimpleMath::Vector3 loc = primitive->GetCollisionLocation();
+	DirectX::SimpleMath::Quaternion rot = primitive->GetRotation();
+	
+	//  캡슐 컨트롤러 설정
+	PxCapsuleControllerDesc desc;
+	desc.material = material;
+	desc.radius = 0.1f;
+	desc.height = (primitive->GetCollisionScale().y- desc.radius) * 2.f;        
+	
+	desc.position = PxExtendedVec3(loc.x, loc.y, loc.z); // 캡슐 중간 위치
+
+	desc.stepOffset = 0.3f;  // 계단 올라가기
+	desc.slopeLimit = cosf(PxPi / 4.0f); // 45도 경사 제한(코사인 값)
+	desc.contactOffset = 0.05f; // 표면과의 여유
+	desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
+
+	// 필수 유효성 체크
+	if (!desc.isValid())
+		throw std::runtime_error("CapsuleControllerDesc is invalid.");
+
+	PxController* c = gControllerMgr->createController(desc);
+	gPlayerController = static_cast<PxCapsuleController*>(c);
+}
+
+void PhysXEngine::TickPlayerController(float dt, const PxVec3& inputDir, float moveSpeed)
+{
+	if (!gPlayerController) return;
+
+	PxVec3 disp = inputDir * moveSpeed * dt; // inputDir는 정규화된 방향 권장
+
+	static float verticalVel = 0.0f;
+	const float g = -9.81f;
+	verticalVel += g * dt;
+	disp.y += verticalVel * dt;
+
+	PxControllerFilters filters;
+
+	PxControllerCollisionFlags flags =
+		gPlayerController->move(disp, 0.001f, dt, filters);
+
+	if (flags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+		verticalVel = 0.0f;
+
+	 PxExtendedVec3 p = gPlayerController->getFootPosition();
+
+	if (playerPrimitive)
+	{
+		playerPrimitive->SetLocation(Vector3(p.x,p.y,p.z));
+	}
 }

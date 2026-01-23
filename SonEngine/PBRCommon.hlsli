@@ -14,7 +14,6 @@ Texture2D gNormal : register(t8);
 Texture2D gRoughness : register(t9);
 
 TextureCube gCubeMapReflect : register(t10);
-
 Texture2D<float> depthOnly : register(t11);
 
 
@@ -206,6 +205,7 @@ float3 SpecularIBL(float3 F0, float3 albedo, float3 N, float3 V, float3 R, float
     float3 specularPreFiltered = gCubeMapSpecular.SampleLevel(gWrapLinearSampler, R, roughness * MAX_MIP).rgb;
     float3 specularBRDF = F0 * BRDF.r + BRDF.g;
     float3 specularIBL = specularPreFiltered * specularBRDF;
+    //float3 specularIBL = specularPreFiltered;
     
     return specularIBL;
 }
@@ -226,5 +226,5 @@ float3 IBL(float3 F0, float3 albedo, float metallic, float roughness, float MAX_
     float3 specular = SpecularIBL(F0, albedo, N, V, R, metallic, roughness, MAX_MIP);
     float3 diffuse = DiffuseIBL(F0, albedo, N, V, NoV, metallic);
     
-    return diffuse + specular;
+    return specular + diffuse;
 }

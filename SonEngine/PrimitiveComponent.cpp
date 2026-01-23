@@ -28,7 +28,7 @@ physx::PxTransform PrimitiveComponent::GetPxTransform() const
 {
     // TODO : quat 변경
     DirectX::SimpleMath::Vector3 loc = GetLocation();
-    DirectX::SimpleMath::Quaternion q =  GetRotation();
+    DirectX::SimpleMath::Quaternion q = GetRotation();
     return physx::PxTransform(
         physx::PxVec3(loc.x, loc.y, loc.z),
         physx::PxQuat(q.x,q.y,q.z,q.w)
@@ -50,9 +50,12 @@ void PrimitiveComponent::SyncFromPhysX(const physx::PxTransform& transform)
 {
     DirectX::SimpleMath::Vector3 loc(transform.p.x, transform.p.y, transform.p.z);
     DirectX::SimpleMath::Quaternion rot(transform.q.x, transform.q.y, transform.q.z, transform.q.w);
-    SetLocation(loc);
-    SetRotation(rot);
-
+    /*SetLocation(loc);
+    SetRotation(rot);*/
+    Transform t;
+    t.location = loc;
+    t.quat = rot;
+    SetLocalTransform(t);    
 }
 
 
@@ -68,4 +71,6 @@ void PrimitiveComponent::SetActorData(const ActorData& ad)
     SetHeightScale(ad.lc.heightScale);
     SetRoughness(ad.lc.roughness);
     SetMetallic(ad.lc.metallic);
+    SetCollisionScale(ad.lc.collisionScale);
+    SetCollisionShape((PhysXShape)ad.lc.collisionShape);
 }
