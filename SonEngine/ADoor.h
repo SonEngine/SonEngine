@@ -8,6 +8,12 @@
 
 class StaticMesh;
 
+enum DoorState {
+	DS_closed,
+	DS_closing,
+	Ds_opened,
+	DS_opening
+};
 class ADoor : public Actor {
 public:
 	ADoor();
@@ -19,6 +25,7 @@ public:
 
 public:
 	void Tick(const float& deltaTime) override;
+	void Interact() override;
 
 public:
 	void SetSpeed(float speed) { m_speed = speed; }
@@ -30,6 +37,12 @@ private:
 	DirectX::SimpleMath::Vector3 m_movingDir = DirectX::SimpleMath::Vector3(1, 0, 0);
 	bool isTriggered = false;
 	float rotationSpeed = 90.f;
+
+	float leftDegree = 0.f;
+	bool openDoor = false;
+	bool closeDoor = false;
+
+	DoorState currentState = DS_closed;
 
 private:
 	std::shared_ptr<StaticMeshComponent> root;

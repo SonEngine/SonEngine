@@ -22,6 +22,7 @@ public:
 
 public:
 	virtual void Tick(const float& deltaTime);
+	virtual void Interact();
 
 public:
 	void UpdateRotation(const int& mouseDeltaX, const int& mouseDeltaY, const float& deltaTime);
@@ -33,6 +34,7 @@ public:
 	void UpdateActorRotation(const DirectX::SimpleMath::Quaternion& delQuat);
 	void SetActorSpeed(const float& newSpeed);
 	void SetRootComponent(std::shared_ptr<SceneComponent> newRootComponent);
+
 
 public:
 	void OnRegister();

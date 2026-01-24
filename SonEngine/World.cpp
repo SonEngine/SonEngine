@@ -191,13 +191,13 @@ void World::Tick(float deltaTime)
 		auto playerIt = m_actors.find("player");
 		if (playerIt != m_actors.end())
 		{
-			Vector3 dir = m_inputHelper.ExecuteCommands(deltaTime, m_actors["player"].get());
+			auto& [dir, jump] = m_inputHelper.ExecutePlayerCommands(deltaTime, m_actors["player"].get());
 			physx::PxVec3 dirPx(dir.x, dir.y, dir.z);
 			float speed = playerIt->second->GetActorSpeed();
 			playerIt->second->UpdateRotation(mouseDeltaX, mouseDeltaY, deltaTime);
 			if (m_physXEngine)
 			{
-				m_physXEngine->TickPlayerController(deltaTime, dirPx, speed);
+				m_physXEngine->TickPlayerController(deltaTime, dirPx, speed, jump);
 			}
 		}
 		mouseDeltaX = 0;
@@ -284,6 +284,20 @@ bool World::GetGrabDirty()
 void World::SetGrabDirty(bool newDity)
 {
 	m_inputHelper.grabDirty = newDity;
+}
+bool World::GetInteractState()
+{
+	return m_inputHelper.GetInteractState();
+}
+
+bool World::GetInteractDirty()
+{
+	return m_inputHelper.interactDirty;
+}
+
+void World::SetInteractDirty(bool newDity)
+{
+	m_inputHelper.interactDirty = newDity;
 }
 
 // BOOKMARK

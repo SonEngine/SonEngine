@@ -24,7 +24,8 @@ void SceneComponent::Attach(std::shared_ptr<SceneComponent> sceneComp)
 {
 	sceneComp->m_parent = this;
 	m_children.push_back(sceneComp);
-	sceneComp->UpdateWorldTransform(localTransform);
+	//sceneComp->UpdateWorldTransform(localTransform);
+	UpdateConstantTransform();
 }
 
 void SceneComponent::SetSpeed(const float& newSpeed)
@@ -39,7 +40,6 @@ void SceneComponent::SetRotateSpeed(const float& newSpeed)
 void SceneComponent::UpdateWorldTransform(const Transform& tr)
 {
 	worldTransform = tr;
-	//UpdateConstantLocation();
 	UpdateConstantTransform();
 }
 
@@ -56,10 +56,10 @@ void SceneComponent::SetLocalConstant(const LocalConstant& newConstant)
 
 	UpdateConstantTransform();
 
-	for (const auto& c : m_children)
+	/*for (const auto& c : m_children)
 	{
 		c->UpdateWorldTransform(localTransform);
-	}
+	}*/
 }
 
 void SceneComponent::UpdateRotation(const int& mouseDeltaX, const int& mouseDeltaY, const float& deltaTime)
@@ -106,38 +106,40 @@ void SceneComponent::SetLocation(const DirectX::SimpleMath::Vector3& newLocation
 	//UpdateConstantLocation();
 	UpdateConstantTransform();
 
-	for (const auto& c : m_children)
-	{
-		c->UpdateWorldTransform(localTransform);
-	}
+
 }
 
 void SceneComponent::SetRotation(const DirectX::SimpleMath::Quaternion& newQuat)
 {
 //TODO front direction도 회전 시켜야 함
 	localTransform.quat = newQuat;
-	//UpdateConstantRotation();
 	UpdateConstantTransform();
 
-	for (const auto& c : m_children)
-	{
-		c->UpdateWorldTransform(localTransform);
-	}
+	//for (const auto& c : m_children)
+	//{
+	//	c->UpdateWorldTransform(localTransform);
+	//}
 }
 
 void SceneComponent::SetLocalTransform(const Transform& newTransform)
 {
 	//TODO front direction도 회전 시켜야 함
 	localTransform = newTransform;
-	//UpdateConstantRotation();
 	UpdateConstantTransform();
 
-	for (const auto& c : m_children)
-	{
-		c->UpdateWorldTransform(localTransform);
-	}
+	//for (const auto& c : m_children)
+	//{
+	//	c->UpdateWorldTransform(localTransform);
+	//}
 }
+void SceneComponent::SetLocalTransformByLdotW(const Transform& LoW)
+{
+	Matrix m = LoW.ToMatrix()* worldTransform.ToMatrix().Invert();
+	Transform t(m);
 
+	localTransform = m;
+	UpdateConstantTransform();
+}
 void SceneComponent::SetCubeMapMipLevel(const int& newCubeMapMipLevel)
 {
 	localConstant.cubeMapMipLevel = newCubeMapMipLevel;
@@ -170,10 +172,10 @@ void SceneComponent::AddLocation(const DirectX::SimpleMath::Vector3& delLocation
 	//UpdateConstantLocation();
 	UpdateConstantTransform();
 
-	for (const auto& c : m_children)
+	/*for (const auto& c : m_children)
 	{
 		c->UpdateWorldTransform(localTransform);
-	}
+	}*/
 }
 
 void SceneComponent::AddRotation(const DirectX::SimpleMath::Quaternion& delQ)
@@ -182,10 +184,10 @@ void SceneComponent::AddRotation(const DirectX::SimpleMath::Quaternion& delQ)
 	//UpdateConstantRotation();
 	UpdateConstantTransform();
 
-	for (const auto& c : m_children)
+	/*for (const auto& c : m_children)
 	{
 		c->UpdateWorldTransform(localTransform);
-	}
+	}*/
 }
 
 DirectX::SimpleMath::Vector3 SceneComponent::GetCollisionScale() const
@@ -195,6 +197,7 @@ DirectX::SimpleMath::Vector3 SceneComponent::GetCollisionScale() const
 		if (CollisionComponent* collisionCmp = dynamic_cast<CollisionComponent*>(c.get()))
 			return collisionCmp->GetCollisionScale();
 	}
+	return localConstant.collisionScale;
 }
 
 DirectX::SimpleMath::Quaternion SceneComponent::GetCollisionRotation() const
@@ -217,6 +220,24 @@ DirectX::SimpleMath::Vector3 SceneComponent::GetCollisionLocation() const
 	return GetLocation();
 }
 
+DirectX::SimpleMath::Vector3 SceneComponent::GetCollisionOffsetLocation() const
+{
+	for (const auto& c : m_children)
+	{
+		if (CollisionComponent* collisionCmp = dynamic_cast<CollisionComponent*>(c.get()))
+			return collisionCmp->GetLocalLocation();
+	}
+	return GetLocalLocation();
+}
+DirectX::SimpleMath::Quaternion SceneComponent::GetCollisionOffsetRotation() const
+{
+	for (const auto& c : m_children)
+	{
+		if (CollisionComponent* collisionCmp = dynamic_cast<CollisionComponent*>(c.get()))
+			return collisionCmp->GetLocalRotation();
+	}
+	return GetLocalRotation();
+}
 DirectX::SimpleMath::Quaternion SceneComponent::GetRotation() const
 {
 	Matrix M = localConstant.model.Transpose();
@@ -293,6 +314,12 @@ void SceneComponent::UpdateConstantTransform()
 
 	localConstant.modelInvTranspose = localConstant.model.Invert();
 	localConstant.model = localConstant.model.Transpose();
+
+	for (const auto& c : m_children)
+	{
+		Transform t(mat);
+		c->UpdateWorldTransform(t);
+	}
 }
 
 void SceneComponent::UpdateConstantLocation()

@@ -75,15 +75,20 @@ public:
 	// kinematic actor들 물리엔진에 동기화
 	void SyncKinematicToPhysX();
 
-protected:
+public:
 	Input::InputHelper m_inputHelper;
 
 public:
 	bool GetInputState(size_t key);
 	bool GetGrabState();
 	bool GetGrabDirty();
-
 	void SetGrabDirty(bool newDity);
+
+	bool GetInteractState();
+	bool GetInteractDirty();
+
+	void SetInteractDirty(bool newDity);
+
 
 // mouse
 private:

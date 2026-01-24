@@ -27,8 +27,8 @@ std::string PrimitiveComponent::GetName() const
 physx::PxTransform PrimitiveComponent::GetPxTransform() const
 {
     // TODO : quat 변경
-    DirectX::SimpleMath::Vector3 loc = GetLocation();
-    DirectX::SimpleMath::Quaternion q = GetRotation();
+    DirectX::SimpleMath::Vector3 loc = GetCollisionLocation();
+    DirectX::SimpleMath::Quaternion q = GetCollisionRotation();
     return physx::PxTransform(
         physx::PxVec3(loc.x, loc.y, loc.z),
         physx::PxQuat(q.x,q.y,q.z,q.w)
@@ -50,12 +50,23 @@ void PrimitiveComponent::SyncFromPhysX(const physx::PxTransform& transform)
 {
     DirectX::SimpleMath::Vector3 loc(transform.p.x, transform.p.y, transform.p.z);
     DirectX::SimpleMath::Quaternion rot(transform.q.x, transform.q.y, transform.q.z, transform.q.w);
-    /*SetLocation(loc);
-    SetRotation(rot);*/
+    
+    Vector3 collLoc = GetCollisionOffsetLocation();
+    Quaternion collRot = GetCollisionOffsetRotation();
+
+    Matrix collMat =
+        Matrix::CreateFromQuaternion(collRot) *
+        Matrix::CreateTranslation(collLoc);
+
+    Matrix ret =
+        Matrix::CreateFromQuaternion(rot) *
+        Matrix::CreateTranslation(loc);
+    collMat = collMat.Invert();
+    Matrix finalMat = collMat * ret;
     Transform t;
-    t.location = loc;
-    t.quat = rot;
-    SetLocalTransform(t);    
+    finalMat.Decompose(t.scale, t.quat, t.location);
+
+    SetLocalTransformByLdotW(t);
 }
 
 

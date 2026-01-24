@@ -3,6 +3,12 @@
 #include "directxtk12\SimpleMath.h"
 
 struct Transform {
+
+	Transform() {};
+	Transform(DirectX::SimpleMath::Matrix m)
+	{
+		m.Decompose(scale, quat, location);
+	}
 	DirectX::SimpleMath::Vector3 location;
 	DirectX::SimpleMath::Quaternion quat;
 	DirectX::SimpleMath::Vector3 scale = DirectX::SimpleMath::Vector3(1.f,1.f,1.f);

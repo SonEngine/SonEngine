@@ -101,10 +101,11 @@ void PhysXEngine::Tick(float deltaTime)
 	// grab 상태가 변했을 때 raycast를 통해 hit 판정 후
 	// hit 했다면 해당 primitive를 kinematic 모드로 전환 후 grabbedPrimitive에 저장
 	// 매 tick 마다 grabbedPrimitive가 존재한다면 카메라 앞으로 location 지정
-	if (world->GetGrabDirty()) {
-		world->SetGrabDirty(false);
+	if (world->GetInteractDirty()) {
+		world->SetInteractDirty(false);
 
-		if (world->GetGrabState() && grabbedPrimitive == nullptr) {
+		// 키를 눌렀을 경우
+		if (world->GetInteractState() && interactPrimitive == nullptr) {
 
 			PxVec3 origin = VectorToPxVec(world->GetViewProjInfo().viewLocation);
 			PxVec3 unitDir = VectorToPxVec(world->GetViewProjInfo().viewDirection);
@@ -122,30 +123,40 @@ void PhysXEngine::Tick(float deltaTime)
 				PxRigidActor* ha = h.actor;
 
 				PrimitiveComponent* prim = static_cast<PrimitiveComponent*>(shape->userData);
-				if (prim && ha) {
+				if (prim)
+				{
+					Actor* owner = prim->GetOwner();
+					if (owner)
+					{
+						owner->Interact();
+					}
+				}
+				/*if (prim && ha) {
 					if (grabbedDynamic = ha->is<PxRigidDynamic>())
 					{
 						grabbedPrimitive = prim;
 						SetKinematicMode(grabbedPrimitive, grabbedDynamic);
 					}
-				}
+				}*/
 			}
 		}
+		// 키를 땠을 경우
 		else {
-			if (grabbedDynamic && grabbedPrimitive) {
+
+			/*if (grabbedDynamic && grabbedPrimitive) {
 				SetDynamicMode(grabbedPrimitive, grabbedDynamic);
 				grabbedDynamic = nullptr;
 				grabbedPrimitive = nullptr;
-			}
+			}*/
 		}
 	}
-	//TODO :
-	if (grabbedPrimitive) {
-		PxVec3 origin = VectorToPxVec(world->GetViewProjInfo().viewLocation);
-		PxVec3 unitDir = VectorToPxVec(world->GetViewProjInfo().viewDirection);
-		PxVec3 newLoc = origin + (unitDir * grabbedDistance);
-		grabbedPrimitive->SetLocation(PxVecToVector(newLoc));
-	}
+	////TODO :
+	//if (grabbedPrimitive) {
+	//	PxVec3 origin = VectorToPxVec(world->GetViewProjInfo().viewLocation);
+	//	PxVec3 unitDir = VectorToPxVec(world->GetViewProjInfo().viewDirection);
+	//	PxVec3 newLoc = origin + (unitDir * grabbedDistance);
+	//	grabbedPrimitive->SetLocation(PxVecToVector(newLoc));
+	//}
 }
 
 void PhysXEngine::AddRigidDynamic(physx::PxRigidDynamic* rigidBody)
@@ -241,6 +252,7 @@ void PhysXEngine::SyncKinematics()
 			if (proxy.dynamicBody)
 			{
 				PxTransform t = proxy.primitive->GetPxTransform();
+				float x = t.p.x;
 				proxy.dynamicBody->setKinematicTarget(t);
 			}
 		}
@@ -350,24 +362,34 @@ void PhysXEngine::CreatePlayerController(class PrimitiveComponent* primitive, Px
 	gPlayerController = static_cast<PxCapsuleController*>(c);
 }
 
-void PhysXEngine::TickPlayerController(float dt, const PxVec3& inputDir, float moveSpeed)
+void PhysXEngine::TickPlayerController(float dt, const PxVec3& inputDir, float moveSpeed, bool jumpPressed)
 {
 	if (!gPlayerController) return;
 
-	PxVec3 disp = inputDir * moveSpeed * dt; // inputDir는 정규화된 방향 권장
+	PxVec3 disp = inputDir * moveSpeed * dt; 
 
-	static float verticalVel = 0.0f;
+	if (playerVerticalVel == 0.f && jumpPressed)
+	{
+		playerVerticalVel = 5.f;
+	}
+	
+	if (playerVerticalVel != 0.f)
+		disp *= 0.4f;
+
 	const float g = -9.81f;
-	verticalVel += g * dt;
-	disp.y += verticalVel * dt;
+	playerVerticalVel += g * dt;
+	disp.y += playerVerticalVel * dt;
 
 	PxControllerFilters filters;
 
+	gPlayerController->move(PxVec3(0.1f, 0, 0), 0.001f, dt, filters);
+	gPlayerController->move(PxVec3(-0.1f,0,0), 0.001f, dt, filters);
+	
 	PxControllerCollisionFlags flags =
 		gPlayerController->move(disp, 0.001f, dt, filters);
 
 	if (flags & PxControllerCollisionFlag::eCOLLISION_DOWN)
-		verticalVel = 0.0f;
+		playerVerticalVel = 0.0f;
 
 	 PxExtendedVec3 p = gPlayerController->getFootPosition();
 

@@ -31,43 +31,99 @@ void ADoor::Initialize(const ActorData& ad)
 		root->SetActorData(rootData);
 		SetRootComponent(root);
 
+		ActorData rightData = ad;
+		rightData.collisionLocation = Vector3(-0.5f, 0.2f, 0.025f);
+		rightData.lc.collisionScale = Vector3(0.45f, 1.2f, 0.05f);
+		rightData.lc.collisionShape = 0;
+
 		doorRight = std::make_shared<StaticMeshComponent>(this);
-		doorRight->SetLocation(Vector3(0.9f, 1.1f, -0.013f));
 		doorRight->SetMesh(world->pbrModelLoader->GetMeshes("door1"));
-		doorRight->SetActorData(rootData);
+		doorRight->SetLocation(Vector3(0.9f, 1.1f, -0.013f));
+		doorRight->SetActorData(rightData);
 		
+		ActorData leftData = ad;
+		leftData.collisionLocation = Vector3(0.5f, 0.2f, 0.025f);
+		leftData.lc.collisionScale = Vector3(0.45f, 1.2f, 0.05f);
+		leftData.lc.collisionShape = 0;
+
 		doorLeft = std::make_shared<StaticMeshComponent>(this);
 		doorLeft->SetMesh(world->pbrModelLoader->GetMeshes("door2")); // door Left
-
-		ActorData leftData = ad;
-		leftData.collisionLocation = Vector3(0.5f, 0.f, 0.05f);
-		leftData.lc.collisionScale = Vector3(0.4f, 1.0f, 0.05f);
-		leftData.lc.collisionShape = 0;
-		//doorLeft->SetLocation(Vector3(-0.989f, 1.1f, -0.013f));
-		doorLeft->SetLocation(Vector3(-1.5f, 1.5f, -0.f));
+		doorLeft->SetLocation(Vector3(-0.989f, 1.1f, -0.013f));
 		doorLeft->SetActorData(leftData);
 
 		if (Graphics::world && ad.useSimulate)
 		{
-			std::shared_ptr<CollisionComponent> collisionCmp = std::make_shared<CollisionComponent>(this);
-			collisionCmp->SetMesh(Graphics::world->dotModelLoader->GetMeshes("point"));
+			std::shared_ptr<CollisionComponent> collisionLeft = std::make_shared<CollisionComponent>(this);
+			collisionLeft->SetMesh(Graphics::world->dotModelLoader->GetMeshes("point"));
 			
-			collisionCmp->SetActorData(leftData);
-			doorLeft->Attach(collisionCmp);
+			collisionLeft->SetActorData(leftData);
+			doorLeft->Attach(collisionLeft);
+
+			std::shared_ptr<CollisionComponent> collisionRight = std::make_shared<CollisionComponent>(this);
+			collisionRight->SetMesh(Graphics::world->dotModelLoader->GetMeshes("point"));
+
+			collisionRight->SetActorData(rightData);
+			doorRight->Attach(collisionRight);
 		}
-		SetActorData(ad);
 
 		root->Attach(doorLeft);
 		root->Attach(doorRight);
-		
+		SetActorData(ad);
+
 	}
 }
 
 void ADoor::Tick(const float& deltaTime)
 {
-	/*float degree = rotationSpeed * deltaTime;
-	float radian =  DirectX::XMConvertToRadians(degree);
-	auto mat = DirectX::XMMatrixRotationY(radian);
-	auto q = DirectX::SimpleMath::Quaternion::CreateFromRotationMatrix(mat);
-	doorLeft->AddRotation(q);*/
+	if (openDoor)
+	{
+		float degree = rotationSpeed * deltaTime;
+		leftDegree += degree;
+		if (leftDegree >= 120.f)
+		{
+			leftDegree = 120.f;
+			openDoor = false;
+			currentState = Ds_opened;
+		}
+
+		float leftRadian = DirectX::XMConvertToRadians(leftDegree);
+		auto leftQ = DirectX::SimpleMath::Quaternion::CreateFromRotationMatrix(DirectX::XMMatrixRotationY(leftRadian));
+		float rightRadian = DirectX::XMConvertToRadians(-leftDegree);
+		auto rightQ = DirectX::SimpleMath::Quaternion::CreateFromRotationMatrix(DirectX::XMMatrixRotationY(rightRadian));
+
+		doorLeft->SetRotation(leftQ);
+		doorRight->SetRotation(rightQ);
+	}
+	else if (closeDoor)
+	{
+		float degree = -rotationSpeed * deltaTime;
+		leftDegree += degree;
+		if (leftDegree <= 0.f)
+		{
+			leftDegree = 0.f;
+			closeDoor = false;
+			currentState = DS_closed;
+		}
+
+		float leftRadian = DirectX::XMConvertToRadians(leftDegree);
+		auto leftQ = DirectX::SimpleMath::Quaternion::CreateFromRotationMatrix(DirectX::XMMatrixRotationY(leftRadian));
+		float rightRadian = DirectX::XMConvertToRadians(-leftDegree);
+		auto rightQ = DirectX::SimpleMath::Quaternion::CreateFromRotationMatrix(DirectX::XMMatrixRotationY(rightRadian));
+
+		doorLeft->SetRotation(leftQ);
+		doorRight->SetRotation(rightQ);
+	}
+}
+
+void ADoor::Interact()
+{
+	if (currentState == DS_closed || currentState == DS_closing) {
+		currentState = DS_opening;
+		openDoor = true;
+	}
+	else
+	{
+		currentState = DS_closing;
+		closeDoor = true;
+	}
 }

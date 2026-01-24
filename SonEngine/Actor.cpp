@@ -50,6 +50,10 @@ void Actor::Tick(const float& deltaTime)
 {
 }
 
+void Actor::Interact()
+{
+}
+
 void Actor::UpdateRotation(const int& mouseDeltaX, const int& mouseDeltaY, const float& deltaTime)
 {
 	if (m_rootComponent)

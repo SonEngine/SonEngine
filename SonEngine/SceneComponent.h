@@ -26,6 +26,8 @@ public:
 	void SetLocation(const DirectX::SimpleMath::Vector3& newLocation);
 	void SetRotation(const DirectX::SimpleMath::Quaternion& newQuat);
 	void SetLocalTransform(const Transform& newTransform);
+	// physx에서 계산한 localTransform * worldTransform으로 부터 localTransform 추출
+	void SetLocalTransformByLdotW(const Transform& LoW);
 	void SetFrontDirection(const DirectX::SimpleMath::Vector3& newDir) { m_frontDirection = newDir; }
 	void SetUpDirection(const DirectX::SimpleMath::Vector3& newDir) {m_upDirection = newDir;}
 	void SetRightDirection(const DirectX::SimpleMath::Vector3& newDir) { m_rightDirection = newDir; }
@@ -51,8 +53,13 @@ public:
 	DirectX::SimpleMath::Vector3 GetUpDirection() const { return m_upDirection; }
 	DirectX::SimpleMath::Vector3 GetRightDirection()const { return m_rightDirection; }
 	
+	DirectX::SimpleMath::Vector3 GetLocalLocation() const { return localTransform.location; }
+	DirectX::SimpleMath::Quaternion GetLocalRotation() const { return localTransform.quat; }
+
 	DirectX::SimpleMath::Vector3 GetLocation() const { return localConstant.model.Transpose().Translation(); }
 	DirectX::SimpleMath::Vector3 GetCollisionLocation() const;
+	DirectX::SimpleMath::Vector3 GetCollisionOffsetLocation() const;
+	DirectX::SimpleMath::Quaternion GetCollisionOffsetRotation() const;
 	DirectX::SimpleMath::Quaternion GetRotation() const;
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
 	DirectX::SimpleMath::Matrix GetCameraViewMatrix() const;

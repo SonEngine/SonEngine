@@ -41,7 +41,8 @@ protected:
 	void onAdvance(const physx::PxRigidBody* const*, const physx::PxTransform*, const physx::PxU32) override {}
 	
 public:
-	void TickPlayerController(float dt, const physx::PxVec3& inputDir, float moveSpeed);
+	//void TickPlayerController(float dt, const physx::PxVec3& inputDir, float moveSpeed);
+	void TickPlayerController(float dt, const physx::PxVec3& inputDir, float moveSpeed, bool isJumping);
 
 
 private:
@@ -64,9 +65,13 @@ private:
 
 private:
 	class PrimitiveComponent* grabbedPrimitive = nullptr;
+	class PrimitiveComponent* interactPrimitive = nullptr;
 	class physx::PxRigidDynamic* grabbedDynamic = nullptr;
 	physx::PxF32 grabbedDistance = 0;
 
 	class PrimitiveComponent* playerPrimitive = nullptr;
+
+private:
+	float playerVerticalVel = 0.0f;
 
 };
