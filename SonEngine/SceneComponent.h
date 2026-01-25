@@ -25,6 +25,7 @@ public:
 	void UpdateRotation(const int& mouseDeltaX, const int& mouseDeltaY, const float& deltaTime);
 	void SetLocation(const DirectX::SimpleMath::Vector3& newLocation);
 	void SetRotation(const DirectX::SimpleMath::Quaternion& newQuat);
+	void SetLocalTransform(const Matrix& newMatrix);
 	void SetLocalTransform(const Transform& newTransform);
 	// physx에서 계산한 localTransform * worldTransform으로 부터 localTransform 추출
 	void SetLocalTransformByLdotW(const Transform& LoW);

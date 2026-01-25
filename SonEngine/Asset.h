@@ -51,5 +51,7 @@ public:
 	//SkinnedLocalConstant Update(const float& frame, const std::string& assetName, const int& clipIdx);
 	//SkinnedLocalConstant Update(const float& frame, const int& clipIdx);
 	SkinnedLocalConstant Update(const float& frame, const int& clipIdx, bool updateRootPos);
+	Matrix GetBoneTransform(const std::string& boneName, const Matrix& socketTransform, const int& clipIdx);
+	//Matrix GetBoneTransform(const std::string& boneName, const int& clipIdx);
 };
 #include "Asset.inl"

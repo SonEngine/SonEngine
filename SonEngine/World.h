@@ -55,7 +55,8 @@ public:
 	//std::vector<PBRLightInfo> GetLightInfos() const;
 
 public:
-	//Actor* Getplayer() { return m_player.get(); }
+	Actor* Getplayer() { return m_player.get(); }
+	Actor* GetActor(const std::string& actorName) const;
 	class PhysXEngine* GetPhysXEngine() const { return m_physXEngine; }
 
 // actors

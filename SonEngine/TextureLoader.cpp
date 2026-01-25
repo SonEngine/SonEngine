@@ -95,7 +95,7 @@ void TextureLoader::LoadTextures(Microsoft::WRL::ComPtr<ID3D12CommandQueue>& com
 	/*omp_set_num_threads(4);
 
 #pragma omp parallel for*/
-	for (int i = 0; i < 47; i++)
+	for (int i = 0; i < count; i++)
 	{
 		std::ifstream bin(binPath, std::ios::binary);
 

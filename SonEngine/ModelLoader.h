@@ -38,6 +38,10 @@ public:
 	DirectX::SimpleMath::Vector3 aiToVector3(aiVector3D vector);
 	SkinnedLocalConstant GetCurrentSLC(const float& frame, const std::string& assetName, const int& clipIdx, bool updateRootPos);
 
+	DirectX::SimpleMath::Matrix GetBoneTransform(const std::string& assetName, const std::string& boneName, const Matrix& socketTransform, const int& clipIdx);
+
+	//DirectX::SimpleMath::Matrix GetBoneTransform(const std::string& assetName, const std::string& boneName, const int& clipIdx);
+
 	DirectX::SimpleMath::Quaternion aiToQuaternion(aiQuaternion quat);
 	DirectX::SimpleMath::Vector4 aiToVector4(aiColor4D vector);
 	aiMatrix4x4 MatrixToAi(const DirectX::SimpleMath::Matrix& mat);
@@ -110,7 +114,24 @@ inline SkinnedLocalConstant ModelLoader<V, I>::GetCurrentSLC(const float& frame,
 	return asset.Update(frame, clipIdx, updateRootPos);
 	
 }
+template<typename V, typename I>
+inline DirectX::SimpleMath::Matrix ModelLoader<V, I>::GetBoneTransform(const std::string& assetName, const std::string& boneName, const Matrix& socketTransform, const int& clipIdx)
+{
+	Matrix m;
 
+	if (assets.find(assetName) == assets.end())
+	{
+		return m;
+	}
+	if (assets[assetName].clips.size() <= (size_t)clipIdx)
+	{
+		//std::cout << "SkinnedLocalConstant ModelLoader<SkinnedVertex, uint16_t>::GetCurrentSLC() clip empty\n";
+		return m;
+	}
+	Asset<V, I>& asset = assets[assetName];
+	return asset.GetBoneTransform(boneName, socketTransform, clipIdx);
+
+}
 template<typename V, typename I>
 inline DirectX::SimpleMath::Quaternion  ModelLoader<V, I>::aiToQuaternion(aiQuaternion quat)
 {

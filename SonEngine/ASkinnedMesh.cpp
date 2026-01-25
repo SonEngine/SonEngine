@@ -1,5 +1,6 @@
 ﻿#include "ASkinnedMesh.h"
 #include "SkinnedMeshComponent.h"
+#include "StaticMeshComponent.h"
 #include "CollisionComponent.h"
 #include "CameraComponent.h"
 #include "StaticMesh.h"
@@ -22,7 +23,7 @@ ASkinnedMesh::~ASkinnedMesh()
 
 void ASkinnedMesh::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData& ad, const AnimData& animData)
 {
-	std::shared_ptr<SkinnedMeshComponent> root = std::make_shared<SkinnedMeshComponent>(this);
+	root = std::make_shared<SkinnedMeshComponent>(this);
 	root->SetMesh(mesh);
 	root->SetActorData(ad);
 	root->SetAnimationData(animData);
@@ -40,16 +41,63 @@ void ASkinnedMesh::Initialize(std::shared_ptr<StaticMesh> mesh, const ActorData&
 		collisionCmp->SetMesh(Graphics::world->dotModelLoader->GetMeshes("point"));
 		collisionCmp->SetActorData(ad);
 		root->Attach(collisionCmp);
-	}
+
+		//if (ad.name == "player")
+		{
+			ActorData meshAd = ad;
+			meshAd.useSimulate = false;
+			meshAd.psoName = "pbrPSO";
+			meshAd.material = "knife_WeaponsPlaceholdMAT_albedo";
+			
+			meshCmp = std::make_shared<StaticMeshComponent>(this);
+			meshCmp->SetMesh(Graphics::world->pbrModelLoader->GetMeshes("Knife"));
+			meshCmp->SetActorData(meshAd);
+			
+			
+			Vector3 rot = Vector3(-92.2f, -7.5f, 111.6f);
+			float roll = DirectX::XMConvertToRadians(rot.x);
+			float pitch = DirectX::XMConvertToRadians(rot.y);
+			float yaw = DirectX::XMConvertToRadians(rot.z);
 	
+			Matrix R = Matrix::CreateFromYawPitchRoll(yaw, pitch, roll);
+			Vector3 t = Vector3(2.2f,3.9f,-6.3f);
+			//Vector3 t = Vector3(0.f, 10.f, 0.f) ;
+			
+			Matrix T = Matrix::CreateTranslation(t);
+			
+			
+			meshLocalMat = T * R;
+			
+			root->Attach(meshCmp);
+		}
+	}
 
 	SetRootComponent(root);
 	SetActorData(ad);
 	UpdateAnimation(0.f);
 }
 
+void ASkinnedMesh::UpdateSocketMatrix(const Vector3 rot, const Vector3& t)
+{
+	float roll = DirectX::XMConvertToRadians(rot.x);
+	float pitch = DirectX::XMConvertToRadians(rot.y);
+	float yaw = DirectX::XMConvertToRadians(rot.z);
+
+	Matrix R = Matrix::CreateFromYawPitchRoll(yaw, pitch, roll);
+
+	Matrix T = Matrix::CreateTranslation(t);
+	meshLocalMat = T * R;
+}
+
+
 void ASkinnedMesh::Tick(const float& deltaTime)
 {
 	UpdateAnimation(deltaTime);
-
+	if (Graphics::world && meshCmp)
+	{
+		
+		Matrix m = Graphics::world->skinnedMeshLoader->GetBoneTransform(root->GetAnimationName(), "hand_r", meshLocalMat, 0);
+		meshCmp->SetLocalTransform(m);
+	}
+	
 }

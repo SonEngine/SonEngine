@@ -81,16 +81,15 @@ void ModelLoader<PBRVertex, uint16_t>::Initialize(ID3D12Device5* device,
 		doorMesh->Initialize<PBRVertex, uint16_t>(device, commandList, {assets["large_castle_door_4k"].m_meshes[i]});
 		meshesMap[name] = doorMesh;
 	}
+	for (auto& [name, asset] : assets)
+	{
+		if (name == "large_castle_door_4k")
+			continue;
+		std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>();
+		mesh->Initialize<PBRVertex, uint16_t>(device, commandList, asset.m_meshes);
+		meshesMap[name] = mesh;
+	}
 
-	//std::shared_ptr<StaticMesh> shieldMesh = std::make_shared<StaticMesh>();
-	//shieldMesh->Initialize<PBRVertex, uint16_t>(device, commandList, { assets["SF_Demon_head_shield_NakedSingularity"].m_meshes[0] });
-
-	//std::shared_ptr<StaticMesh> mariaMesh = std::make_shared<StaticMesh>();
-	//mariaMesh->Initialize<PBRVertex, uint16_t>(device, commandList, assets["maria"].m_meshes );
-
-	//meshesMap["maria"] = mariaMesh;
-	//meshesMap["shield"] = shieldMesh;
-	meshesMap["sphereTan"] = sphereTanMesh;
 	meshesMap["sphere"] = sphereMesh;
 	meshesMap["plane"] = planeMesh;
 	meshesMap["cube"] = cubeMesh;

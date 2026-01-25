@@ -19,19 +19,7 @@ inline SkinnedLocalConstant Asset<V, I>::Update(const float& frame, const int& c
 	for (uint32_t boneId = 0; boneId < animData.boneIdToName.size(); boneId++)
 	{
 		const std::vector<AnimationKey>& keys = clip.keys[boneId];
-		/*int32_t parentId = boneData.boneParents[i];
-		const Matrix parentTransform = parentId >= 0
-			? boneData.boneTransform[parentId]
-			: Matrix();
 
-		if (clip.keys[i].size() > k)
-		{
-			boneData.boneTransform[i] = clip.keys[i][k].m * parentTransform;
-		}
-		else
-		{
-			boneData.boneTransform[i] = parentTransform;
-		}*/
 		const int parentIdx = animData.boneParents[boneId];
 		const Matrix parentMatrix = parentIdx >= 0
 			? animData.boneTransform[parentIdx]
@@ -58,12 +46,6 @@ inline SkinnedLocalConstant Asset<V, I>::Update(const float& frame, const int& c
 			Matrix::CreateFromQuaternion(r) *
 			Matrix::CreateTranslation(t); 
 
-
-		//Matrix keyMat =
-		//	Matrix::CreateScale(key.scale) *
-		//	Matrix::CreateFromQuaternion(key.quat) *
-		//	Matrix::CreateTranslation(key.pos);
-	
 		animData.boneTransform[boneId] = keyMat * parentMatrix;
 	}
 	for (uint32_t i = 0; i < animData.boneIdToName.size(); i++)
@@ -75,4 +57,23 @@ inline SkinnedLocalConstant Asset<V, I>::Update(const float& frame, const int& c
 				animData.defaultTransform).Transpose();
 	}
 	return slc;
+}
+
+template<typename V, typename I>
+inline Matrix Asset<V, I>::GetBoneTransform(const std::string& boneName,const Matrix &socketTransform, const int& clipIdx)
+{
+	auto it = animData.boneNameToId.find(boneName);
+	if (it == animData.boneNameToId.end())
+		return Matrix();
+
+	int32_t i = it->second;
+	/*return (animData.defaultInvTransform *
+		socketTransform*
+		animData.boneTransform[i] *
+		animData.defaultTransform);*/
+
+	return (animData.defaultInvTransform *
+		socketTransform *
+		animData.boneTransform[i]*
+		animData.defaultTransform);
 }

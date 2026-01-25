@@ -16,6 +16,7 @@ public:
 
 public:
 	StaticMesh* GetMesh() const { return m_mesh.get(); }
+	std::string GetAnimationName() const { return m_animationName; }
 	std::shared_ptr<StaticMesh> GetMeshPtr() const { return m_mesh; }
 	SkinnedLocalConstant GetSkinnedLocalConstant() { return m_skinnedLocalConstant; }
 

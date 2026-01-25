@@ -126,6 +126,7 @@ private:
 	void ApplyGameCommand(const GameCmd& cmd);
 	void ApplyImpl(const CmdAddActor& c);
 	void ApplyImpl(const CmdUpdateActorConstant& c);
+	void ApplyImpl(const CmdUpdateSocketData& c);
 
 private:
 	MeshType GetMeshType(PrimitiveComponent* comp);
@@ -198,16 +199,16 @@ private:
 	std::array<float, 4> cubeRtvClearColor;
 	std::string playerCubeMapTextureName = "cubeMapPlayer";
 
-// depthOnly
+	// depthOnly
 private:
-	UINT depthOnlyWidth = 1024*4;
-	UINT depthOnlyHeight = 1024*4;
+	UINT depthOnlyWidth = 1024 * 4;
+	UINT depthOnlyHeight = 1024 * 4;
 	std::string depthOnlyTextureName = "depthOnlyTex";
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_depthOnlyBuffer;
 	D3D12_VIEWPORT m_depthOnlyViewport;
 	D3D12_RECT m_depthOnlyRect;
 
-// Compute Shader 용
+	// Compute Shader 용
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_computeBuffer;
 	//DXGI_FORMAT m_computeBufferFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -251,7 +252,7 @@ private:
 	std::string skinnedMeshPSO = "skinnedMeshPSO";
 	std::string collisionPSO = "collisionPSO";
 
-//FrameResource
+	//FrameResource
 private:
 	static const int m_frameResourceCount = 3;
 	std::vector<std::shared_ptr<FrameResource>> m_frameResources;
@@ -306,8 +307,8 @@ private:
 	std::vector<std::shared_ptr<PBRLightInfo>> m_lightInfos;
 	bool test = true;
 	bool gui_wireFrameMode = false;
-	bool gui_renderPointCloud= false;
-	std::array<float,3> gui_location;
+	bool gui_renderPointCloud = false;
+	std::array<float, 3> gui_location;
 
 private:
 	MouseInputStateHelper* pMouseinputStateHelper = nullptr;
@@ -326,7 +327,7 @@ private:
 	UpdateCmd r_updateCmd;
 	GameCmd g_cmd;
 
-	int actorCount = 100;
+	int actorCount = 200;
 
 	std::unordered_map<uint32_t, std::string> r_idToName;
 	std::unordered_map<std::string, uint32_t> r_nameToId;
@@ -350,4 +351,12 @@ private:
 
 private:
 	std::shared_ptr<Scene> m_scene;
+
+private:
+	Vector3 r_rotation = Vector3(-92.2f, -7.5f, 111.6f);
+	Vector3 r_location = Vector3(2.2f, 3.9f, -6.3f);
+	Vector3 g_rotation;
+	Vector3 g_location;
+
+	bool r_renderGUI = true;
 };

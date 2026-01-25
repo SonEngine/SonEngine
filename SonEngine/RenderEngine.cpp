@@ -19,6 +19,8 @@
 #include "DotComponent.h"
 #include "ModelLoader.h"
 
+#include "ASkinnedMesh.h"
+
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
 
@@ -586,9 +588,8 @@ void RenderEngine::UpdateGUI()
 	std::string fpsStr = "FPS : " + std::to_string(fps);
 	ImGui::Text(fpsStr.c_str());
 	Vector3 dir = r_currentFrameResource->GetGlobalConstant().cameraDir;
-	//std::string str = "x : " + std::to_string(dir.x) + "y : " + std::to_string(dir.y) + "z : " + std::to_string(dir.z);
-	//ImGui::Text(str.c_str());
-
+	ImGui::Checkbox("Render GUI", &r_renderGUI);
+	
 	ImGui::Checkbox("Change Mode", &test);
 	ImGui::Checkbox("Render PointCloud", &gui_renderPointCloud);
 	if (ImGui::Checkbox("WireFrame Mode", &gui_wireFrameMode))
@@ -609,6 +610,26 @@ void RenderEngine::UpdateGUI()
 
 	/*ImGui::TextUnformatted("save miplevel");
 	ImGui::SliderInt("save miplevel", &saveMipLevel, 0, 5);*/
+	
+	ImGui::Text("Rotation");
+	if (ImGui::DragFloat3("##Rotation", (float*)&r_rotation, 0.1f, -180.f, 180.f))
+	{
+		CmdUpdateSocketData sd;
+		sd.location = r_location;
+		sd.rot = r_rotation;
+
+		m_renderToMainCmdQueue->Push(std::move(sd));
+	}
+	ImGui::Text("Location");
+	if (ImGui::DragFloat3("##Location", (float*)&r_location, 0.1f, -10.f, 10.f))
+	{
+		CmdUpdateSocketData sd;
+		sd.location = r_location;
+		sd.rot = r_rotation;
+
+		m_renderToMainCmdQueue->Push(std::move(sd));
+	}
+	
 	ImGui::SeparatorText("Local Constant");
 
 	ImGui::Text(r_idToName[r_selecteId].c_str());
@@ -769,6 +790,8 @@ void RenderEngine::Tick(float deltaTime)
 	{
 		ApplyGameCommand(g_cmd);
 	}
+
+	
 
 	// Global Constants
 	if (world)
@@ -1438,7 +1461,7 @@ void RenderEngine::CreateTextures()
 	fallbackDDSPath = "Textures/Fallback/";
 
 	m_textureLoader = std::make_shared<TextureLoader>(texturePath, m_device);
-	m_textureLoader->InitHeap(100);
+	m_textureLoader->InitHeap(200);
 	m_textureLoader->LoadIdx();
 	m_textureLoader->LoadTextures(m_commandQueue);
 
@@ -1612,9 +1635,9 @@ void RenderEngine::DrawingWithMouse()
 	//	Render(pointCloudPSO, i++, MT_pointCloud, false/*isFinal*/, false/*clear RT*/);
 	Render(cubeMapPSO, i++, MT_cubeMap, false/*isFinal*/, false/*clear RT*/);
 
-	bool renderGUI = true;
-	Render("renderTexturePSO", i++, MT_finalize, !renderGUI/*isFinal*/, true/*clear RT*/);
-	if (renderGUI)
+
+	Render("renderTexturePSO", i++, MT_finalize, !r_renderGUI/*isFinal*/, true/*clear RT*/);
+	if (r_renderGUI)
 		RenderGUI(true);
 }
 
@@ -1890,6 +1913,21 @@ void RenderEngine::ApplyImpl(const CmdUpdateActorConstant& c)
 	//update.meshType = MT_primitive;
 
 	//m_renderCmdQueue->Push(update);
+}
+
+void RenderEngine::ApplyImpl(const CmdUpdateSocketData& c)
+{
+	g_rotation = c.rot;
+	g_location = c.location;
+
+	if (world)
+	{
+		Actor* player = world->GetActor("player");
+		if (ASkinnedMesh* sPlayer = dynamic_cast<ASkinnedMesh*>(player))
+		{
+			sPlayer->UpdateSocketMatrix(g_rotation, g_location);
+		}
+	}
 }
 
 MeshType RenderEngine::GetMeshType(PrimitiveComponent* primitive)

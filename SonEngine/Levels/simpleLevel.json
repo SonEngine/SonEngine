@@ -5,7 +5,7 @@
       "class": "Actor",
       "name": "sphere",
       "transform": {
-        "pos": [ 0.0, 1.8, 2 ],
+        "pos": [ -6.0, 0.5, 2 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -27,6 +27,40 @@
             "pos": [ 0.0, 0.0, 0.0 ],
             "rot": [ 0, 0, 0, 1 ],
             "scale": [ 3, 3, 1 ]
+          }
+        },
+        {
+          "type": "RenderMode",
+          "psoName": "pbrPSO"
+        }
+      ]
+    },
+    {
+      "class": "Actor",
+      "name": "knife",
+      "transform": {
+        "pos": [ 0.0, 0.0, 0 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "Knife",
+          "material": "knife_WeaponsPlaceholdMAT_albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Static"
+        },
+        {
+          "type": "LocalConstant",
+          "updateConstants": true,
+          "texTransform": {
+            "pos": [ 0.0, 0.0, 0.0 ],
+            "rot": [ 0, 0, 0, 1 ],
+            "scale": [ 1, 1, 1 ]
           }
         },
         {
@@ -87,7 +121,7 @@
       "class": "ASkinnedMesh",
       "name": "shield",
       "transform": {
-        "pos": [ 6.0, 0.5, 0.0 ],
+        "pos": [ 3.0, 0.5, 0.0 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -125,7 +159,7 @@
       "class": "ASkinnedMesh",
       "name": "ue4",
       "transform": {
-        "pos": [ 8.0, 0.0, -0.5 ],
+        "pos": [ 0.0, 0.0, 0.0 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -204,7 +238,7 @@
       "class": "ADoor",
       "name": "door",
       "transform": {
-        "pos": [ 0.1, 0.0, 0 ],
+        "pos": [ 0.1, 0.0, 3 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -251,7 +285,11 @@
         {
           "type": "RigidBody",
           "simulate": false,
-          "mode": "PM_Default"
+          "mode": "PM_Default",
+          "transform": {
+            "pos": [ 0.0, 0.7, 0 ],
+            "scale": [ 0.5, 0.7, 0.5 ]
+          }
         },
         {
           "type": "LocalConstant",
@@ -335,7 +373,7 @@
           "view": [ 32, 32, 0.1, 100 ],
           "brightness": [ 0.8, 0.8, 0.8, 1 ],
           "color": [ 1, 1, 1, 1 ],
-          "intensity": 10000.0
+          "intensity": 15000.0
         }
       ]
     }

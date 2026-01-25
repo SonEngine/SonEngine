@@ -56,13 +56,20 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 
 	modelLoader->Load("torus.fbx");
 	
-	pbrModelLoader->Load("sphere.glb");
 
 	auto tr = DirectX::XMMatrixScaling(0.01f, 0.01f, 0.01f);
+	
 	auto unrealTR = 
 		DirectX::XMMatrixScaling(0.01f, 0.01f, 0.01f) * 
 		DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2)*
 		DirectX::XMMatrixRotationY(DirectX::XM_PI);
+
+	auto unrealFrontTR =
+		DirectX::XMMatrixScaling(0.01f, 0.01f, 0.01f) *
+		DirectX::XMMatrixRotationY(DirectX::XM_PI);
+
+	auto mixamoFrontTR =
+		DirectX::XMMatrixScaling(0.01f, 0.01f, 0.01f);
 
 	skinnedMeshLoader->Load("Capoeira.fbx", tr, true);
 	skinnedMeshLoader->Load("maria.fbx", tr, true);
@@ -72,9 +79,11 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	skinnedMeshLoader->Load("fpp_arm/MaleArm2.fbx", unrealTR, true);
 	//skinnedMeshLoader->LoadAnimation("fpp_arm/animations/MaleArm_Male_FPP_Dag_AttackD.fbx", "MaleArm2");
 	skinnedMeshLoader->LoadAnimations("fpp_arm/animations", "MaleArm2");
+
 	tr = DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2);
 	pbrModelLoader->Load("large_castle_door_4k.fbx", tr, false);
-	
+	pbrModelLoader->Load("Knife.FBX", unrealTR * DirectX::XMMatrixTranslation(0.0f,0.f,0.f));
+
 
 	tr = DirectX::XMMatrixRotationZ(3.141592f) *
 		DirectX::XMMatrixRotationX(-3.14f / 12.f) *
@@ -188,13 +197,13 @@ void World::Tick(float deltaTime)
 		m_camera->UpdateCameraRotation(mouseDeltaX, mouseDeltaY, deltaTime);
 		m_camera->UpdateCameraLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
 		
-		auto playerIt = m_actors.find("player");
-		if (playerIt != m_actors.end())
+		//auto playerIt = m_actors.find("player");
+		if (m_player)
 		{
-			auto& [dir, jump] = m_inputHelper.ExecutePlayerCommands(deltaTime, m_actors["player"].get());
+			auto& [dir, jump] = m_inputHelper.ExecutePlayerCommands(deltaTime, m_player.get());
 			physx::PxVec3 dirPx(dir.x, dir.y, dir.z);
-			float speed = playerIt->second->GetActorSpeed();
-			playerIt->second->UpdateRotation(mouseDeltaX, mouseDeltaY, deltaTime);
+			float speed = m_player->GetActorSpeed();
+			m_player->UpdateRotation(mouseDeltaX, mouseDeltaY, deltaTime);
 			if (m_physXEngine)
 			{
 				m_physXEngine->TickPlayerController(deltaTime, dirPx, speed, jump);
@@ -239,6 +248,14 @@ ViewProjInfo World::GetViewProjInfo()
 		};
 	}
 	return playerInfo;
+}
+
+Actor* World::GetActor(const std::string& actorName) const
+{
+	auto it = m_actors.find(actorName);
+	if (it != m_actors.end())
+		return it->second.get();
+	return nullptr;
 }
 
 void World::RegisterPrimitive(PrimitiveComponent* primitive, bool usePhysX)

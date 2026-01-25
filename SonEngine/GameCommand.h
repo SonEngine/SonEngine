@@ -14,7 +14,12 @@ struct CmdAddActor {
 	int state;
 };
 
+struct CmdUpdateSocketData {
+	Vector3 rot;
+	Vector3 location;
+};
 // render thread 에서 main으
 using GameCmd = std::variant<
 	CmdUpdateActorConstant,
-	CmdAddActor>;
+	CmdAddActor,
+	CmdUpdateSocketData>;

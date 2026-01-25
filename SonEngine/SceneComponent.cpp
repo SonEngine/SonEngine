@@ -120,17 +120,18 @@ void SceneComponent::SetRotation(const DirectX::SimpleMath::Quaternion& newQuat)
 	//	c->UpdateWorldTransform(localTransform);
 	//}
 }
-
+void SceneComponent::SetLocalTransform(const Matrix& newMatrix)
+{
+	//TODO front direction도 회전 시켜야 함
+	Transform t(newMatrix);
+	localTransform = t;
+	UpdateConstantTransform();
+}
 void SceneComponent::SetLocalTransform(const Transform& newTransform)
 {
 	//TODO front direction도 회전 시켜야 함
 	localTransform = newTransform;
 	UpdateConstantTransform();
-
-	//for (const auto& c : m_children)
-	//{
-	//	c->UpdateWorldTransform(localTransform);
-	//}
 }
 void SceneComponent::SetLocalTransformByLdotW(const Transform& LoW)
 {
