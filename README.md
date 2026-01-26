@@ -1,4 +1,4 @@
-# 3D Graphics Engine Project
+# Game Engine Project
 
 DirectX 12을 사용한 로우레벨 3D 렌더링 엔진.  
 렌더링 파이프라인 구성, 셰이더 처리, 모델 및 애니메이션 로딩, physx를 이용한 물리엔진 통합, collision box 렌더링, 물리엔진을 이용한 actor와의 상호작용 (문 열기, 무기 장착, trigger box) 등을 직접 구현한 엔진입니다.
