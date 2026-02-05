@@ -6,7 +6,8 @@ enum PhysXMode {
 	PM_Static,
 	PM_Kinematic,
 	PM_Trigger,
-	PM_Player
+	PM_Player,
+	PM_Bullet
 };
 
 enum PhysXShape {

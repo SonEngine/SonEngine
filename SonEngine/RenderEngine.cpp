@@ -24,6 +24,8 @@
 #include "Directxtk12/DDSTextureLoader.h"
 #include "directxtk12/ResourceUploadBatch.h"
 
+#include "MouseInputState.h"
+
 #include <fp16.h>
 #include <pix3.h>
 
@@ -45,7 +47,7 @@ RenderEngine::~RenderEngine()
 	ImGui::DestroyContext();
 }
 
-bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd, MouseInputStateHelper* mouseInputState)
+bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd)
 {
 	/*dlModel = std::make_shared<DLModel>();
 	dlModel->Initialize("DL/models/mlp.pt");*/
@@ -61,7 +63,6 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 	}
 	m_renderToMainCmdQueue = std::make_shared<BoundedQueue<GameCmd>>(1024);
 
-	pMouseinputStateHelper = mouseInputState;
 	m_guiWidth = guiWidth;
 	m_width = width;
 	m_height = height;
@@ -250,7 +251,10 @@ bool RenderEngine::Initialize(int width, int height, int guiWidth, IDXGIFactory7
 				{
 					m_scene->Apply(r_addCmd);
 				}
-				if (m_renderUpdateCmdQueue[i]->TryPop(r_updateCmd))
+			}
+			for (auto & i : r_packet.updateIdx)
+			{				
+				if (m_renderUpdateCmdQueue[i]->Pop(r_updateCmd))
 				{
 					m_scene->Apply(r_updateCmd);
 				}
@@ -589,7 +593,7 @@ void RenderEngine::UpdateGUI()
 	ImGui::Text(fpsStr.c_str());
 	Vector3 dir = r_currentFrameResource->GetGlobalConstant().cameraDir;
 	ImGui::Checkbox("Render GUI", &r_renderGUI);
-	
+
 	ImGui::Checkbox("Change Mode", &test);
 	ImGui::Checkbox("Render PointCloud", &gui_renderPointCloud);
 	if (ImGui::Checkbox("WireFrame Mode", &gui_wireFrameMode))
@@ -610,7 +614,7 @@ void RenderEngine::UpdateGUI()
 
 	/*ImGui::TextUnformatted("save miplevel");
 	ImGui::SliderInt("save miplevel", &saveMipLevel, 0, 5);*/
-	
+
 	ImGui::Text("Rotation");
 	if (ImGui::DragFloat3("##Rotation", (float*)&r_rotation, 0.1f, -180.f, 180.f))
 	{
@@ -629,7 +633,7 @@ void RenderEngine::UpdateGUI()
 
 		m_renderToMainCmdQueue->Push(std::move(sd));
 	}
-	
+
 	ImGui::SeparatorText("Local Constant");
 
 	ImGui::Text(r_idToName[r_selecteId].c_str());
@@ -677,9 +681,9 @@ void RenderEngine::UpdateGUI()
 	}
 
 	ImGui::PopItemWidth();
-	if (ImGui::Button("Spawn Actor")) {
+	if (ImGui::Button("Spawn Bullet")) {
 		CmdAddActor cmd;
-		cmd.name = "test";
+		cmd.name = "bullet";
 		m_renderToMainCmdQueue->Push(std::move(cmd));
 
 	}
@@ -754,8 +758,9 @@ void  RenderEngine::UpdateMousePosition()
 {
 	GetCursorPos(&currMousPt);
 	ScreenToClient(mainWnd, &currMousPt);
-	pMouseinputStateHelper->UpdateMousePos(currMousPt.x, currMousPt.y);
-	pMouseinputStateHelper->UpdatePrevMousePos(prevMousePt.x, prevMousePt.y);
+
+	Graphics::world->m_mouseInputStateHelper.UpdateMousePos(currMousPt.x, currMousPt.y);
+	Graphics::world->m_mouseInputStateHelper.UpdatePrevMousePos(prevMousePt.x, prevMousePt.y);
 }
 
 void RenderEngine::UpdateGlobalConstantBuffer(const ViewProjInfo& viewProjInfo)
@@ -791,8 +796,6 @@ void RenderEngine::Tick(float deltaTime)
 		ApplyGameCommand(g_cmd);
 	}
 
-	
-
 	// Global Constants
 	if (world)
 	{
@@ -801,11 +804,11 @@ void RenderEngine::Tick(float deltaTime)
 		UpdateGlobalConstantBuffer(world->GetViewProjInfo());
 		{
 			UpdateMousePosition();
-			UpdatePBGlobalConstantBuffer(m_guiWidth, pMouseinputStateHelper->GetInputState());
+			UpdatePBGlobalConstantBuffer(m_guiWidth, world->m_mouseInputStateHelper.GetInputState());
 			prevMousePt = currMousPt;
 		}
+		packet.updateIdx.clear();
 
-		m_frameQueue->Push(std::move(packet));
 	}
 
 	// Local Constants
@@ -817,6 +820,8 @@ void RenderEngine::Tick(float deltaTime)
 		if (prim->IsUpdateConstant())
 		{
 			MeshType mt = GetMeshType(prim);
+			packet.updateIdx.push_back(i);
+
 			if (mt == MT_skinnedMesh)
 			{
 				std::string name = prim->GetName();
@@ -840,14 +845,15 @@ void RenderEngine::Tick(float deltaTime)
 				m_renderUpdateCmdQueue[i]->Push(std::move(update));
 			}
 		}
-		{
-			std::lock_guard<std::mutex> lock(g_mtx);
-			frameReady = true;
-		}
-		// render thread 호출
-		cv.notify_one();
-
 	}
+	m_frameQueue->Push(std::move(packet));
+
+	{
+		std::lock_guard<std::mutex> lock(g_mtx);
+		frameReady = true;
+	}
+	// render thread 호출
+	cv.notify_one();
 }
 
 void RenderEngine::RenderMeshes(const std::string& psoName, ID3D12GraphicsCommandList* commandList, MeshType meshType, RenderPassType rpType, int gcbIdx)
@@ -956,7 +962,7 @@ void RenderEngine::RenderMeshes(const std::string& psoName, ID3D12GraphicsComman
 				}
 				else if (type == MT_collision)
 				{
-					if (rpType == RenderPassType::RPT_Default) 
+					if (rpType == RenderPassType::RPT_Default)
 					{
 						commandList->SetGraphicsRootConstantBufferView(0, ld.localCB->GetGPUVirtualAddress());
 						commandList->SetGraphicsRootConstantBufferView(1, r_currentFrameResource->GetGCBGPUAddress());
@@ -1885,16 +1891,11 @@ void RenderEngine::ApplyGameCommand(const GameCmd& cmd)
 
 void RenderEngine::ApplyImpl(const CmdAddActor& c)
 {
+	// Game Thread
 	if (world)
 	{
-		auto testActor = utility->CreateActor(
-			"test",
-			world->modelLoader->GetMeshes("cube"),
-			"pavement_03_albedo",
-			{ 0.f,5.f,0.f },
-			world.get());
-		std::cout << "Main Spawn Actor\n";
-		world->SpawnActor(testActor);
+		//ActorData ad = CreateBulletActorData()
+		world->SpawnBullet();
 	}
 
 }

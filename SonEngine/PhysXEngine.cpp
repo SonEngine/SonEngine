@@ -180,7 +180,7 @@ void PhysXEngine::RegisterPrimitive(class PrimitiveComponent* primitive, bool us
 	PxTransform t = PxTransform(PxVec3(loc.x, loc.y, loc.z), PxQuat(rot.x, rot.y, rot.z, rot.w));
 	PxFilterData filterData;
 	filterData.word0 = 1;
-
+	
 	PxShape* shape = gPhysics->createShape(PxBoxGeometry(scale.x, scale.y, scale.z), *gMaterial);
 	shape->userData = primitive;
 	shape->setSimulationFilterData(filterData);
@@ -223,7 +223,14 @@ void PhysXEngine::RegisterPrimitive(class PrimitiveComponent* primitive, bool us
 			body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
 
 		}
-
+		else if (mode == PM_Bullet)
+		{
+			body->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+			body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+			body->setLinearVelocity(PxVec3(0.f,0.f,100.f));
+			body->setLinearDamping(0.0f);
+			body->setAngularDamping(0.0f);
+		}
 		body->setName(name.c_str());
 		body->attachShape(*shape);
 		proxy.dynamicBody = body;
@@ -374,7 +381,7 @@ void PhysXEngine::TickPlayerController(float dt, const PxVec3& inputDir, float m
 	}
 	
 	if (playerVerticalVel != 0.f)
-		disp *= 0.4f;
+		disp *= AirControl;
 
 	const float g = -9.81f;
 	playerVerticalVel += g * dt;
@@ -395,6 +402,6 @@ void PhysXEngine::TickPlayerController(float dt, const PxVec3& inputDir, float m
 
 	if (playerPrimitive)
 	{
-		playerPrimitive->SetLocation(Vector3(p.x,p.y,p.z));
+		playerPrimitive->SetLocation(Vector3((float)p.x, (float)p.y, (float)p.z));
 	}
 }

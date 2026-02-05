@@ -95,7 +95,7 @@ protected:
 	DirectX::SimpleMath::Vector3 m_rightDirection;
 
 protected:
-	float m_speed = 10.f;
+	float m_speed = 5.f;
 	float m_rotateSpeed = 60.f;
 	LocalConstant localConstant;
 	float xAngle = 0.f;

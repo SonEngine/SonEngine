@@ -73,5 +73,6 @@ private:
 
 private:
 	float playerVerticalVel = 0.0f;
+	float AirControl = 0.8f;
 
 };

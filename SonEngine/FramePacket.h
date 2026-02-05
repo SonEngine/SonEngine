@@ -3,6 +3,7 @@
 #include "directxtk12\SimpleMath.h"
 #include "PaintBoardHLSLCompat.h"
 #include "PBRHLSLCompat.h"
+#include <vector>
 
 struct FramePacket
 {
@@ -10,4 +11,5 @@ struct FramePacket
 	PBRGlobalConstant gc;
 	PBGlobalConstant pbgc;
 	float deltaTime;
+	std::vector<int> updateIdx;
 };

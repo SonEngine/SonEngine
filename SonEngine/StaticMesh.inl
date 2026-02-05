@@ -62,6 +62,10 @@ inline void StaticMesh::Initialize(ID3D12Device5* device, ID3D12GraphicsCommandL
 {
 	meshCount = (UINT)meshes.size();
 	
+	if (sizeof(V) == sizeof(PBRVertex) && sizeof(I) == sizeof(uint16_t))
+	{
+		m_mesh = (std::vector<Mesh<PBRVertex, uint16_t>>*)&meshes;
+	}
 	m_vertexGpu.resize(meshCount);
 	m_vertexUpload.resize(meshCount);
 	m_indexGpu.resize(meshCount);

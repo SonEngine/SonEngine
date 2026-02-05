@@ -11,7 +11,6 @@
 
 #include "GraphicsCommon.h"
 
-#include "MouseInputState.h"
 
 namespace Core {
     class BaseApp {
@@ -57,7 +56,7 @@ namespace Core {
         bool printDirty = false;
 
     protected:
-        MouseInputStateHelper mouseInputStateHelper;
+       // MouseInputStateHelper mouseInputStateHelper;
 
     };
 }

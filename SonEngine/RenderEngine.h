@@ -45,8 +45,9 @@ public:
 	RenderEngine(ID3D12Device5* device = nullptr);
 	virtual ~RenderEngine();
 
+
 public:
-	bool Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd, MouseInputStateHelper* mouseInputState);
+	bool Initialize(int width, int height, int guiWidth, IDXGIFactory7* factory, HWND wnd);
 	bool InitGUI(HWND wnd);
 
 	void RequestResize(int newWidth, int newHeight);
@@ -311,7 +312,6 @@ private:
 	std::array<float, 3> gui_location;
 
 private:
-	MouseInputStateHelper* pMouseinputStateHelper = nullptr;
 	POINT currMousPt = { 0,0 };
 	POINT prevMousePt = { 0,0 };
 

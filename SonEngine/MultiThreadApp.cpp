@@ -109,7 +109,7 @@ bool Core::MultiThreadApp::InitDirectX()
 	if (world) { world->InitializePhysics(m_physXEngine.get()); }
 	
 	m_renderEngine = std::make_shared<RenderEngine>(m_device.Get());
-	m_renderEngine->Initialize(m_width, m_height, m_guiWidth, m_dxgiFactory.Get(), m_mainWnd, &mouseInputStateHelper);
+	m_renderEngine->Initialize(m_width, m_height, m_guiWidth, m_dxgiFactory.Get(), m_mainWnd);
 
 	//if (world)
 	//{

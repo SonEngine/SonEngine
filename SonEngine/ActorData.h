@@ -5,7 +5,14 @@
 #include "PBRHLSLCompat.h"
 #include "PhysXMode.h"
 
-struct ActorData 
+enum ActorState {
+	AS_default,
+	AS_idle,
+	AS_attack,
+	AS_playMontage
+};
+
+struct ActorData
 {
 	ActorData()
 	{
@@ -31,7 +38,6 @@ struct ActorData
 	PhysXMode mode = PhysXMode::PM_Default;
 	bool updateConstants;
 	Vector3 collisionLocation;
-
 	LocalConstant lc;
 };
 
@@ -54,4 +60,36 @@ struct AnimData
 	std::string name;
 	float animationSpeed = 60.f;
 	bool playAnimation = true;
+	ActorState actorState = ActorState::AS_default;
 };
+
+inline ActorData CreateBulletActorData(const Vector3& location)
+{
+	static int i = 0;
+	ActorData ad;
+	
+	ad.useSimulate = true;
+	ad.mode = PhysXMode::PM_Bullet;
+	ad.updateConstants = true;
+	ad.lc.useReflect = false;
+	ad.lc.heightScale = 0.f;
+	ad.lc.forceMip0 = false;
+	ad.lc.roughness = 0.2f;
+	ad.lc.metallic = 0.8f;
+	ad.lc.collisionScale = Vector3(0.5, 0.5, 0.5);
+	ad.lc.collisionShape = PhysXShape::PS_cube;
+	ad.collisionLocation = Vector3::Zero;
+
+	ad.name = "bullet_" + std::to_string(i);
+	ad.mesh = "sphere";
+	ad.material ="Metal052C_4K-PNG_albedo";
+	ad.psoName = "pbrPSO";
+
+	DirectX::SimpleMath::Matrix model =
+		DirectX::SimpleMath::Matrix::CreateTranslation(location);
+
+	ad.lc.model = model.Transpose();
+	ad.lc.modelInvTranspose = model.Invert();
+	i++;
+	return ad;
+}

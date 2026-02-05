@@ -9,6 +9,7 @@
 #include "d3d12.h"
 #include "PBRHLSLCompat.h"
 #include "Vertex.h"
+#include "MouseInputState.h"
 
 class Actor;
 class Camera;
@@ -43,6 +44,7 @@ public:
 public:
 	void SetInputState(size_t key, bool isKeyDown);
 	bool LoadLevel(const std::filesystem::path & levelPath);
+	void SpawnBullet();
 	void SetFPSMode(bool newFpsMode) { isFPSMode = newFpsMode; }
 	void SetFoucusMode(bool newFocusMode) { isFocused = newFocusMode; }
 
@@ -78,6 +80,7 @@ public:
 
 public:
 	Input::InputHelper m_inputHelper;
+	MouseInputStateHelper m_mouseInputStateHelper;
 
 public:
 	bool GetInputState(size_t key);

@@ -243,7 +243,11 @@ void Core::SimpleApp::Update(float deltaTime)
 	GetCursorPos(&currMousPt);
 	ScreenToClient(m_mainWnd, &currMousPt);
 
-	pbGC.lMouseClickDown = mouseInputStateHelper.GetInputState().lmbDown;
+	if (!Graphics::world)
+	{
+		return;
+	}
+	pbGC.lMouseClickDown = Graphics::world->m_mouseInputStateHelper.GetInputState().lmbDown;
 	pbGC.mouseX = float(currMousPt.x);
 	pbGC.mouseY = float(currMousPt.y);
 	pbGC.prevMouseX = float(prevMousePt.x);

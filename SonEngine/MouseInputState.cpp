@@ -29,3 +29,14 @@ void MouseInputStateHelper::Update(bool IslmouseDown)
 	if (IslmouseDown)
 		IsFirstFrame = true;
 }
+
+void MouseInputStateHelper::UpdateLMouseState(bool IslmouseDown)
+{
+	if (state.lmbDown != IslmouseDown)
+	{
+		state.lmbDown = IslmouseDown;
+		lMouseDirty = true;
+	}
+	if (IslmouseDown)
+		IsFirstFrame = true;
+}

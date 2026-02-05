@@ -3,6 +3,7 @@
 #include <nlohmann/json.hpp>
 #include "PhysXMode.h"
 #include "directxtk12\SimpleMath.h"
+#include "ActorData.h"
 
 enum  ActorType {
     AT_Actor,
@@ -34,13 +35,20 @@ NLOHMANN_JSON_SERIALIZE_ENUM(PhysXMode, {
     {PhysXMode::PM_Player,   "PM_Player"},
     {PhysXMode::PM_Dynamic,   "PM_Dynamic"},
     {PhysXMode::PM_Kinematic, "PM_Kinematic"},
-    {PhysXMode::PM_Trigger, "PM_Trigger"}
+    {PhysXMode::PM_Trigger, "PM_Trigger"},
+    {PhysXMode::PM_Bullet, "PM_Bullet"},
     })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(PhysXShape, {
     {PhysXShape::PS_cube,    "cube"},
     {PhysXShape::PS_sphere,   "sphere"}
         })
+
+NLOHMANN_JSON_SERIALIZE_ENUM(ActorState, {
+    {ActorState::AS_default,    "Default"},
+    {ActorState::AS_idle,    "Idle"},
+    {ActorState::AS_attack,    "Attack"}
+})
 
 static DirectX::SimpleMath::Vector3 ParseVec3(const nlohmann::json & j)
 {

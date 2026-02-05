@@ -17,7 +17,7 @@
 #include "Asset.h"
 #include "StaticMesh.h"
 #include <omp.h>
-
+#include "BlendData.h"
 
 template<typename V, typename I>
 class ModelLoader {
@@ -36,7 +36,9 @@ public:
 	std::vector<Mesh<V, I>> GetAsset(const std::string& assetName) const;
 	std::shared_ptr<StaticMesh> GetMeshes(const std::string& assetName) const;
 	DirectX::SimpleMath::Vector3 aiToVector3(aiVector3D vector);
-	SkinnedLocalConstant GetCurrentSLC(const float& frame, const std::string& assetName, const int& clipIdx, bool updateRootPos);
+	SkinnedLocalConstant  GetCurrentSLC(const float& frame, const std::string& assetName, const int& clipIdx, bool updateRootPos);
+	SkinnedLocalConstant BlendPose(const BlendData& blendData);
+	size_t  GetAnimationSize(const std::string& assetName, const int& clipIdx) const;
 
 	DirectX::SimpleMath::Matrix GetBoneTransform(const std::string& assetName, const std::string& boneName, const Matrix& socketTransform, const int& clipIdx);
 
@@ -101,9 +103,9 @@ inline SkinnedLocalConstant ModelLoader<V, I>::GetCurrentSLC(const float& frame,
 {
 	SkinnedLocalConstant slc;
 
-	if (assets.find(assetName) == assets.end())
+	if (assets.find(assetName) == assets.end()) 
 	{
-		return slc;
+		return  slc;
 	}
 	if (assets[assetName].clips.size() <= (size_t)clipIdx)
 	{
@@ -112,7 +114,105 @@ inline SkinnedLocalConstant ModelLoader<V, I>::GetCurrentSLC(const float& frame,
 	}
 	Asset<V,I> & asset = assets[assetName];
 	return asset.Update(frame, clipIdx, updateRootPos);
-	
+}
+
+
+template<typename V, typename I>
+inline SkinnedLocalConstant ModelLoader<V, I>::BlendPose(const BlendData&blendData)
+{
+	SkinnedLocalConstant slc;
+
+	if (assets.find(blendData.animName0) == assets.end() || assets.find(blendData.animName1) == assets.end())
+	{
+		return  slc;
+	}
+	if (assets[blendData.animName0].clips.size() <= (size_t)blendData.clipId0|| assets[blendData.animName1].clips.size() <= (size_t)blendData.clipId1)
+	{
+		//std::cout << "SkinnedLocalConstant ModelLoader<SkinnedVertex, uint16_t>::GetCurrentSLC() clip empty\n";
+		return slc;
+	}
+	Asset<V, I>& A = assets[blendData.animName0];
+	Asset<V, I>& B = assets[blendData.animName1];
+
+	const AnimationClip& clipA = A.clips[blendData.clipId0];
+	const AnimationClip& clipB = B.clips[blendData.clipId1];
+
+	int frame0 = (int)(blendData.frame0);
+	int frame1 = frame0 + 1;
+	float alpha = blendData.frame0 - float(frame0);
+
+	A.animData.accumulatedRootTransform = Matrix();
+	B.animData.accumulatedRootTransform = Matrix();
+
+	for (uint32_t boneId = 0; boneId < A.animData.boneIdToName.size(); boneId++)
+	{
+		const std::vector<AnimationKey>& keysA = clipA.keys[boneId];
+		const std::vector<AnimationKey>& keysB = clipB.keys[boneId];
+
+		const int parentIdxA = A.animData.boneParents[boneId];
+
+		const Matrix parentMatrix = parentIdxA >= 0
+			? A.animData.boneTransform[parentIdxA]
+			: A.animData.accumulatedRootTransform;
+
+		AnimationKey key = keysA.size() > 0
+			? keysA[frame0 % keysA.size()]
+			: AnimationKey();
+
+		AnimationKey nextKey = keysA.size() > 0
+			? keysA[frame1 % keysA.size()]
+			: AnimationKey();
+
+		AnimationKey key1 = keysB.size() > 0
+			? keysB[(int)blendData.frame1 % keysB.size()]
+			: AnimationKey();
+
+		if (parentIdxA < 0)
+		{
+			key.pos.x = key.pos.z = 0.f;
+		}
+		XMVECTOR t = XMVectorLerp(key.pos, nextKey.pos, alpha);
+		XMVECTOR s = XMVectorLerp(key.scale, nextKey.scale, alpha);
+		XMVECTOR r = XMQuaternionNormalize(XMQuaternionSlerp(key.quat, nextKey.quat, alpha));
+
+		t = XMVectorLerp(t, key1.pos, blendData.weight);
+		s = XMVectorLerp(s, key1.scale, blendData.weight);
+		r = XMQuaternionNormalize(XMQuaternionSlerp(r, key1.quat, blendData.weight));
+
+		//XMVECTOR t = XMVectorLerp(key.pos, key1.pos, blendData.weight);
+		//XMVECTOR s = XMVectorLerp(key.scale, key1.scale, blendData.weight);
+		//XMVECTOR r = XMQuaternionNormalize(XMQuaternionSlerp(key.quat, key1.quat, blendData.weight));
+
+		Matrix keyMat =
+			Matrix::CreateScale(s) *
+			Matrix::CreateFromQuaternion(r) *
+			Matrix::CreateTranslation(t);
+
+		A.animData.boneTransform[boneId] = keyMat * parentMatrix;
+	}
+	for (uint32_t i = 0; i < A.animData.boneIdToName.size(); i++)
+	{
+		slc.boneTransform[i] =
+			(A.animData.defaultInvTransform *
+				A.animData.boneOffset[i] *
+				A.animData.boneTransform[i] *
+				A.animData.defaultTransform).Transpose();
+	}
+	return slc;
+}
+
+template<typename V, typename I>
+inline size_t ModelLoader<V, I>::GetAnimationSize(const std::string& assetName, const int& clipIdx) const
+{
+	auto it = assets.find(assetName);
+
+	if (it == assets.end())
+	{
+		return  0;
+	}
+	if(it->second.clips.size() <= (size_t)clipIdx)
+
+	return it->second.clips[clipIdx].keys.size();
 }
 template<typename V, typename I>
 inline DirectX::SimpleMath::Matrix ModelLoader<V, I>::GetBoneTransform(const std::string& assetName, const std::string& boneName, const Matrix& socketTransform, const int& clipIdx)

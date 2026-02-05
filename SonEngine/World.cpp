@@ -74,10 +74,11 @@ void World::Initialize(int cameraWidth, int cameraHeight, RenderEngine* renderEn
 	skinnedMeshLoader->Load("Capoeira.fbx", tr, true);
 	skinnedMeshLoader->Load("maria.fbx", tr, true);
 	skinnedMeshLoader->Load("shield.fbx", tr, true);
-	skinnedMeshLoader->Load("SK_Mannequin.fbx", unrealTR, true);
-	skinnedMeshLoader->LoadAnimation("FPP_Dag_AttackD.fbx", "SK_Mannequin");
+	
+	skinnedMeshLoader->Load("ue4/SK_Mannequin.fbx", unrealTR, true);
+	skinnedMeshLoader->LoadAnimations("ue4/animations", "SK_Mannequin");
+	
 	skinnedMeshLoader->Load("fpp_arm/MaleArm2.fbx", unrealTR, true);
-	//skinnedMeshLoader->LoadAnimation("fpp_arm/animations/MaleArm_Male_FPP_Dag_AttackD.fbx", "MaleArm2");
 	skinnedMeshLoader->LoadAnimations("fpp_arm/animations", "MaleArm2");
 
 	tr = DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2);
@@ -211,6 +212,17 @@ void World::Tick(float deltaTime)
 		}
 		mouseDeltaX = 0;
 		mouseDeltaY = 0;
+
+		if (m_mouseInputStateHelper.GetLMouseDirty() && m_mouseInputStateHelper.GetLMouseState())
+		{
+			m_mouseInputStateHelper.SetLMouseDirty(false);
+			if (m_player)
+			{
+				if(m_player->GetActorState()!=AS_playMontage)
+					m_player->SetActorState(AS_attack);
+
+			}
+		}
 		//m_camera->UpdateActorLocation(m_inputHelper.ExecuteCommands(deltaTime, m_camera.get()));
 	}
 	else
@@ -452,6 +464,8 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 							animData.name = comp["animationName"].get<std::string>();
 						if (comp.contains("playAnimation"))
 							animData.playAnimation = comp["playAnimation"].get<bool>();
+						if (comp.contains("actorState"))
+							animData.actorState = comp["actorState"].get<ActorState>();
 					}
 				}
 				switch (at)
@@ -553,4 +567,21 @@ bool World::LoadLevel(const std::filesystem::path& levelPath)
 
 	}
 	return true;
+}
+
+void World::SpawnBullet()
+{
+	if (m_player)
+	{
+		Vector3 loc = m_player->GetActorLocation();
+		Vector3 dir = m_player->GetActorFrontDir();
+		Vector3 spawnLoc = loc + dir * 1.f;
+
+		ActorData ad = CreateBulletActorData(spawnLoc);
+
+		std::shared_ptr<Actor> bulletActor = std::make_shared<Actor>(ad.name, this);
+		bulletActor->Initialize(pbrModelLoader->GetMeshes(ad.mesh), ad);
+		SpawnActor(bulletActor);
+	}
+	
 }

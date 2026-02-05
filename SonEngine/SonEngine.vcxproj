@@ -225,6 +225,7 @@
     <ClInclude Include="ASkinnedMesh.h" />
     <ClInclude Include="Asset.h" />
     <ClInclude Include="BaseApp.h" />
+    <ClInclude Include="BlendData.h" />
     <ClInclude Include="BoundedQueue.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraComponent.h" />

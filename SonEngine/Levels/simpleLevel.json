@@ -5,7 +5,7 @@
       "class": "Actor",
       "name": "sphere",
       "transform": {
-        "pos": [ -6.0, 0.5, 2 ],
+        "pos": [ -6.0, 0.5, 0 ],
         "rot": [ 0, 0, 0, 1 ],
         "scale": [ 1, 1, 1 ]
       },
@@ -37,22 +37,26 @@
     },
     {
       "class": "Actor",
-      "name": "knife",
+      "name": "cube",
       "transform": {
-        "pos": [ 0.0, 0.0, 0 ],
+        "pos": [ 3.0, 0.15, 3 ],
         "rot": [ 0, 0, 0, 1 ],
-        "scale": [ 1, 1, 1 ]
+        "scale": [ 1, 0.3, 1 ]
       },
       "components": [
         {
           "type": "StaticMesh",
-          "mesh": "Knife",
-          "material": "knife_WeaponsPlaceholdMAT_albedo"
+          "mesh": "cube",
+          "material": "Metal052C_4K-PNG_albedo"
         },
         {
           "type": "RigidBody",
-          "simulate": false,
-          "mode": "PM_Static"
+          "simulate": true,
+          "mode": "PM_Static",
+          "transform": {
+            "pos": [ 0.0, 0.0, 0 ],
+            "scale": [ 0.5, 0.15, 0.5 ]
+          }
         },
         {
           "type": "LocalConstant",
@@ -60,7 +64,7 @@
           "texTransform": {
             "pos": [ 0.0, 0.0, 0.0 ],
             "rot": [ 0, 0, 0, 1 ],
-            "scale": [ 1, 1, 1 ]
+            "scale": [ 3, 3, 1 ]
           }
         },
         {
@@ -190,7 +194,48 @@
         {
           "type": "Animation",
           "animationSpeed": 60.0,
-          "animationName": "FPP_Dag_AttackD"
+          "animationName": "FPP_Dag",
+          "actorState": "Idle"
+        }
+      ]
+    },
+    {
+      "class": "ASkinnedMesh",
+      "name": "ue4_2",
+      "transform": {
+        "pos": [ 2.0, 0.0, 0.0 ],
+        "rot": [ 0, 0, 0, 1 ],
+        "scale": [ 1, 1, 1 ]
+      },
+      "components": [
+        {
+          "type": "StaticMesh",
+          "mesh": "SK_Mannequin",
+          "material": "M_UE4Man_Body_Albedo"
+        },
+        {
+          "type": "RigidBody",
+          "simulate": false,
+          "mode": "PM_Kinematic",
+          "transform": {
+            "pos": [ 0.0, 0.9, 0 ],
+            "scale": [ 0.5, 0.8, 0.5 ]
+          },
+          "shape": "cube"
+        },
+        {
+          "type": "LocalConstant",
+          "updateConstants": true
+        },
+        {
+          "type": "RenderMode",
+          "psoName": "skinnedMeshPSO"
+        },
+        {
+          "type": "Animation",
+          "animationSpeed": 60.0,
+          "animationName": "FPP_Dag",
+          "actorState": "Attack"
         }
       ]
     },
@@ -229,8 +274,9 @@
         {
           "type": "Animation",
           "animationSpeed": 60.0,
-          "animationName": "MaleArm_Male_FPP_Dag_Idle",
-          "playAnimation": true
+          "animationName": "MaleArm_Male_FPP_Dag",
+          "playAnimation": true,
+          "actorState": "Idle"
         }
       ]
     },
@@ -346,22 +392,8 @@
           "material": "PavingStones145_2K-PNG_Albedo"
         },
         {
-          "type": "RigidBody",
-          "simulate": false,
-          "mode": "PM_Default"
-        },
-        {
           "type": "LocalConstant",
-          "forceMip0": false,
-          "updateConstants": true,
-          "useReflect": false,
-          "heightScale": 0.00,
-          "roughness": 0.0,
-          "texTransform": {
-            "pos": [ 0.0, 0.0, 0.0 ],
-            "rot": [ 0, 0, 0, 1 ],
-            "scale": [ 1, 1, 1 ]
-          }
+          "updateConstants": true
         },
         {
           "type": "RenderMode",

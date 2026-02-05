@@ -15,7 +15,7 @@ inline SkinnedLocalConstant Asset<V, I>::Update(const float& frame, const int& c
 	int frame1 = frame0 + 1;
 	float alpha = frame - float(frame0);
 
-
+	animData.accumulatedRootTransform = Matrix();
 	for (uint32_t boneId = 0; boneId < animData.boneIdToName.size(); boneId++)
 	{
 		const std::vector<AnimationKey>& keys = clip.keys[boneId];
@@ -46,6 +46,19 @@ inline SkinnedLocalConstant Asset<V, I>::Update(const float& frame, const int& c
 			Matrix::CreateFromQuaternion(r) *
 			Matrix::CreateTranslation(t); 
 
+		/*float radian = DirectX::XMConvertToRadians(90.f / 5.f);
+		if (animData.boneIdToName[boneId] == "spine_01"||
+			animData.boneIdToName[boneId] == "spine_02"||
+			animData.boneIdToName[boneId] == "spine_03"||
+			animData.boneIdToName[boneId] == "spine_04"||
+			animData.boneIdToName[boneId] == "spine_05")
+		{
+			keyMat =
+				Matrix::CreateScale(s) *
+				Matrix::CreateFromQuaternion(r) *
+				DirectX::XMMatrixRotationZ(radian) *
+				Matrix::CreateTranslation(t);
+		}*/
 		animData.boneTransform[boneId] = keyMat * parentMatrix;
 	}
 	for (uint32_t i = 0; i < animData.boneIdToName.size(); i++)

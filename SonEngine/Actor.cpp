@@ -8,6 +8,7 @@
 
 using DirectX::SimpleMath::Vector3;
 
+
 Actor::Actor()
 {
 }

@@ -38,8 +38,6 @@ void FrameResource::Initialize(ID3D12Device5* device, const UINT& width, const U
 		reinterpret_cast<void**>(&pPbrGCB)
 	);
 
-
-
 	Graphics::utility->CreateConstantBuffer(
 		sizeof(PBGlobalConstant),
 		m_pbGCBuffer,

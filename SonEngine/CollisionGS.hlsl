@@ -42,11 +42,17 @@ void main(
         2, 6,
         3, 7
     };
+    
+    float4x4 M = gLocalCB.model;
+    M[0].xyz = normalize(M[0].xyz); // (scale 제거)
+    M[1].xyz = normalize(M[1].xyz);
+    M[2].xyz = normalize(M[2].xyz);
+    
     for (int i = 0; i < 10; i++)
     {
         int index = indices[i];
         psInput o;
-        float4 svPos = mul(float4(pos[index], 1.f), gLocalCB.model);
+        float4 svPos = mul(float4(pos[index], 1.f), M);
         svPos = mul(svPos, gPBRGCB.view);
         svPos = mul(svPos, gPBRGCB.proj);
         o.svPosition = svPos;

@@ -54,7 +54,9 @@ public:
 	float GetActorSpeed() const;
 	DirectX::SimpleMath::Matrix GetViewMatrix() const;
 	DirectX::SimpleMath::Matrix GetCameraViewMatrix() const;
+	ActorState GetActorState() const { return m_currentState; }
 
+public:
 	void UpdateMipState(int newForceMip0);
 
 	void UpdateUseReflect(int newUseReflect);
@@ -65,6 +67,7 @@ public:
 	void SetTextureName(const std::string& newName);
 	void SetHeightScale(const float& heightScale);
 	void SetPSOName(const std::string& newName);
+	void SetActorState(const ActorState newState) { m_currentState = newState; }
 
 protected:
 	std::shared_ptr<SceneComponent> m_rootComponent;
@@ -72,4 +75,5 @@ protected:
 
 private:
 	class World* m_world;
+	ActorState m_currentState;
 };

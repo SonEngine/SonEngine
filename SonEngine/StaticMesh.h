@@ -8,6 +8,7 @@
 #include "GraphicsCommon.h"
 #include "Mesh.h"
 #include "TextureGPUResource.h"
+#include "Vertex.h"
 
 class TextureLoader;
 
@@ -58,6 +59,8 @@ protected:
 	std::vector<UINT> m_indexCounts;
 	std::vector<UINT> m_vertexCounts;
 	UINT meshCount = 0;
+
+	std::vector<Mesh<PBRVertex, uint16_t>>* m_mesh;
 };
 
 #include "StaticMesh.inl"
